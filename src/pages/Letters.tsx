@@ -112,18 +112,10 @@ const Letters: React.FC = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>No.</TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => {setSortBy('letter_number');setSortDir(sortDir==='asc'?'desc':'asc')}}>
-                        Nomor Surat {sortBy==='letter_number' ? (sortDir==='asc'? '▲':'▼') : ''}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => {setSortBy('template_name');setSortDir(sortDir==='asc'?'desc':'asc')}}>
-                        Template {sortBy==='template_name' ? (sortDir==='asc'? '▲':'▼') : ''}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => {setSortBy('tanggal');setSortDir(sortDir==='asc'?'desc':'asc')}}>
-                        Tanggal {sortBy==='tanggal' ? (sortDir==='asc'? '▲':'▼') : ''}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => {setSortBy('status');setSortDir(sortDir==='asc'?'desc':'asc')}}>
-                        Status {sortBy==='status' ? (sortDir==='asc'? '▲':'▼') : ''}
-                      </TableHead>
+                      <TableHead>Nomor Surat</TableHead>
+                      <TableHead>Nama Pegawai</TableHead>
+                      <TableHead>Penandatangan</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -135,8 +127,8 @@ const Letters: React.FC = () => {
                         <TableRow key={l.id}>
                           <TableCell>{i + 1}</TableCell>
                           <TableCell>{l.letter_number}</TableCell>
-                          <TableCell>{l.template_name}</TableCell>
-                          <TableCell>{l.form_data?.tanggal}</TableCell>
+                          <TableCell>{l.recipient?.nama || (typeof l.form_data === 'string' ? (() => { try { return JSON.parse(l.form_data).namapegawai } catch { return undefined } })() : l.form_data?.namapegawai) || '-'}</TableCell>
+                          <TableCell>{l.signing_official?.nama || (typeof l.form_data === 'string' ? (() => { try { return JSON.parse(l.form_data).namapejabat } catch { return undefined } })() : l.form_data?.namapejabat) || '-'}</TableCell>
                           <TableCell>{getStatusBadge(l.status)}</TableCell>
                           <TableCell>
                             <Link to={`/letters/${l.id}`} className="btn btn-xs btn-outline flex items-center gap-1">
