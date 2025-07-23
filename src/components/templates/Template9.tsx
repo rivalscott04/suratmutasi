@@ -20,11 +20,11 @@ export const Template9: React.FC<Template9Props> = ({ data }) => {
             KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
             <span className="text-xs">KANTOR KEMENTERIAN AGAMA {data.kabkota}</span>
           </div>
-          <div className="text-xs leading-tight mt-2">
+          <div className="header-info">
             {data.jln}<br />
-            {data.telfon}<br />
-            {data.fax} {data.email}<br />
-            {data.website}
+            Telp. {data.telfon} Fax. {data.fax}<br />
+            Email: {data.email}<br />
+            Website: {data.website}
           </div>
         </div>
       </div>

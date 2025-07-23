@@ -21,9 +21,9 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
             </div>
             <div className="header-info">
               {data.jln}<br />
-              {data.telfon}<br />
-              {data.fax} {data.email}<br />
-              {data.website}
+              Telp. {data.telfon} Fax. {data.fax}<br />
+              Email: {data.email}<br />
+              Website: {data.website}
             </div>
           </div>
         </div>

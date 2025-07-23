@@ -1218,9 +1218,7 @@ const TemplateForm: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-8">
                 {renderTemplateForm()}
                 {submitError && <div className="text-error mb-2">{submitError}</div>}
-                <Button type="submit" className="w-full" disabled={saving}>
-                  {saving ? 'Menyimpan...' : 'Simpan & Generate Surat'}
-                </Button>
+                {/* Pindahkan button Simpan & Generate ke paling bawah, hanya satu, setelah section Tanda Tangan */}
               </form>
             </FormSection>
 
@@ -1250,77 +1248,34 @@ const TemplateForm: React.FC = () => {
                 </div>
               </div>
             </FormSection>
-
+            <div className="pt-6">
+              <Button type="submit" className="w-full bg-teal-700 hover:bg-teal-800 text-white" disabled={saving}>
+                {saving ? 'Menyimpan...' : 'Simpan & Generate Surat'}
+              </Button>
+            </div>
           </div>
 
           {/* Preview Section */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6">
-              <FormSection 
-                title="Preview Surat" 
-                description="Lihat hasil surat yang akan dicetak"
+            <div className="sticky top-8">
+              <div className="mb-4 font-semibold">Lihat hasil surat yang akan dicetak</div>
+              <div
+                className="border rounded-lg bg-white shadow p-4 overflow-auto"
+                style={{ minWidth: '420px', maxWidth: '520px', width: '100%', maxHeight: '600px', margin: '0 auto' }}
               >
-                <div className="space-y-4">
-                  <Button 
-                    onClick={handlePrint} 
-                    className="w-full"
-                    size="lg"
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Cetak Surat
-                  </Button>
-                  
-                  <Card className="border-2 border-dashed">
-                    <CardContent className="p-4">
-                      <div className="bg-white rounded-lg overflow-hidden shadow-sm max-h-96 overflow-y-auto">
-                        <div className="transform scale-50 origin-top-left w-[200%]">
-                          {renderTemplatePreview()}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  {suratId && (
-                    <div className="space-y-2">
-                      <Button onClick={handleGeneratePdf} className="w-full" disabled={pdfLoading}>
-                        {pdfLoading ? 'Menggenerate PDF...' : 'Generate PDF'}
-                      </Button>
-                      {pdfUrl && (
-                        <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline w-full mt-2">Download PDF</a>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </FormSection>
+                {renderTemplatePreview()}
+              </div>
             </div>
           </div>
         </div>
       </div>
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="max-w-md w-full rounded-xl p-8 bg-white/90 backdrop-blur shadow-xl flex flex-col items-center text-center">
-          <button onClick={() => setShowSuccessModal(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
-          <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Surat berhasil disimpan!</h2>
-          <p className="text-gray-600 mb-6">Anda dapat melanjutkan generate PDF, melihat detail surat, atau input surat baru.</p>
-          <div className="flex flex-col gap-3 w-full">
-            <button
-              className="btn btn-primary w-full text-base font-semibold py-3 rounded-lg"
-              onClick={() => {
-                setShowSuccessModal(false);
-                if (suratId) navigate(`/letters/${suratId}`);
-              }}
-            >
-              Lihat Detail Surat
-            </button>
-            <button
-              className="btn btn-outline w-full text-base font-semibold py-3 rounded-lg"
-              onClick={() => {
-                setShowSuccessModal(false);
-                window.location.reload();
-              }}
-            >
-              Input Surat Baru
-            </button>
-          </div>
+        <DialogContent className="max-w-md w-full text-center">
+          <div className="text-2xl font-bold mb-2">Surat berhasil disimpan!</div>
+          <div className="mb-4">Surat siap digenerate PDF dan dapat dilihat di Riwayat Surat.</div>
+          <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => navigate('/letters')}>
+            Lihat Riwayat Surat
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
