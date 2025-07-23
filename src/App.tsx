@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import LetterDetail from "./pages/LetterDetail";
 import Letters from "./pages/Letters";
+import LetterPrintPreview from "./pages/LetterPrintPreview";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const AppRoutes = () => {
           <Letters />
         </ProtectedRoute>
       } />
+      <Route path="/letters/:id/preview" element={<LetterPrintPreview />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

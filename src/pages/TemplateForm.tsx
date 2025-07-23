@@ -18,11 +18,13 @@ import { Template7 } from '@/components/templates/Template7';
 import { Template8 } from '@/components/templates/Template8';
 import { Template9 } from '@/components/templates/Template9';
 import { BaseTemplateData, Template1Data, Template2Data, Template3Data, Template4Data, Template5Data, Template6Data, Template7Data, Template8Data, Template9Data, Pegawai } from '@/types/template';
-import { Printer, ArrowLeft, FileText, CheckCircle } from 'lucide-react';
+import { Printer, ArrowLeft, FileText, CheckCircle, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiPost, apiGet } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { DialogTitle, DialogDescription } from '@radix-ui/react-dialog';
+import SuratPreviewContainer from '@/components/SuratPreviewContainer';
 
 const TEMPLATES = [
   {
@@ -1268,11 +1270,56 @@ const TemplateForm: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-8">
               <div className="mb-4 font-semibold">Lihat hasil surat yang akan dicetak</div>
-              <div
-                className="border rounded-lg bg-white shadow p-4 overflow-auto"
-                style={{ minWidth: '420px', maxWidth: '520px', width: '100%', maxHeight: '600px', margin: '0 auto' }}
-              >
+              <SuratPreviewContainer>
                 {renderTemplatePreview()}
+              </SuratPreviewContainer>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  className="bg-teal-700 hover:bg-teal-800 text-white flex items-center gap-2"
+                  onClick={() => {
+                    const w = window.open();
+                    if (w) {
+                      const headLinks = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'));
+                      w.document.write('<html><head>');
+                      headLinks.forEach(link => {
+                        w.document.write(link.outerHTML);
+                      });
+                      w.document.write('</head><body style="background:#f8fafc;">');
+                      const previewHTML = document.querySelector('.preview-container')?.outerHTML || '';
+                      w.document.write(previewHTML);
+                      w.document.write('</body></html>');
+                      w.document.close();
+                    }
+                  }}
+                  type="button"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open in New Tab
+                </Button>
+                <Button
+                  className="bg-teal-700 hover:bg-teal-800 text-white flex items-center gap-2"
+                  onClick={() => {
+                    const w = window.open('', '', 'width=900,height=600');
+                    if (w) {
+                      const headLinks = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'));
+                      w.document.write('<html><head>');
+                      headLinks.forEach(link => {
+                        w.document.write(link.outerHTML);
+                      });
+                      w.document.write('</head><body style="background:#f8fafc;">');
+                      const previewHTML = document.querySelector('.preview-container')?.outerHTML || '';
+                      w.document.write(previewHTML);
+                      w.document.write('</body></html>');
+                      w.document.close();
+                      w.focus();
+                      setTimeout(() => w.print(), 500);
+                    }
+                  }}
+                  type="button"
+                >
+                  <Printer className="w-4 h-4" />
+                  Cetak
+                </Button>
               </div>
             </div>
           </div>

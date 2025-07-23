@@ -8,18 +8,41 @@ interface Template1Props {
 }
 
 export const Template1: React.FC<Template1Props> = ({ data }) => {
+  // Tambahkan fungsi formatTanggalIndonesia jika belum ada
+  const formatTanggalIndonesia = (tanggal: string) => {
+    if (!tanggal) return '';
+    const bulanIndo = [
+      '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    let d, m, y;
+    if (/\d{4}-\d{2}-\d{2}/.test(tanggal)) {
+      [y, m, d] = tanggal.split('-');
+    } else if (/\d{2}-\d{2}-\d{4}/.test(tanggal)) {
+      [d, m, y] = tanggal.split('-');
+    } else if (/\d{2}\/\d{2}\/\d{4}/.test(tanggal)) {
+      [d, m, y] = tanggal.split('/');
+    } else {
+      return tanggal;
+    }
+    const bulan = bulanIndo[parseInt(m, 10)] || m;
+    return `${d} ${bulan} ${y}`;
+  };
+
   return (
-    <div className="letter-body">
+    <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif' }}>
       <section className="sheet">
         {/* Header */}
-        <div className="header">
+        <div className="header" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <img src={logoKemenag} alt="Logo Kementerian Agama" className="logo" />
-          <div className="header-content">
-            <div className="header-text">
+          <div className="header-content" style={{ flex: 1, textAlign: 'center' }}>
+            <div className="header-text" style={{ fontWeight: 'bold', fontSize: '18.7px', letterSpacing: 0 }}>
               KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
-              <span className="sub-header">KANTOR KEMENTERIAN AGAMA {data.kabkota.toUpperCase()}</span>
+              <span className="sub-header" style={{ fontWeight: 'bold', fontSize: '16px', display: 'block', marginTop: 2 }}>
+                KANTOR KEMENTERIAN AGAMA {data.kabkota.toUpperCase()}
+              </span>
             </div>
-            <div className="header-info">
+            <div className="header-info" style={{ fontSize: '12px', marginTop: 4 }}>
               {data.jln}<br />
               Telp. {data.telfon} Fax. {data.fax}<br />
               Email: {data.email}<br />
@@ -120,7 +143,7 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
           {/* Signature */}
           <div className="signature-section">
             <div className="signature-place">
-              {data.ibukota}, {data.tanggal}
+              {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
             </div>
             <div>
               Kepala,

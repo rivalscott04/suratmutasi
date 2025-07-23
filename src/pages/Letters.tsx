@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText } from 'lucide-react';
+import { FileText, Printer, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -19,6 +19,7 @@ import { Template8 } from '@/components/templates/Template8';
 import { Template9 } from '@/components/templates/Template9';
 import { apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import SuratPreviewContainer from '@/components/SuratPreviewContainer';
 
 const Letters: React.FC = () => {
   const { token } = useAuth();
@@ -45,6 +46,7 @@ const Letters: React.FC = () => {
 
   const { toast } = useToast();
   const [selectedPegawaiNip, setSelectedPegawaiNip] = useState<string | null>(null);
+  const [selectedLetterId, setSelectedLetterId] = useState<string | null>(null);
   const [pegawaiLetters, setPegawaiLetters] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLetterForPreview, setSelectedLetterForPreview] = useState<any | null>(null);
@@ -78,8 +80,9 @@ const Letters: React.FC = () => {
   };
 
   // Fetch surat pegawai saat NIP dipilih
-  const handleShowPegawaiLetters = async (nip: string) => {
+  const handleShowPegawaiLetters = async (nip: string, letterId: string) => {
     setSelectedPegawaiNip(nip);
+    setSelectedLetterId(letterId);
     setModalOpen(false);
     setSelectedLetterForPreview(null);
     setPdfUrl(null);
@@ -226,12 +229,12 @@ const Letters: React.FC = () => {
                                     }
                                     nip = fd.nippegawai;
                                   }
-                                  if (nip) await handleShowPegawaiLetters(nip);
+                                  if (nip) await handleShowPegawaiLetters(nip, l.id);
                                 }}>
                                   <FileText className="w-4 h-4" /> Detail
                                 </Button>
                                 {/* Dropdown surat pegawai */}
-                                {selectedPegawaiNip && selectedPegawaiNip === (l.recipient?.nip || (typeof l.form_data === 'string' ? (() => { try { return JSON.parse(l.form_data).nippegawai } catch { return undefined } })() : l.form_data?.nippegawai)) && pegawaiLetters.length > 0 && (
+                                {selectedPegawaiNip && selectedLetterId === l.id && pegawaiLetters.length > 0 && (
                                   <div className="absolute z-20 mt-2 w-72 bg-white border border-gray-200 rounded shadow-lg">
                                     <div className="max-h-60 overflow-y-auto">
                                       {pegawaiLetters.map((srt: any) => (
@@ -271,15 +274,61 @@ const Letters: React.FC = () => {
           {selectedLetterForPreview && (
             <div className="space-y-4">
               <div className="font-bold text-lg mb-2">Preview Surat</div>
-              <div className="border p-2 rounded bg-gray-50 max-h-[400px] overflow-auto">
-                {renderPreviewByTemplate(selectedLetterForPreview)}
+              <div className="overflow-auto max-h-[60vh] min-h-[200px]">
+                <SuratPreviewContainer>
+                  {renderPreviewByTemplate(selectedLetterForPreview)}
+                </SuratPreviewContainer>
               </div>
-              <div className="flex flex-col gap-2">
-                <Button onClick={() => handleGeneratePdf(selectedLetterForPreview.id)} disabled={pdfLoading}>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Button
+                  className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2"
+                  onClick={() => handleGeneratePdf(selectedLetterForPreview.id)}
+                  disabled={pdfLoading}
+                >
+                  <FileText className="w-4 h-4" />
                   {pdfLoading ? 'Membuat PDF...' : 'Generate PDF'}
                 </Button>
+                <Button
+                  className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2"
+                  onClick={() => {
+                    const previewDiv = document.getElementById('modal-preview-scroll');
+                    const printContents = previewDiv?.outerHTML;
+                    const printWindow = window.open('', '', 'width=900,height=600');
+                    if (printWindow && printContents) {
+                      printWindow.document.write('<html><head><title>Print Surat</title>');
+                      printWindow.document.write('<link rel="stylesheet" href="/src/App.css" />');
+                      printWindow.document.write('</head><body>' + printContents + '</body></html>');
+                      printWindow.document.close();
+                      printWindow.focus();
+                      setTimeout(() => printWindow.print(), 500);
+                    }
+                  }}
+                  type="button"
+                >
+                  <Printer className="w-4 h-4" />
+                  Cetak
+                </Button>
+                <Button
+                  className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2"
+                  onClick={() => {
+                    if (selectedLetterForPreview?.id) {
+                      window.open(`/letters/${selectedLetterForPreview.id}/preview`, '_blank');
+                    }
+                  }}
+                  type="button"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open in New Tab
+                </Button>
                 {pdfUrl && (
-                  <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-green-700 underline text-sm">Download PDF</a>
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 text-sm font-medium transition-colors"
+                  >
+                    <FileText className="w-4 h-4" /> Download PDF
+                  </a>
                 )}
               </div>
             </div>
