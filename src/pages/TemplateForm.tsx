@@ -409,15 +409,7 @@ const TemplateForm: React.FC = () => {
     }
     // Format tanggal Indonesia untuk tanda tangan
     let tanggalIndo = '';
-    if (templateId === '1') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
-    if (templateId === '2') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
-    if (templateId === '3') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
-    if (templateId === '4') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
-    if (templateId === '5') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
-    if (templateId === '6') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
-    if (templateId === '7') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
-    if (templateId === '8') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
-    if (templateId === '9') tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
+    if (baseData.tanggal) tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
     try {
       // Compose payload sesuai backend
       const payload: any = {
@@ -446,6 +438,13 @@ const TemplateForm: React.FC = () => {
           ukerpegawai: selectedPegawai?.unit_kerja || '',
           unitkerjapejabat: selectedPejabat?.unit_kerja || '',
           ukerpejabat: selectedPejabat?.unit_kerja || '',
+          // Pastikan field bulan/tahun nomor surat ikut di-merge
+          blnno: template1Data.blnno || '',
+          thnno: template1Data.thnno || '',
+          blnnomor: template2Data.blnnomor || template7Data.blnnomor || template8Data.blnno || '',
+          tahunskrg: template2Data.tahunskrg || template7Data.tahunskrg || template8Data.thnno || '',
+          blnsrt: template4Data.blnsrt || '',
+          thnskrg: template4Data.thnskrg || '',
         },
         status: 'draft',
       };
