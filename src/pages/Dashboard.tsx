@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, TrendingUp, Clock, Users, ArrowRight, BarChart3, Calendar, Settings as SettingsIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Table } from 'flowbite-react';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 const Dashboard = () => {
   const { user, token, loading } = useAuth();
@@ -234,35 +234,37 @@ const Dashboard = () => {
             <div className="text-error">{error}</div>
           ) : (
             <div className="overflow-x-auto">
-              <Table hoverable striped>
-                <Table.Head>
-                  <Table.HeadCell>No.</Table.HeadCell>
-                  <Table.HeadCell>Nomor Surat</Table.HeadCell>
-                  <Table.HeadCell>Perihal</Table.HeadCell>
-                  <Table.HeadCell>Status</Table.HeadCell>
-                  <Table.HeadCell>Aksi</Table.HeadCell>
-                </Table.Head>
-                <Table.Body>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Nomor Surat</TableHead>
+                    <TableHead>Perihal</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {filteredLetters.length === 0 ? (
-                    <Table.Row>
-                      <Table.Cell colSpan={5} className="text-center">Tidak ada surat</Table.Cell>
-                    </Table.Row>
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center">Tidak ada surat</TableCell>
+                    </TableRow>
                   ) : (
                     filteredLetters.slice(0, 5).map((l, i) => (
-                      <Table.Row key={l.id}>
-                        <Table.Cell>{i + 1}</Table.Cell>
-                        <Table.Cell>{l.letter_number}</Table.Cell>
-                        <Table.Cell>{l.subject}</Table.Cell>
-                        <Table.Cell>{getStatusBadge(l.status)}</Table.Cell>
-                        <Table.Cell>
+                      <TableRow key={l.id}>
+                        <TableCell>{i + 1}</TableCell>
+                        <TableCell>{l.letter_number}</TableCell>
+                        <TableCell>{l.subject}</TableCell>
+                        <TableCell>{getStatusBadge(l.status)}</TableCell>
+                        <TableCell>
                           <Link to={`/letters/${l.id}`} className="btn btn-xs btn-outline flex items-center gap-1">
                             <FileText className="w-4 h-4" /> Detail
                           </Link>
-                        </Table.Cell>
-                      </Table.Row>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </Table.Body>
+                </TableBody>
               </Table>
             </div>
           )}

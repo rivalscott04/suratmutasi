@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Table } from 'flowbite-react';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 const Letters: React.FC = () => {
   const { token } = useAuth();
@@ -108,43 +108,45 @@ const Letters: React.FC = () => {
               <div className="text-error">{error}</div>
             ) : (
               <div className="overflow-x-auto">
-                <Table hoverable striped>
-                  <Table.Head>
-                    <Table.HeadCell>No.</Table.HeadCell>
-                    <Table.HeadCell className="cursor-pointer" onClick={() => {setSortBy('letter_number');setSortDir(sortDir==='asc'?'desc':'asc')}}>
-                      Nomor Surat {sortBy==='letter_number' ? (sortDir==='asc'? '▲':'▼') : ''}
-                    </Table.HeadCell>
-                    <Table.HeadCell className="cursor-pointer" onClick={() => {setSortBy('template_name');setSortDir(sortDir==='asc'?'desc':'asc')}}>
-                      Template {sortBy==='template_name' ? (sortDir==='asc'? '▲':'▼') : ''}
-                    </Table.HeadCell>
-                    <Table.HeadCell className="cursor-pointer" onClick={() => {setSortBy('tanggal');setSortDir(sortDir==='asc'?'desc':'asc')}}>
-                      Tanggal {sortBy==='tanggal' ? (sortDir==='asc'? '▲':'▼') : ''}
-                    </Table.HeadCell>
-                    <Table.HeadCell className="cursor-pointer" onClick={() => {setSortBy('status');setSortDir(sortDir==='asc'?'desc':'asc')}}>
-                      Status {sortBy==='status' ? (sortDir==='asc'? '▲':'▼') : ''}
-                    </Table.HeadCell>
-                    <Table.HeadCell>Aksi</Table.HeadCell>
-                  </Table.Head>
-                  <Table.Body>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>No.</TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => {setSortBy('letter_number');setSortDir(sortDir==='asc'?'desc':'asc')}}>
+                        Nomor Surat {sortBy==='letter_number' ? (sortDir==='asc'? '▲':'▼') : ''}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => {setSortBy('template_name');setSortDir(sortDir==='asc'?'desc':'asc')}}>
+                        Template {sortBy==='template_name' ? (sortDir==='asc'? '▲':'▼') : ''}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => {setSortBy('tanggal');setSortDir(sortDir==='asc'?'desc':'asc')}}>
+                        Tanggal {sortBy==='tanggal' ? (sortDir==='asc'? '▲':'▼') : ''}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => {setSortBy('status');setSortDir(sortDir==='asc'?'desc':'asc')}}>
+                        Status {sortBy==='status' ? (sortDir==='asc'? '▲':'▼') : ''}
+                      </TableHead>
+                      <TableHead>Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {sortedLetters.length === 0 ? (
-                      <Table.Row><Table.Cell colSpan={6} className="text-center">Tidak ada surat</Table.Cell></Table.Row>
+                      <TableRow><TableCell colSpan={6} className="text-center">Tidak ada surat</TableCell></TableRow>
                     ) : (
                       sortedLetters.map((l, i) => (
-                        <Table.Row key={l.id}>
-                          <Table.Cell>{i + 1}</Table.Cell>
-                          <Table.Cell>{l.letter_number}</Table.Cell>
-                          <Table.Cell>{l.template_name}</Table.Cell>
-                          <Table.Cell>{l.form_data?.tanggal}</Table.Cell>
-                          <Table.Cell>{getStatusBadge(l.status)}</Table.Cell>
-                          <Table.Cell>
+                        <TableRow key={l.id}>
+                          <TableCell>{i + 1}</TableCell>
+                          <TableCell>{l.letter_number}</TableCell>
+                          <TableCell>{l.template_name}</TableCell>
+                          <TableCell>{l.form_data?.tanggal}</TableCell>
+                          <TableCell>{getStatusBadge(l.status)}</TableCell>
+                          <TableCell>
                             <Link to={`/letters/${l.id}`} className="btn btn-xs btn-outline flex items-center gap-1">
                               <FileText className="w-4 h-4" /> Detail
                             </Link>
-                          </Table.Cell>
-                        </Table.Row>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </Table.Body>
+                  </TableBody>
                 </Table>
               </div>
             )}
