@@ -49,9 +49,27 @@ const Letters: React.FC = () => {
   const [selectedLetterId, setSelectedLetterId] = useState<string | null>(null);
   const [pegawaiLetters, setPegawaiLetters] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedLetterForPreview, setSelectedLetterForPreview] = useState<any | null>(null);
+  const [selectedLetterForPreview, setSelectedLetterForPreview] = useState<any>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [expandedPegawai, setExpandedPegawai] = useState<string | null>(null);
+  const [expandedSurat, setExpandedSurat] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Group surat by pegawai
+  const grouped: Record<string, any[]> = letters.reduce((acc, surat) => {
+    const nama = surat.namapegawai || 'Tanpa Pegawai';
+    if (!acc[nama]) acc[nama] = [];
+    acc[nama].push(surat);
+    return acc;
+  }, {});
+
+  // Filter by search
+  const filteredGrouped: [string, any[]][] = Object.entries(grouped).filter(([nama, suratList]) => {
+    if (!searchTerm) return true;
+    return nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      suratList.some(surat => surat.letter_number.toLowerCase().includes(searchTerm.toLowerCase()));
+  });
 
   useEffect(() => {
     if (!token) return;
@@ -131,6 +149,19 @@ const Letters: React.FC = () => {
     }
   };
 
+  // Tambahkan mapping singkatan jenis surat di dalam komponen
+  const TEMPLATE_SHORT: { [key: number]: string } = {
+    1: 'TBS',
+    2: 'ANJAB',
+    3: 'PM',
+    4: 'SKBT',
+    5: 'HD',
+    6: 'PIDANA',
+    7: 'PELEPASAN',
+    8: 'PENERIMAAN',
+    9: 'SPTJM',
+  };
+
   return (
     <>
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
@@ -167,169 +198,127 @@ const Letters: React.FC = () => {
             <CardTitle>Riwayat Surat</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
-              <input
-                type="text"
-                className="input input-bordered w-full md:w-64"
-                placeholder="Cari nomor atau template..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-            {loading ? (
-              <div>Loading surat...</div>
-            ) : error ? (
-              <div className="text-error">{error}</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>No.</TableHead>
-                      <TableHead>Nomor Surat</TableHead>
-                      <TableHead>Nama Pegawai</TableHead>
-                      <TableHead>Penandatangan</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedLetters.length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="text-center">Tidak ada surat</TableCell></TableRow>
-                    ) : (
-                      sortedLetters.map((l, i) => {
-                        let namaPegawai = l.recipient?.nama;
-                        let namaPejabat = l.signing_official?.nama;
-                        if (!namaPegawai || !namaPejabat) {
-                          let fd = l.form_data;
-                          if (typeof fd === 'string') {
-                            try { fd = JSON.parse(fd); } catch { fd = {}; }
-                          }
-                          namaPegawai = namaPegawai || fd.namapegawai;
-                          namaPejabat = namaPejabat || fd.namapejabat;
-                        }
-                        return (
-                          <TableRow key={l.id}>
-                            <TableCell>{i + 1}</TableCell>
-                            <TableCell>{l.letter_number}</TableCell>
-                            <TableCell>{namaPegawai || '-'}</TableCell>
-                            <TableCell>{namaPejabat || '-'}</TableCell>
-                            <TableCell>{getStatusBadge(l.status)}</TableCell>
-                            <TableCell>
-                              {/* Tombol Detail dengan Dropdown */}
-                              <div className="relative inline-block text-left">
-                                <Button size="sm" variant="outline" onClick={async (e) => {
-                                  e.preventDefault();
-                                  // Ambil NIP pegawai dari relasi atau form_data
-                                  let nip = l.recipient?.nip;
-                                  if (!nip) {
-                                    let fd = l.form_data;
-                                    if (typeof fd === 'string') {
-                                      try { fd = JSON.parse(fd); } catch { fd = {}; }
-                                    }
-                                    nip = fd.nippegawai;
-                                  }
-                                  if (nip) await handleShowPegawaiLetters(nip, l.id);
-                                }}>
-                                  <FileText className="w-4 h-4" /> Detail
-                                </Button>
-                                {/* Dropdown surat pegawai */}
-                                {selectedPegawaiNip && selectedLetterId === l.id && pegawaiLetters.length > 0 && (
-                                  <div className="absolute z-20 mt-2 w-72 bg-white border border-gray-200 rounded shadow-lg">
-                                    <div className="max-h-60 overflow-y-auto">
-                                      {pegawaiLetters.map((srt: any) => (
-                                        <button
-                                          key={srt.id}
-                                          className="w-full text-left px-4 py-2 hover:bg-green-50 border-b last:border-b-0"
-                                          onClick={() => {
-                                            setSelectedLetterForPreview(srt);
-                                            setModalOpen(true);
-                                            setPdfUrl(null);
-                                          }}
-                                        >
-                                          <div className="font-semibold">{srt.letter_number}</div>
-                                          <div className="text-xs text-gray-500">{typeof srt.form_data === 'string' ? (() => { try { return JSON.parse(srt.form_data).tanggal } catch { return '-' } })() : srt.form_data?.tanggal}</div>
-                                          <div className="text-xs text-gray-500">{srt.template_name}</div>
-                                        </button>
-                                      ))}
-                                    </div>
+            <h1 className="text-2xl font-bold mb-4">Riwayat Surat</h1>
+            <input
+              type="text"
+              className="border rounded px-3 py-2 mb-4 w-full max-w-md"
+              placeholder="Cari nama pegawai atau nomor surat..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            <div className="space-y-4">
+              {filteredGrouped.length === 0 && <div className="text-center text-muted-foreground">Tidak ada data</div>}
+              {filteredGrouped.map(([nama, suratList]) => (
+                <div key={nama} className="border rounded-lg overflow-hidden">
+                  <button
+                    className="w-full text-left px-4 py-3 bg-gray-100 hover:bg-gray-200 font-semibold flex items-center justify-between"
+                    onClick={() => setExpandedPegawai(expandedPegawai === nama ? null : nama)}
+                  >
+                    <span>{nama}</span>
+                    <span className={`transition-transform ${expandedPegawai === nama ? 'rotate-90' : ''}`}>▶</span>
+                  </button>
+                  <div
+                    className={`transition-all duration-300 overflow-hidden ${expandedPegawai === nama ? 'max-h-[1000px] py-2' : 'max-h-0 py-0'}`}
+                    style={{ background: '#fff' }}
+                  >
+                    {expandedPegawai === nama && (
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-4 py-2">No.</th>
+                            <th className="px-4 py-2">Jenis Surat</th>
+                            <th className="px-4 py-2">Nomor Surat</th>
+                            <th className="px-4 py-2">Penandatangan</th>
+                            <th className="px-4 py-2">Status</th>
+                            <th className="px-4 py-2">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {suratList.map((surat, idx) => (
+                            <>
+                              <tr key={surat.id} className="border-b">
+                                <td className="px-4 py-2">{idx + 1}</td>
+                                <td className="px-4 py-2">{TEMPLATE_SHORT[surat.template_id] || '-'}</td>
+                                <td className="px-4 py-2">{surat.letter_number}</td>
+                                <td className="px-4 py-2">{surat.namapejabat}</td>
+                                <td className="px-4 py-2"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">{surat.status}</span></td>
+                                <td className="px-4 py-2">
+                                  <button
+                                    className="text-blue-600 hover:underline mr-2"
+                                    onClick={() => setExpandedSurat(expandedSurat === surat.id ? null : surat.id)}
+                                  >
+                                    {expandedSurat === surat.id ? 'Tutup' : 'Detail'}
+                                  </button>
+                                  <button
+                                    className="text-green-600 hover:underline"
+                                    onClick={() => {
+                                      setSelectedLetterForPreview(surat);
+                                      setModalOpen(true);
+                                    }}
+                                  >
+                                    Preview
+                                  </button>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td colSpan={6} className="p-0">
+                                  <div
+                                    className={`transition-all duration-300 bg-gray-50 ${expandedSurat === surat.id ? 'max-h-[500px] p-4' : 'max-h-0 p-0 overflow-hidden'}`}
+                                  >
+                                    {expandedSurat === surat.id && (
+                                      <div>
+                                        <div className="font-semibold mb-2">Detail Surat</div>
+                                        <div className="text-xs whitespace-pre-wrap">
+                                          {/* Tampilkan detail surat sesuai kebutuhan, misal: */}
+                                          <div>Nomor Surat: {surat.letter_number}</div>
+                                          <div>Status: {surat.status}</div>
+                                          <div>Penandatangan: {surat.namapejabat}</div>
+                                          {/* Tambahkan field lain sesuai kebutuhan */}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
+                                </td>
+                              </tr>
+                            </>
+                          ))}
+                        </tbody>
+                      </table>
                     )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
       {/* Modal Preview Surat */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-3xl w-full">
+        <DialogContent className="max-w-4xl w-full">
           {selectedLetterForPreview && (
-            <div className="space-y-4">
-              <div className="font-bold text-lg mb-2">Preview Surat</div>
-              <div className="overflow-auto max-h-[60vh] min-h-[200px]">
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <div className="font-bold">Preview Surat</div>
+                <div className="space-x-2">
+                  <button
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    onClick={() => window.open(`/letters/${selectedLetterForPreview.id}/preview`, '_blank')}
+                  >
+                    Open in New Tab
+                  </button>
+                  <button
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    onClick={() => window.print()}
+                  >
+                    Cetak
+                  </button>
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded shadow max-h-[70vh] overflow-auto">
+                {/* Gunakan komponen preview surat sesuai kebutuhan */}
                 <SuratPreviewContainer>
                   {renderPreviewByTemplate(selectedLetterForPreview)}
                 </SuratPreviewContainer>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Button
-                  className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2"
-                  onClick={() => handleGeneratePdf(selectedLetterForPreview.id)}
-                  disabled={pdfLoading}
-                >
-                  <FileText className="w-4 h-4" />
-                  {pdfLoading ? 'Membuat PDF...' : 'Generate PDF'}
-                </Button>
-                <Button
-                  className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2"
-                  onClick={() => {
-                    const previewDiv = document.getElementById('modal-preview-scroll');
-                    const printContents = previewDiv?.outerHTML;
-                    const printWindow = window.open('', '', 'width=900,height=600');
-                    if (printWindow && printContents) {
-                      printWindow.document.write('<html><head><title>Print Surat</title>');
-                      printWindow.document.write('<link rel="stylesheet" href="/src/App.css" />');
-                      printWindow.document.write('</head><body>' + printContents + '</body></html>');
-                      printWindow.document.close();
-                      printWindow.focus();
-                      setTimeout(() => printWindow.print(), 500);
-                    }
-                  }}
-                  type="button"
-                >
-                  <Printer className="w-4 h-4" />
-                  Cetak
-                </Button>
-                <Button
-                  className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2"
-                  onClick={() => {
-                    if (selectedLetterForPreview?.id) {
-                      window.open(`/letters/${selectedLetterForPreview.id}/preview`, '_blank');
-                    }
-                  }}
-                  type="button"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open in New Tab
-                </Button>
-                {pdfUrl && (
-                  <a
-                    href={pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 text-sm font-medium transition-colors"
-                  >
-                    <FileText className="w-4 h-4" /> Download PDF
-                  </a>
-                )}
               </div>
             </div>
           )}

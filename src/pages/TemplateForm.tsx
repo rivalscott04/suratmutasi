@@ -256,60 +256,58 @@ const TemplateForm: React.FC = () => {
     fetchOffice();
   }, [token, user]);
 
-  const handlePejabatSelect = (pejabat: Pegawai) => {
+  const handlePejabatSelect = (pejabat?: Pegawai) => {
     setSelectedPejabat(pejabat);
     setBaseData(prev => ({
       ...prev,
-      namapejabat: pejabat.nama,
-      nippejabat: pejabat.nip,
-      pangkatgolpejabat: pejabat.pangkat_gol || (pejabat as any).golongan || '',
-      jabatanpejabat: pejabat.jabatan
+      namapejabat: pejabat?.nama || '',
+      nippejabat: pejabat?.nip || '',
+      pangkatgolpejabat: pejabat?.pangkat_gol || (pejabat as any)?.golongan || '',
+      jabatanpejabat: pejabat?.jabatan || ''
     }));
-
     if (templateId === '1') {
-      setTemplate1Data(prev => ({ ...prev, ukerpejabat: pejabat.unit_kerja }));
+      setTemplate1Data(prev => ({ ...prev, ukerpejabat: pejabat?.unit_kerja || '' }));
     }
     if (templateId === '5') {
-      setTemplate5Data(prev => ({ ...prev, ukerpejabat: pejabat.unit_kerja }));
+      setTemplate5Data(prev => ({ ...prev, ukerpejabat: pejabat?.unit_kerja || '' }));
     }
     if (templateId === '6') {
-      setTemplate6Data(prev => ({ ...prev, ukerpejabat: pejabat.unit_kerja }));
+      setTemplate6Data(prev => ({ ...prev, ukerpejabat: pejabat?.unit_kerja || '' }));
     }
     if (templateId === '9') {
-      setTemplate9Data(prev => ({ ...prev, ukerpejabat: pejabat.unit_kerja }));
+      setTemplate9Data(prev => ({ ...prev, ukerpejabat: pejabat?.unit_kerja || '' }));
     }
   };
 
-  const handlePegawaiSelect = (pegawai: Pegawai) => {
+  const handlePegawaiSelect = (pegawai?: Pegawai) => {
     setSelectedPegawai(pegawai);
     setBaseData(prev => ({
       ...prev,
-      namapegawai: pegawai.nama,
-      nippegawai: pegawai.nip,
-      pangkatgolpegawai: pegawai.pangkat_gol || (pegawai as any).golongan || '',
-      jabatanpegawai: pegawai.jabatan
+      namapegawai: pegawai?.nama || '',
+      nippegawai: pegawai?.nip || '',
+      pangkatgolpegawai: pegawai?.pangkat_gol || (pegawai as any)?.golongan || '',
+      jabatanpegawai: pegawai?.jabatan || ''
     }));
-
     if (templateId === '1') {
-      setTemplate1Data(prev => ({ ...prev, ukerpegawai: pegawai.unit_kerja }));
+      setTemplate1Data(prev => ({ ...prev, ukerpegawai: pegawai?.unit_kerja || '' }));
     }
     if (templateId === '3') {
-      setTemplate3Data(prev => ({ ...prev, tempattugas: pegawai.tempat_tugas }));
+      setTemplate3Data(prev => ({ ...prev, tempattugas: pegawai?.tempat_tugas || '' }));
     }
     if (templateId === '4') {
-      setTemplate4Data(prev => ({ ...prev, unitkerja: pegawai.unit_kerja }));
+      setTemplate4Data(prev => ({ ...prev, unitkerja: pegawai?.unit_kerja || '' }));
     }
     if (templateId === '5') {
-      setTemplate5Data(prev => ({ ...prev, tempattugas: pegawai.tempat_tugas }));
+      setTemplate5Data(prev => ({ ...prev, tempattugas: pegawai?.tempat_tugas || '' }));
     }
     if (templateId === '6') {
-      setTemplate6Data(prev => ({ ...prev, ukerpegawai: pegawai.unit_kerja }));
+      setTemplate6Data(prev => ({ ...prev, ukerpegawai: pegawai?.unit_kerja || '' }));
     }
     if (templateId === '7') {
-      setTemplate7Data(prev => ({ ...prev, tempattugas: pegawai.tempat_tugas }));
+      setTemplate7Data(prev => ({ ...prev, tempattugas: pegawai?.tempat_tugas || '' }));
     }
     if (templateId === '8') {
-      setTemplate8Data(prev => ({ ...prev, tempattugas: pegawai.tempat_tugas }));
+      setTemplate8Data(prev => ({ ...prev, tempattugas: pegawai?.tempat_tugas || '' }));
     }
   };
 
@@ -376,8 +374,7 @@ const TemplateForm: React.FC = () => {
       setSaving(false);
       return;
     }
-    if (!selectedPegawai?.nip) {
-      console.log('VALIDASI GAGAL: selectedPegawai', selectedPegawai);
+    if (templateId !== '9' && !selectedPegawai?.nip) {
       setSubmitError('Pilih pegawai yang akan dinyatakan dalam surat.');
       setSaving(false);
       return;
@@ -428,7 +425,7 @@ const TemplateForm: React.FC = () => {
         template_name: selectedTemplate?.title,
         letter_number,
         subject: selectedTemplate?.title,
-        recipient_employee_nip: selectedPegawai.nip,
+        recipient_employee_nip: selectedPegawai?.nip || null, // Handle null for template 9
         signing_official_nip: selectedPejabat.nip,
         form_data: {
           ...baseData,

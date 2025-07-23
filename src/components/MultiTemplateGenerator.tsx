@@ -217,8 +217,25 @@ const MultiTemplateGenerator: React.FC = () => {
     }
   };
 
-  const handlePegawaiSelect = (pegawai: Pegawai) => {
+  const handlePegawaiSelect = (pegawai?: Pegawai) => {
     setSelectedPegawai(pegawai);
+    if (!pegawai) {
+      setBaseData(prev => ({
+        ...prev,
+        namapegawai: '',
+        nippegawai: '',
+        pangkatgolpegawai: '',
+        jabatanpegawai: ''
+      }));
+      setTemplate1Data(prev => ({ ...prev, ukerpegawai: '' }));
+      setTemplate3Data(prev => ({ ...prev, tempattugas: '' }));
+      setTemplate4Data(prev => ({ ...prev, unitkerja: '' }));
+      setTemplate5Data(prev => ({ ...prev, tempattugas: '' }));
+      setTemplate6Data(prev => ({ ...prev, ukerpegawai: '' }));
+      setTemplate7Data(prev => ({ ...prev, tempattugas: '' }));
+      setTemplate8Data(prev => ({ ...prev, tempattugas: '' }));
+      return;
+    }
     setBaseData(prev => ({
       ...prev,
       namapegawai: pegawai.nama,
@@ -238,16 +255,16 @@ const MultiTemplateGenerator: React.FC = () => {
       setTemplate4Data(prev => ({ ...prev, unitkerja: pegawai.unit_kerja }));
     }
     if (selectedTemplate === '5') {
-      setTemplate5Data(prev => ({ ...prev, tempattugas: pegawai.tempat_tugas }));
+      setTemplate5Data(prev => ({ ...prev, tempattugas: pegawai.unit_kerja }));
     }
     if (selectedTemplate === '6') {
       setTemplate6Data(prev => ({ ...prev, ukerpegawai: pegawai.unit_kerja }));
     }
     if (selectedTemplate === '7') {
-      setTemplate7Data(prev => ({ ...prev, tempattugas: pegawai.tempat_tugas }));
+      setTemplate7Data(prev => ({ ...prev, tempattugas: pegawai.unit_kerja }));
     }
     if (selectedTemplate === '8') {
-      setTemplate8Data(prev => ({ ...prev, tempattugas: pegawai.tempat_tugas }));
+      setTemplate8Data(prev => ({ ...prev, tempattugas: pegawai.unit_kerja }));
     }
   };
 
@@ -505,6 +522,7 @@ const MultiTemplateGenerator: React.FC = () => {
                 <Label htmlFor="tglmulai">Tanggal Mulai Mengajar</Label>
                 <Input
                   id="tglmulai"
+                  type="date"
                   value={template3Data.tglmulai}
                   onChange={(e) => handleTemplate3DataChange('tglmulai', e.target.value)}
                   placeholder="dd Bulan yyyy"
@@ -546,15 +564,7 @@ const MultiTemplateGenerator: React.FC = () => {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="unitkerja4">Unit Kerja</Label>
-                <Input
-                  id="unitkerja4"
-                  value={template4Data.unitkerja}
-                  onChange={(e) => handleTemplate4DataChange('unitkerja', e.target.value)}
-                  placeholder="Unit kerja pegawai"
-                />
-              </div>
+              {/* Hapus input Unit Kerja di sini */}
               <div>
                 <Label htmlFor="keperluan">Keperluan</Label>
                 <Input
