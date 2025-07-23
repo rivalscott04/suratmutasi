@@ -109,7 +109,10 @@ const TemplateForm: React.FC = () => {
   const [selectedPegawai, setSelectedPegawai] = useState<Pegawai | undefined>();
   const [office, setOffice] = useState<any>(null);
   
-  // Base data that applies to all templates
+  // Set default tahun di semua form input tahun
+  const currentYear = new Date().getFullYear().toString();
+
+  // Input tempat pada section tanda tangan: default kosong, placeholder 'Mataram'
   const [baseData, setBaseData] = useState<BaseTemplateData>({
     kabkota: 'LOMBOK BARAT',
     jln: 'Jl. Gajah Mada No. 1 Gerung, Lombok Barat 83511',
@@ -117,26 +120,23 @@ const TemplateForm: React.FC = () => {
     fax: 'Fax. (0370) 681557',
     email: 'kemenag.lombokbarat@gmail.com',
     website: 'lombokbarat.kemenag.go.id',
-    
     namapejabat: '',
     nippejabat: '',
     pangkatgolpejabat: '',
     jabatanpejabat: '',
-    
     namapegawai: '',
     nippegawai: '',
     pangkatgolpegawai: '',
     jabatanpegawai: '',
-    
-    ibukota: 'Gerung',
+    ibukota: '', // default kosong
     tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
   });
 
-  // Template-specific data states
+  // Inisialisasi state tahun di semua templateXData
   const [template1Data, setTemplate1Data] = useState<Partial<Template1Data>>({
     nosrt: '',
     blnno: '',
-    thnno: '',
+    thnno: currentYear,
     ukerpejabat: '',
     ukerpegawai: ''
   });
@@ -144,7 +144,7 @@ const TemplateForm: React.FC = () => {
   const [template2Data, setTemplate2Data] = useState<Partial<Template2Data>>({
     nosurat: '',
     blnnomor: '',
-    tahunskrg: '',
+    tahunskrg: currentYear,
     unitkerja: '',
     namajabatan: '',
     bbnkerja: '',
@@ -156,7 +156,7 @@ const TemplateForm: React.FC = () => {
   const [template3Data, setTemplate3Data] = useState<Partial<Template3Data>>({
     nosrt: '',
     blnno: '',
-    thnno: '',
+    thnno: currentYear,
     tempattugas: '',
     sekolah: '',
     kabkota2: '',
@@ -166,7 +166,7 @@ const TemplateForm: React.FC = () => {
   const [template4Data, setTemplate4Data] = useState<Partial<Template4Data>>({
     nosrt: '',
     blnsrt: '',
-    thnskrg: '',
+    thnskrg: currentYear,
     unitkerja: '',
     keperluan: ''
   });
@@ -174,7 +174,7 @@ const TemplateForm: React.FC = () => {
   const [template5Data, setTemplate5Data] = useState<Partial<Template5Data>>({
     nosrt: '',
     blnno: '',
-    thnno: '',
+    thnno: currentYear,
     ukerpejabat: '',
     tempattugas: ''
   });
@@ -182,7 +182,7 @@ const TemplateForm: React.FC = () => {
   const [template6Data, setTemplate6Data] = useState<Partial<Template6Data>>({
     nosrt: '',
     blnno: '',
-    thnno: '',
+    thnno: currentYear,
     ukerpejabat: '',
     ukerpegawai: ''
   });
@@ -190,7 +190,7 @@ const TemplateForm: React.FC = () => {
   const [template7Data, setTemplate7Data] = useState<Partial<Template7Data>>({
     nosurat: '',
     blnnomor: '',
-    tahunskrg: '',
+    tahunskrg: currentYear,
     tempattugas: '',
     kabkota2: '',
     jabatnpegawai2: '',
@@ -201,7 +201,7 @@ const TemplateForm: React.FC = () => {
   const [template8Data, setTemplate8Data] = useState<Partial<Template8Data>>({
     nosrt: '',
     blnno: '',
-    thnno: '',
+    thnno: currentYear,
     tempattugas: '',
     jabatanbaru: '',
     tempattugasbaru: ''
@@ -210,7 +210,7 @@ const TemplateForm: React.FC = () => {
   const [template9Data, setTemplate9Data] = useState<Partial<Template9Data>>({
     nosrt: '',
     blnno: '',
-    thnno: '',
+    thnno: currentYear,
     ukerpejabat: ''
   });
 
@@ -357,26 +357,31 @@ const TemplateForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('SUBMIT', { selectedPegawai, selectedPejabat, office, user, templateId });
     setSaving(true);
     setSubmitError(null);
     setPdfUrl(null);
     // Validasi field wajib
     if (!office?.id) {
+      console.log('VALIDASI GAGAL: office', office);
       setSubmitError('Data kantor tidak ditemukan. Silakan atur kantor di Settings.');
       setSaving(false);
       return;
     }
     if (!user?.id) {
+      console.log('VALIDASI GAGAL: user', user);
       setSubmitError('User tidak valid. Silakan login ulang.');
       setSaving(false);
       return;
     }
     if (!selectedPegawai?.nip) {
+      console.log('VALIDASI GAGAL: selectedPegawai', selectedPegawai);
       setSubmitError('Pilih pegawai yang akan dinyatakan dalam surat.');
       setSaving(false);
       return;
     }
     if (!selectedPejabat?.nip) {
+      console.log('VALIDASI GAGAL: selectedPejabat', selectedPejabat);
       setSubmitError('Pilih pejabat penandatangan surat.');
       setSaving(false);
       return;
@@ -403,10 +408,12 @@ const TemplateForm: React.FC = () => {
       letter_number = `B-${template9Data.nosrt}/Kk.18.08/1/Kp.01.2/${template9Data.blnno}/${template9Data.thnno}`;
     }
     if (!letter_number) {
+      console.log('VALIDASI GAGAL: letter_number', letter_number);
       setSubmitError('Nomor surat wajib diisi.');
       setSaving(false);
       return;
     }
+    console.log('SUBMIT LANJUT: letter_number', letter_number);
     // Format tanggal Indonesia untuk tanda tangan
     let tanggalIndo = '';
     if (baseData.tanggal) tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
@@ -448,11 +455,13 @@ const TemplateForm: React.FC = () => {
         },
         status: 'draft',
       };
+      console.log('PAYLOAD', payload);
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
       setShowSuccessModal(true);
       toast({ title: 'Surat berhasil disimpan', description: 'Surat siap digenerate PDF.' });
     } catch (err: any) {
+      console.error('ERROR SUBMIT', err);
       setSubmitError(err.message || 'Gagal menyimpan surat');
     } finally {
       setSaving(false);
@@ -483,7 +492,7 @@ const TemplateForm: React.FC = () => {
               <Label htmlFor="nosrt">Nomor Surat</Label>
               <Input
                 id="nosrt"
-                value={template1Data.nosrt}
+                value={template1Data.nosrt || ''}
                 onChange={(e) => handleTemplate1DataChange('nosrt', e.target.value)}
                 placeholder="e.g., 123"
               />
@@ -492,7 +501,7 @@ const TemplateForm: React.FC = () => {
               <Label htmlFor="blnno">Bulan (Angka)</Label>
               <Input
                 id="blnno"
-                value={template1Data.blnno}
+                value={template1Data.blnno || ''}
                 onChange={(e) => handleTemplate1DataChange('blnno', e.target.value)}
                 placeholder="e.g., 12"
               />
@@ -501,7 +510,7 @@ const TemplateForm: React.FC = () => {
               <Label htmlFor="thnno">Tahun</Label>
               <Input
                 id="thnno"
-                value={template1Data.thnno}
+                value={template1Data.thnno || ''}
                 onChange={(e) => handleTemplate1DataChange('thnno', e.target.value)}
                 placeholder="e.g., 2024"
               />
@@ -510,167 +519,151 @@ const TemplateForm: React.FC = () => {
         );
       case '2':
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="nosurat">Nomor Surat</Label>
-                <Input
-                  id="nosurat"
-                  value={template2Data.nosurat}
-                  onChange={(e) => handleTemplate2DataChange('nosurat', e.target.value)}
-                  placeholder="e.g., 123"
-                />
-              </div>
-              <div>
-                <Label htmlFor="blnnomor">Bulan (Angka)</Label>
-                <Input
-                  id="blnnomor"
-                  value={template2Data.blnnomor}
-                  onChange={(e) => handleTemplate2DataChange('blnnomor', e.target.value)}
-                  placeholder="e.g., 12"
-                />
-              </div>
-              <div>
-                <Label htmlFor="tahunskrg">Tahun</Label>
-                <Input
-                  id="tahunskrg"
-                  value={template2Data.tahunskrg}
-                  onChange={(e) => handleTemplate2DataChange('tahunskrg', e.target.value)}
-                  placeholder="e.g., 2024"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nosurat">Nomor Surat</Label>
+              <Input
+                id="nosurat"
+                value={template2Data.nosurat || ''}
+                onChange={(e) => handleTemplate2DataChange('nosurat', e.target.value)}
+                placeholder="e.g., 123"
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="unitkerja">Unit Kerja</Label>
-                <Input
-                  id="unitkerja"
-                  value={template2Data.unitkerja}
-                  onChange={(e) => handleTemplate2DataChange('unitkerja', e.target.value)}
-                  placeholder="Unit kerja"
-                />
-              </div>
-              <div>
-                <Label htmlFor="namajabatan">Nama Jabatan</Label>
-                <Input
-                  id="namajabatan"
-                  value={template2Data.namajabatan}
-                  onChange={(e) => handleTemplate2DataChange('namajabatan', e.target.value)}
-                  placeholder="Nama jabatan"
-                />
-              </div>
+            <div>
+              <Label htmlFor="blnnomor">Bulan (Angka)</Label>
+              <Input
+                id="blnnomor"
+                value={template2Data.blnnomor || ''}
+                onChange={(e) => handleTemplate2DataChange('blnnomor', e.target.value)}
+                placeholder="e.g., 12"
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="bbnkerja">Beban Kerja</Label>
-                <Input
-                  id="bbnkerja"
-                  value={template2Data.bbnkerja}
-                  onChange={(e) => handleTemplate2DataChange('bbnkerja', e.target.value)}
-                  placeholder="Beban kerja"
-                />
-              </div>
-              <div>
-                <Label htmlFor="eksisting">Eksisting</Label>
-                <Input
-                  id="eksisting"
-                  value={template2Data.eksisting}
-                  onChange={(e) => handleTemplate2DataChange('eksisting', e.target.value)}
-                  placeholder="Jumlah eksisting"
-                />
-              </div>
-              <div>
-                <Label htmlFor="kelebihan">Kelebihan</Label>
-                <Input
-                  id="kelebihan"
-                  value={template2Data.kelebihan}
-                  onChange={(e) => handleTemplate2DataChange('kelebihan', e.target.value)}
-                  placeholder="Jumlah kelebihan"
-                />
-              </div>
-              <div>
-                <Label htmlFor="kekurangan">Kekurangan</Label>
-                <Input
-                  id="kekurangan"
-                  value={template2Data.kekurangan}
-                  onChange={(e) => handleTemplate2DataChange('kekurangan', e.target.value)}
-                  placeholder="Jumlah kekurangan"
-                />
-              </div>
+            <div>
+              <Label htmlFor="tahunskrg">Tahun</Label>
+              <Input
+                id="tahunskrg"
+                value={template2Data.tahunskrg || ''}
+                onChange={(e) => handleTemplate2DataChange('tahunskrg', e.target.value)}
+                placeholder="e.g., 2024"
+              />
+            </div>
+            <div>
+              <Label htmlFor="namajabatan">Nama Jabatan</Label>
+              <Input
+                id="namajabatan"
+                value={template2Data.namajabatan || ''}
+                onChange={(e) => handleTemplate2DataChange('namajabatan', e.target.value)}
+                placeholder="Nama jabatan"
+              />
+            </div>
+            <div>
+              <Label htmlFor="bbnkerja">Beban Kerja</Label>
+              <Input
+                id="bbnkerja"
+                value={template2Data.bbnkerja || ''}
+                onChange={(e) => handleTemplate2DataChange('bbnkerja', e.target.value)}
+                placeholder="Beban kerja"
+              />
+            </div>
+            <div>
+              <Label htmlFor="eksisting">Eksisting</Label>
+              <Input
+                id="eksisting"
+                value={template2Data.eksisting || ''}
+                onChange={(e) => handleTemplate2DataChange('eksisting', e.target.value)}
+                placeholder="Jumlah eksisting"
+              />
+            </div>
+            <div>
+              <Label htmlFor="kelebihan">Kelebihan</Label>
+              <Input
+                id="kelebihan"
+                value={template2Data.kelebihan || ''}
+                onChange={(e) => handleTemplate2DataChange('kelebihan', e.target.value)}
+                placeholder="Jumlah kelebihan"
+              />
+            </div>
+            <div>
+              <Label htmlFor="kekurangan">Kekurangan</Label>
+              <Input
+                id="kekurangan"
+                value={template2Data.kekurangan || ''}
+                onChange={(e) => handleTemplate2DataChange('kekurangan', e.target.value)}
+                placeholder="Jumlah kekurangan"
+              />
             </div>
           </div>
         );
       case '3':
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="nosrt3">Nomor Surat</Label>
-                <Input
-                  id="nosrt3"
-                  value={template3Data.nosrt}
-                  onChange={(e) => handleTemplate3DataChange('nosrt', e.target.value)}
-                  placeholder="e.g., 123"
-                />
-              </div>
-              <div>
-                <Label htmlFor="blnno3">Bulan (Angka)</Label>
-                <Input
-                  id="blnno3"
-                  value={template3Data.blnno}
-                  onChange={(e) => handleTemplate3DataChange('blnno', e.target.value)}
-                  placeholder="e.g., 12"
-                />
-              </div>
-              <div>
-                <Label htmlFor="thnno3">Tahun</Label>
-                <Input
-                  id="thnno3"
-                  value={template3Data.thnno}
-                  onChange={(e) => handleTemplate3DataChange('thnno', e.target.value)}
-                  placeholder="e.g., 2024"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nosrt3">Nomor Surat</Label>
+              <Input
+                id="nosrt3"
+                value={template3Data.nosrt || ''}
+                onChange={(e) => handleTemplate3DataChange('nosrt', e.target.value)}
+                placeholder="e.g., 123"
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tempattugas">Tempat Tugas</Label>
-                <Input
-                  id="tempattugas"
-                  value={template3Data.tempattugas}
-                  onChange={(e) => handleTemplate3DataChange('tempattugas', e.target.value)}
-                  placeholder="Tempat tugas pegawai"
-                />
-              </div>
-              <div>
-                <Label htmlFor="sekolah">Sekolah</Label>
-                <Input
-                  id="sekolah"
-                  value={template3Data.sekolah}
-                  onChange={(e) => handleTemplate3DataChange('sekolah', e.target.value)}
-                  placeholder="Jenis sekolah"
-                />
-              </div>
+            <div>
+              <Label htmlFor="blnno3">Bulan (Angka)</Label>
+              <Input
+                id="blnno3"
+                value={template3Data.blnno || ''}
+                onChange={(e) => handleTemplate3DataChange('blnno', e.target.value)}
+                placeholder="e.g., 12"
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="kabkota2">Kabupaten/Kota</Label>
-                <Input
-                  id="kabkota2"
-                  value={template3Data.kabkota2}
-                  onChange={(e) => handleTemplate3DataChange('kabkota2', e.target.value)}
-                  placeholder="Nama kabupaten/kota"
-                />
-              </div>
-              <div>
-                <Label htmlFor="tglmulai">Tanggal Mulai Mengajar</Label>
-                <Input
-                  id="tglmulai"
-                  value={template3Data.tglmulai}
-                  onChange={(e) => handleTemplate3DataChange('tglmulai', e.target.value)}
-                  placeholder="dd Bulan yyyy"
-                />
-              </div>
+            <div>
+              <Label htmlFor="thnno3">Tahun</Label>
+              <Input
+                id="thnno3"
+                value={template3Data.thnno || ''}
+                onChange={(e) => handleTemplate3DataChange('thnno', e.target.value)}
+                placeholder="e.g., 2024"
+              />
+            </div>
+            <div>
+              <Label htmlFor="tempattugas">Tempat Tugas</Label>
+              <Input
+                id="tempattugas"
+                value={template3Data.tempattugas || ''}
+                onChange={(e) => handleTemplate3DataChange('tempattugas', e.target.value)}
+                placeholder="Tempat tugas pegawai"
+              />
+            </div>
+            <div>
+              <Label htmlFor="sekolah">Sekolah</Label>
+              <select
+                id="sekolah"
+                className="border rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                value={template3Data.sekolah || ''}
+                onChange={e => handleTemplate3DataChange('sekolah', e.target.value)}
+              >
+                <option value="">Pilih sekolah</option>
+                <option value="MAN">MAN</option>
+                <option value="MTs">MTs</option>
+                <option value="MIN">MIN</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="kabkota2">Kabupaten/Kota</Label>
+              <Input
+                id="kabkota2"
+                value={template3Data.kabkota2 || ''}
+                onChange={(e) => handleTemplate3DataChange('kabkota2', e.target.value)}
+                placeholder="Nama kabupaten/kota"
+              />
+            </div>
+            <div>
+              <Label htmlFor="tglmulai">Tanggal Mulai</Label>
+              <Input
+                id="tglmulai"
+                value={template3Data.tglmulai || ''}
+                onChange={(e) => handleTemplate3DataChange('tglmulai', e.target.value)}
+                placeholder="dd Bulan yyyy"
+              />
             </div>
           </div>
         );
@@ -682,7 +675,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="nosrt4">Nomor Surat</Label>
                 <Input
                   id="nosrt4"
-                  value={template4Data.nosrt}
+                  value={template4Data.nosrt || ''}
                   onChange={(e) => handleTemplate4DataChange('nosrt', e.target.value)}
                   placeholder="e.g., 123"
                 />
@@ -691,7 +684,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="blnsrt">Bulan Surat</Label>
                 <Input
                   id="blnsrt"
-                  value={template4Data.blnsrt}
+                  value={template4Data.blnsrt || ''}
                   onChange={(e) => handleTemplate4DataChange('blnsrt', e.target.value)}
                   placeholder="e.g., 12"
                 />
@@ -700,7 +693,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="thnskrg">Tahun</Label>
                 <Input
                   id="thnskrg"
-                  value={template4Data.thnskrg}
+                  value={template4Data.thnskrg || ''}
                   onChange={(e) => handleTemplate4DataChange('thnskrg', e.target.value)}
                   placeholder="e.g., 2024"
                 />
@@ -711,7 +704,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="unitkerja4">Unit Kerja</Label>
                 <Input
                   id="unitkerja4"
-                  value={template4Data.unitkerja}
+                  value={template4Data.unitkerja || ''}
                   onChange={(e) => handleTemplate4DataChange('unitkerja', e.target.value)}
                   placeholder="Unit kerja pegawai"
                 />
@@ -720,7 +713,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="keperluan">Keperluan</Label>
                 <Input
                   id="keperluan"
-                  value={template4Data.keperluan}
+                  value={template4Data.keperluan || ''}
                   onChange={(e) => handleTemplate4DataChange('keperluan', e.target.value)}
                   placeholder="Keperluan SKBT"
                 />
@@ -736,7 +729,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="nosrt5">Nomor Surat</Label>
                 <Input
                   id="nosrt5"
-                  value={template5Data.nosrt}
+                  value={template5Data.nosrt || ''}
                   onChange={(e) => handleTemplate5DataChange('nosrt', e.target.value)}
                   placeholder="e.g., 123"
                 />
@@ -745,7 +738,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="blnno5">Bulan (Angka)</Label>
                 <Input
                   id="blnno5"
-                  value={template5Data.blnno}
+                  value={template5Data.blnno || ''}
                   onChange={(e) => handleTemplate5DataChange('blnno', e.target.value)}
                   placeholder="e.g., 12"
                 />
@@ -754,7 +747,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="thnno5">Tahun</Label>
                 <Input
                   id="thnno5"
-                  value={template5Data.thnno}
+                  value={template5Data.thnno || ''}
                   onChange={(e) => handleTemplate5DataChange('thnno', e.target.value)}
                   placeholder="e.g., 2024"
                 />
@@ -770,7 +763,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="nosrt6">Nomor Surat</Label>
                 <Input
                   id="nosrt6"
-                  value={template6Data.nosrt}
+                  value={template6Data.nosrt || ''}
                   onChange={(e) => handleTemplate6DataChange('nosrt', e.target.value)}
                   placeholder="e.g., 123"
                 />
@@ -779,7 +772,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="blnno6">Bulan (Angka)</Label>
                 <Input
                   id="blnno6"
-                  value={template6Data.blnno}
+                  value={template6Data.blnno || ''}
                   onChange={(e) => handleTemplate6DataChange('blnno', e.target.value)}
                   placeholder="e.g., 12"
                 />
@@ -788,7 +781,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="thnno6">Tahun</Label>
                 <Input
                   id="thnno6"
-                  value={template6Data.thnno}
+                  value={template6Data.thnno || ''}
                   onChange={(e) => handleTemplate6DataChange('thnno', e.target.value)}
                   placeholder="e.g., 2024"
                 />
@@ -804,7 +797,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="nosurat7">Nomor Surat</Label>
                 <Input
                   id="nosurat7"
-                  value={template7Data.nosurat}
+                  value={template7Data.nosurat || ''}
                   onChange={(e) => handleTemplate7DataChange('nosurat', e.target.value)}
                   placeholder="e.g., 123"
                 />
@@ -813,7 +806,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="blnnomor7">Bulan (Angka)</Label>
                 <Input
                   id="blnnomor7"
-                  value={template7Data.blnnomor}
+                  value={template7Data.blnnomor || ''}
                   onChange={(e) => handleTemplate7DataChange('blnnomor', e.target.value)}
                   placeholder="e.g., 12"
                 />
@@ -822,7 +815,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="tahunskrg7">Tahun</Label>
                 <Input
                   id="tahunskrg7"
-                  value={template7Data.tahunskrg}
+                  value={template7Data.tahunskrg || ''}
                   onChange={(e) => handleTemplate7DataChange('tahunskrg', e.target.value)}
                   placeholder="e.g., 2024"
                 />
@@ -833,7 +826,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="tempattugas7">Tempat Tugas Asal</Label>
                 <Input
                   id="tempattugas7"
-                  value={template7Data.tempattugas}
+                  value={template7Data.tempattugas || ''}
                   onChange={(e) => handleTemplate7DataChange('tempattugas', e.target.value)}
                   placeholder="Tempat tugas asal"
                 />
@@ -842,7 +835,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="kabkota27">Kabupaten/Kota Asal</Label>
                 <Input
                   id="kabkota27"
-                  value={template7Data.kabkota2}
+                  value={template7Data.kabkota2 || ''}
                   onChange={(e) => handleTemplate7DataChange('kabkota2', e.target.value)}
                   placeholder="Kabupaten/kota asal"
                 />
@@ -853,7 +846,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="jabatnpegawai2">Jabatan Baru</Label>
                 <Input
                   id="jabatnpegawai2"
-                  value={template7Data.jabatnpegawai2}
+                  value={template7Data.jabatnpegawai2 || ''}
                   onChange={(e) => handleTemplate7DataChange('jabatnpegawai2', e.target.value)}
                   placeholder="Jabatan yang akan dituju"
                 />
@@ -862,7 +855,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="tempattugas2">Tempat Tugas Baru</Label>
                 <Input
                   id="tempattugas2"
-                  value={template7Data.tempattugas2}
+                  value={template7Data.tempattugas2 || ''}
                   onChange={(e) => handleTemplate7DataChange('tempattugas2', e.target.value)}
                   placeholder="Tempat tugas tujuan"
                 />
@@ -872,7 +865,7 @@ const TemplateForm: React.FC = () => {
               <Label htmlFor="kabataukotatujuan">Kabupaten/Kota Tujuan</Label>
               <Input
                 id="kabataukotatujuan"
-                value={template7Data.kabataukotatujuan}
+                value={template7Data.kabataukotatujuan || ''}
                 onChange={(e) => handleTemplate7DataChange('kabataukotatujuan', e.target.value)}
                 placeholder="Kabupaten/kota tujuan"
               />
@@ -887,7 +880,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="nosrt8">Nomor Surat</Label>
                 <Input
                   id="nosrt8"
-                  value={template8Data.nosrt}
+                  value={template8Data.nosrt || ''}
                   onChange={(e) => handleTemplate8DataChange('nosrt', e.target.value)}
                   placeholder="e.g., 123"
                 />
@@ -896,7 +889,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="blnno8">Bulan (Angka)</Label>
                 <Input
                   id="blnno8"
-                  value={template8Data.blnno}
+                  value={template8Data.blnno || ''}
                   onChange={(e) => handleTemplate8DataChange('blnno', e.target.value)}
                   placeholder="e.g., 12"
                 />
@@ -905,7 +898,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="thnno8">Tahun</Label>
                 <Input
                   id="thnno8"
-                  value={template8Data.thnno}
+                  value={template8Data.thnno || ''}
                   onChange={(e) => handleTemplate8DataChange('thnno', e.target.value)}
                   placeholder="e.g., 2024"
                 />
@@ -916,7 +909,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="tempattugas8">Tempat Tugas Asal</Label>
                 <Input
                   id="tempattugas8"
-                  value={template8Data.tempattugas}
+                  value={template8Data.tempattugas || ''}
                   onChange={(e) => handleTemplate8DataChange('tempattugas', e.target.value)}
                   placeholder="Tempat tugas asal"
                 />
@@ -925,7 +918,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="jabatanbaru">Jabatan Baru</Label>
                 <Input
                   id="jabatanbaru"
-                  value={template8Data.jabatanbaru}
+                  value={template8Data.jabatanbaru || ''}
                   onChange={(e) => handleTemplate8DataChange('jabatanbaru', e.target.value)}
                   placeholder="Jabatan yang akan dituju"
                 />
@@ -935,7 +928,7 @@ const TemplateForm: React.FC = () => {
               <Label htmlFor="tempattugasbaru">Tempat Tugas Baru</Label>
               <Input
                 id="tempattugasbaru"
-                value={template8Data.tempattugasbaru}
+                value={template8Data.tempattugasbaru || ''}
                 onChange={(e) => handleTemplate8DataChange('tempattugasbaru', e.target.value)}
                 placeholder="Tempat tugas tujuan"
               />
@@ -950,7 +943,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="nosrt9">Nomor Surat</Label>
                 <Input
                   id="nosrt9"
-                  value={template9Data.nosrt}
+                  value={template9Data.nosrt || ''}
                   onChange={(e) => handleTemplate9DataChange('nosrt', e.target.value)}
                   placeholder="e.g., 123"
                 />
@@ -959,7 +952,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="blnno9">Bulan (Angka)</Label>
                 <Input
                   id="blnno9"
-                  value={template9Data.blnno}
+                  value={template9Data.blnno || ''}
                   onChange={(e) => handleTemplate9DataChange('blnno', e.target.value)}
                   placeholder="e.g., 12"
                 />
@@ -968,7 +961,7 @@ const TemplateForm: React.FC = () => {
                 <Label htmlFor="thnno9">Tahun</Label>
                 <Input
                   id="thnno9"
-                  value={template9Data.thnno}
+                  value={template9Data.thnno || ''}
                   onChange={(e) => handleTemplate9DataChange('thnno', e.target.value)}
                   placeholder="e.g., 2024"
                 />
@@ -1139,22 +1132,22 @@ const TemplateForm: React.FC = () => {
                 <div className="space-y-4">
                   <AutoFilledInput
                     label="Nama Pejabat"
-                    value={baseData.namapejabat}
+                    value={baseData.namapejabat || ''}
                     placeholder="Akan terisi otomatis"
                   />
                   <AutoFilledInput
                     label="NIP"
-                    value={baseData.nippejabat}
+                    value={baseData.nippejabat || ''}
                     placeholder="Akan terisi otomatis"
                   />
                   <AutoFilledInput
                     label="Pangkat/Golongan"
-                    value={baseData.pangkatgolpejabat}
+                    value={baseData.pangkatgolpejabat || ''}
                     placeholder="Akan terisi otomatis"
                   />
                   <AutoFilledInput
                     label="Jabatan"
-                    value={baseData.jabatanpejabat}
+                    value={baseData.jabatanpejabat || ''}
                     placeholder="Akan terisi otomatis"
                   />
                   <AutoFilledInput
@@ -1165,50 +1158,68 @@ const TemplateForm: React.FC = () => {
                 </div>
               </div>
             </FormSection>
-
-            {/* Pegawai Section */}
-            <FormSection 
-              title="Data Pegawai" 
-              description="Pilih pegawai yang akan dinyatakan dalam surat"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Data Pegawai khusus Analisis Jabatan (template2) hanya input manual unit kerja pegawai */}
+            {templateId === '2' && (
+              <FormSection
+                title="Data Pegawai"
+                description="Masukkan unit kerja yang akan dianalisis"
+              >
                 <div>
-                  <PegawaiSearchInput
-                    label="Cari Pegawai"
-                    placeholder="Masukkan nama atau NIP pegawai..."
-                    onSelect={handlePegawaiSelect}
-                    selectedPegawai={selectedPegawai}
+                  <Label htmlFor="unitkerja">Unit Kerja Pegawai</Label>
+                  <Input
+                    id="unitkerja"
+                    value={template2Data.unitkerja || ''}
+                    onChange={e => handleTemplate2DataChange('unitkerja', e.target.value)}
+                    placeholder="Masukkan unit kerja pegawai"
                   />
                 </div>
-                <div className="space-y-4">
-                  <AutoFilledInput
-                    label="Nama Pegawai"
-                    value={baseData.namapegawai}
-                    placeholder="Akan terisi otomatis"
-                  />
-                  <AutoFilledInput
-                    label="NIP"
-                    value={baseData.nippegawai}
-                    placeholder="Akan terisi otomatis"
-                  />
-                  <AutoFilledInput
-                    label="Pangkat/Golongan"
-                    value={baseData.pangkatgolpegawai}
-                    placeholder="Akan terisi otomatis"
-                  />
-                  <AutoFilledInput
-                    label="Jabatan"
-                    value={baseData.jabatanpegawai}
-                    placeholder="Akan terisi otomatis"
-                  />
-                  <AutoFilledInput
-                    label="Unit Kerja Pegawai"
-                    value={selectedPegawai?.unit_kerja ?? ''}
-                    placeholder="Akan terisi otomatis"
-                  />
+              </FormSection>
+            )}
+            {/* Data Pegawai hanya jika bukan SPTJM dan bukan Analisis Jabatan */}
+            {templateId !== '9' && templateId !== '2' && (
+              <FormSection
+                title="Data Pegawai"
+                description="Pilih pegawai yang akan dinyatakan dalam surat"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <PegawaiSearchInput
+                      label="Cari Pegawai"
+                      placeholder="Masukkan nama atau NIP pegawai..."
+                      onSelect={handlePegawaiSelect}
+                      selectedPegawai={selectedPegawai}
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <AutoFilledInput
+                      label="Nama Pegawai"
+                      value={baseData.namapegawai || ''}
+                      placeholder="Akan terisi otomatis"
+                    />
+                    <AutoFilledInput
+                      label="NIP"
+                      value={baseData.nippegawai || ''}
+                      placeholder="Akan terisi otomatis"
+                    />
+                    <AutoFilledInput
+                      label="Pangkat/Golongan"
+                      value={baseData.pangkatgolpegawai || ''}
+                      placeholder="Akan terisi otomatis"
+                    />
+                    <AutoFilledInput
+                      label="Jabatan"
+                      value={baseData.jabatanpegawai || ''}
+                      placeholder="Akan terisi otomatis"
+                    />
+                    <AutoFilledInput
+                      label="Unit Kerja Pegawai"
+                      value={selectedPegawai?.unit_kerja ?? ''}
+                      placeholder="Akan terisi otomatis"
+                    />
+                  </div>
                 </div>
-              </div>
-            </FormSection>
+              </FormSection>
+            )}
 
             {/* Template Specific Fields */}
             <FormSection 
@@ -1217,42 +1228,40 @@ const TemplateForm: React.FC = () => {
             >
               <form onSubmit={handleSubmit} className="space-y-8">
                 {renderTemplateForm()}
+                {/* Signature Section sekarang di dalam form */}
+                <FormSection 
+                  title="Tanda Tangan" 
+                  description="Atur tempat dan tanggal penandatanganan"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="ibukota">Tempat</Label>
+                      <Input
+                        id="ibukota"
+                        value={baseData.ibukota || ''}
+                        onChange={(e) => handleBaseDataChange('ibukota', e.target.value)}
+                        placeholder="Mataram"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="tanggal">Tanggal</Label>
+                      <Input
+                        id="tanggal"
+                        value={baseData.tanggal || ''}
+                        onChange={(e) => handleBaseDataChange('tanggal', e.target.value)}
+                        placeholder="dd-mm-yyyy"
+                      />
+                    </div>
+                  </div>
+                </FormSection>
+                <div className="pt-6">
+                  <Button type="submit" className="w-full bg-teal-700 hover:bg-teal-800 text-white" disabled={saving}>
+                    {saving ? 'Menyimpan...' : 'Simpan & Generate Surat'}
+                  </Button>
+                </div>
                 {submitError && <div className="text-error mb-2">{submitError}</div>}
-                {/* Pindahkan button Simpan & Generate ke paling bawah, hanya satu, setelah section Tanda Tangan */}
               </form>
             </FormSection>
-
-            {/* Signature Section */}
-            <FormSection 
-              title="Tanda Tangan" 
-              description="Atur tempat dan tanggal penandatanganan"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="ibukota">Tempat</Label>
-                  <Input
-                    id="ibukota"
-                    value={baseData.ibukota}
-                    onChange={(e) => handleBaseDataChange('ibukota', e.target.value)}
-                    placeholder="e.g., Gerung"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="tanggal">Tanggal</Label>
-                  <Input
-                    id="tanggal"
-                    value={baseData.tanggal}
-                    onChange={(e) => handleBaseDataChange('tanggal', e.target.value)}
-                    placeholder="dd-mm-yyyy"
-                  />
-                </div>
-              </div>
-            </FormSection>
-            <div className="pt-6">
-              <Button type="submit" className="w-full bg-teal-700 hover:bg-teal-800 text-white" disabled={saving}>
-                {saving ? 'Menyimpan...' : 'Simpan & Generate Surat'}
-              </Button>
-            </div>
           </div>
 
           {/* Preview Section */}
