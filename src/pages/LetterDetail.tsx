@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import NavigationBar from '@/components/NavigationBar';
 import { Badge } from '@/components/ui/badge';
 import { FileText, ArrowLeft } from 'lucide-react';
 import { Template1 } from '@/components/templates/Template1';
@@ -18,6 +17,7 @@ import { Template8 } from '@/components/templates/Template8';
 import { Template9 } from '@/components/templates/Template9';
 import { apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const LetterDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,19 +47,35 @@ const LetterDetail: React.FC = () => {
   if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   if (error || !letter) return <div className="flex flex-col items-center justify-center min-h-screen"><div className="text-error mb-4">{error || 'Surat tidak ditemukan'}</div><Link to="/dashboard" className="btn btn-primary">Kembali ke Dashboard</Link></div>;
 
+  // Parse form_data jika string
+  let parsedFormData = letter.form_data;
+  if (typeof parsedFormData === 'string') {
+    try {
+      parsedFormData = JSON.parse(parsedFormData);
+    } catch {
+      parsedFormData = {};
+    }
+  }
+
   const renderPreviewByTemplate = (letter: any) => {
-    const id = String(letter.template_id);
-    const data = letter.form_data;
+    let data = letter.form_data;
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch {
+        data = {};
+      }
+    }
     if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
-    if (id === '1') return <Template1 data={data} />;
-    if (id === '2') return <Template2 data={data} />;
-    if (id === '3') return <Template3 data={data} />;
-    if (id === '4') return <Template4 data={data} />;
-    if (id === '5') return <Template5 data={data} />;
-    if (id === '6') return <Template6 data={data} />;
-    if (id === '7') return <Template7 data={data} />;
-    if (id === '8') return <Template8 data={data} />;
-    if (id === '9') return <Template9 data={data} />;
+    if (String(letter.template_id) === '1') return <Template1 data={data} />;
+    if (String(letter.template_id) === '2') return <Template2 data={data} />;
+    if (String(letter.template_id) === '3') return <Template3 data={data} />;
+    if (String(letter.template_id) === '4') return <Template4 data={data} />;
+    if (String(letter.template_id) === '5') return <Template5 data={data} />;
+    if (String(letter.template_id) === '6') return <Template6 data={data} />;
+    if (String(letter.template_id) === '7') return <Template7 data={data} />;
+    if (String(letter.template_id) === '8') return <Template8 data={data} />;
+    if (String(letter.template_id) === '9') return <Template9 data={data} />;
     return <div className="text-error">Template tidak dikenali</div>;
   };
 
@@ -80,9 +96,11 @@ const LetterDetail: React.FC = () => {
     setSelectedBatch([]);
   };
 
+  // Filter surat pegawai hanya yang NIP-nya sama
+  const filteredPegawaiLetters = pegawaiLetters.filter(l => l.recipient_employee_nip === letter.recipient_employee_nip);
+
   return (
     <>
-      <NavigationBar />
       <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
         <div className="flex items-center space-x-2 mb-4">
           <Button asChild variant="outline" size="sm">
@@ -98,14 +116,23 @@ const LetterDetail: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-2">
               <div><span className="font-semibold">Nomor Surat:</span> {letter.letter_number}</div>
-              <div><span className="font-semibold">Tanggal:</span> {letter.form_data?.tanggal}</div>
+              <div><span className="font-semibold">Tanggal:</span> {parsedFormData.tanggal}</div>
               <div><span className="font-semibold">Template:</span> {letter.template_name}</div>
               <div><span className="font-semibold">Status:</span> <Badge>{letter.status}</Badge></div>
-              <div><span className="font-semibold">Pegawai:</span> {letter.form_data?.namapegawai} ({letter.recipient_employee_nip})</div>
-              <div><span className="font-semibold">Pejabat Penandatangan:</span> {letter.form_data?.namapejabat} ({letter.signing_official_nip})</div>
-              <div><span className="font-semibold">Unit Kerja Pegawai:</span> {letter.form_data?.unitkerja || letter.form_data?.ukerpegawai}</div>
-              <div><span className="font-semibold">Jabatan Pegawai:</span> {letter.form_data?.jabatanpegawai}</div>
-              <div><span className="font-semibold">Pangkat/Golongan Pegawai:</span> {letter.form_data?.pangkatgolpegawai}</div>
+              <div><span className="font-semibold">Pegawai:</span> {parsedFormData.namapegawai} ({letter.recipient_employee_nip})</div>
+              <div><span className="font-semibold">Pejabat Penandatangan:</span> {parsedFormData.namapejabat} ({letter.signing_official_nip})</div>
+              <div><span className="font-semibold">Unit Kerja Pegawai:</span> {parsedFormData.unitkerja || parsedFormData.ukerpegawai}</div>
+              <div><span className="font-semibold">Jabatan Pegawai:</span> {parsedFormData.jabatanpegawai}</div>
+              <div><span className="font-semibold">Pangkat/Golongan Pegawai:</span> {parsedFormData.pangkatgolpegawai}</div>
+              {/* Tombol Generate PDF */}
+              <div className="pt-4">
+                <Button onClick={async () => {
+                  await apiPost(`/api/letters/${letter.id}/generate-pdf`, {}, token);
+                  toast({ title: 'PDF berhasil digenerate', description: 'Silakan cek file surat.' });
+                }}>
+                  Generate PDF
+                </Button>
+              </div>
             </CardContent>
           </Card>
           {/* Preview Surat */}
@@ -132,25 +159,25 @@ const LetterDetail: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="table w-full">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>No.</th>
-                    <th>Nomor Surat</th>
-                    <th>Template</th>
-                    <th>Tanggal</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pegawaiLetters.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center">Tidak ada surat lain</td></tr>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead></TableHead>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Nomor Surat</TableHead>
+                    <TableHead>Template</TableHead>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPegawaiLetters.length === 0 ? (
+                    <TableRow><TableCell colSpan={7} className="text-center">Tidak ada surat lain</TableCell></TableRow>
                   ) : (
-                    pegawaiLetters.map((l, i) => (
-                      <tr key={l.id} className={l.id === letter.id ? 'bg-green-50 font-semibold' : ''}>
-                        <td>
+                    filteredPegawaiLetters.map((l, i) => (
+                      <TableRow key={l.id} className={l.id === letter.id ? 'bg-green-50 font-semibold' : ''}>
+                        <TableCell>
                           <input
                             type="checkbox"
                             checked={selectedBatch.includes(l.id)}
@@ -159,22 +186,22 @@ const LetterDetail: React.FC = () => {
                               else setSelectedBatch(selectedBatch.filter(id => id !== l.id));
                             }}
                           />
-                        </td>
-                        <td>{i + 1}</td>
-                        <td>{l.letter_number}</td>
-                        <td>{l.template_name}</td>
-                        <td>{l.form_data?.tanggal}</td>
-                        <td><Badge>{l.status}</Badge></td>
-                        <td>
+                        </TableCell>
+                        <TableCell>{i + 1}</TableCell>
+                        <TableCell>{l.letter_number}</TableCell>
+                        <TableCell>{l.template_name}</TableCell>
+                        <TableCell>{typeof l.form_data === 'string' ? (() => { try { return JSON.parse(l.form_data).tanggal } catch { return '-' } })() : l.form_data?.tanggal}</TableCell>
+                        <TableCell><Badge>{l.status}</Badge></TableCell>
+                        <TableCell>
                           {l.id !== letter.id && (
                             <Link to={`/letters/${l.id}`} className="btn btn-xs btn-outline">Lihat</Link>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>

@@ -7,6 +7,18 @@ import { FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Template1 } from '@/components/templates/Template1';
+import { Template2 } from '@/components/templates/Template2';
+import { Template3 } from '@/components/templates/Template3';
+import { Template4 } from '@/components/templates/Template4';
+import { Template5 } from '@/components/templates/Template5';
+import { Template6 } from '@/components/templates/Template6';
+import { Template7 } from '@/components/templates/Template7';
+import { Template8 } from '@/components/templates/Template8';
+import { Template9 } from '@/components/templates/Template9';
+import { apiPost } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 const Letters: React.FC = () => {
   const { token } = useAuth();
@@ -30,6 +42,14 @@ const Letters: React.FC = () => {
     if (sortDir === 'asc') return String(aVal).localeCompare(String(bVal));
     return String(bVal).localeCompare(String(aVal));
   });
+
+  const { toast } = useToast();
+  const [selectedPegawaiNip, setSelectedPegawaiNip] = useState<string | null>(null);
+  const [pegawaiLetters, setPegawaiLetters] = useState<any[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedLetterForPreview, setSelectedLetterForPreview] = useState<any | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -55,6 +75,57 @@ const Letters: React.FC = () => {
     if (status === 'draft') return <Badge className="bg-orange-100 text-orange-700 border-orange-200">Draft</Badge>;
     if (status === 'signed') return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Signed</Badge>;
     return <Badge className="bg-gray-100 text-gray-700 border-gray-200">{status}</Badge>;
+  };
+
+  // Fetch surat pegawai saat NIP dipilih
+  const handleShowPegawaiLetters = async (nip: string) => {
+    setSelectedPegawaiNip(nip);
+    setModalOpen(false);
+    setSelectedLetterForPreview(null);
+    setPdfUrl(null);
+    setPdfLoading(false);
+    if (!token) return;
+    try {
+      const res = await apiGet(`/api/letters?recipient_employee_nip=${nip}`, token);
+      setPegawaiLetters(res.letters || []);
+    } catch {
+      setPegawaiLetters([]);
+    }
+  };
+
+  // Render preview surat sesuai template
+  const renderPreviewByTemplate = (letter: any) => {
+    let data = letter.form_data;
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch { data = {}; }
+    }
+    if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
+    const id = String(letter.template_id);
+    if (id === '1') return <Template1 data={data} />;
+    if (id === '2') return <Template2 data={data} />;
+    if (id === '3') return <Template3 data={data} />;
+    if (id === '4') return <Template4 data={data} />;
+    if (id === '5') return <Template5 data={data} />;
+    if (id === '6') return <Template6 data={data} />;
+    if (id === '7') return <Template7 data={data} />;
+    if (id === '8') return <Template8 data={data} />;
+    if (id === '9') return <Template9 data={data} />;
+    return <div className="text-error">Template tidak dikenali</div>;
+  };
+
+  // Generate PDF handler
+  const handleGeneratePdf = async (letterId: string) => {
+    setPdfLoading(true);
+    setPdfUrl(null);
+    try {
+      const res = await apiPost(`/api/letters/${letterId}/generate-pdf`, {}, token);
+      setPdfUrl(res.file?.file_path || res.file_path);
+      toast({ title: 'PDF berhasil digenerate', description: 'Klik link untuk mengunduh.' });
+    } catch (err: any) {
+      toast({ title: 'Gagal generate PDF', description: err.message || 'Terjadi kesalahan', variant: 'destructive' });
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   return (
@@ -123,20 +194,69 @@ const Letters: React.FC = () => {
                     {sortedLetters.length === 0 ? (
                       <TableRow><TableCell colSpan={6} className="text-center">Tidak ada surat</TableCell></TableRow>
                     ) : (
-                      sortedLetters.map((l, i) => (
-                        <TableRow key={l.id}>
-                          <TableCell>{i + 1}</TableCell>
-                          <TableCell>{l.letter_number}</TableCell>
-                          <TableCell>{l.recipient?.nama || (typeof l.form_data === 'string' ? (() => { try { return JSON.parse(l.form_data).namapegawai } catch { return undefined } })() : l.form_data?.namapegawai) || '-'}</TableCell>
-                          <TableCell>{l.signing_official?.nama || (typeof l.form_data === 'string' ? (() => { try { return JSON.parse(l.form_data).namapejabat } catch { return undefined } })() : l.form_data?.namapejabat) || '-'}</TableCell>
-                          <TableCell>{getStatusBadge(l.status)}</TableCell>
-                          <TableCell>
-                            <Link to={`/letters/${l.id}`} className="btn btn-xs btn-outline flex items-center gap-1">
-                              <FileText className="w-4 h-4" /> Detail
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      sortedLetters.map((l, i) => {
+                        let namaPegawai = l.recipient?.nama;
+                        let namaPejabat = l.signing_official?.nama;
+                        if (!namaPegawai || !namaPejabat) {
+                          let fd = l.form_data;
+                          if (typeof fd === 'string') {
+                            try { fd = JSON.parse(fd); } catch { fd = {}; }
+                          }
+                          namaPegawai = namaPegawai || fd.namapegawai;
+                          namaPejabat = namaPejabat || fd.namapejabat;
+                        }
+                        return (
+                          <TableRow key={l.id}>
+                            <TableCell>{i + 1}</TableCell>
+                            <TableCell>{l.letter_number}</TableCell>
+                            <TableCell>{namaPegawai || '-'}</TableCell>
+                            <TableCell>{namaPejabat || '-'}</TableCell>
+                            <TableCell>{getStatusBadge(l.status)}</TableCell>
+                            <TableCell>
+                              {/* Tombol Detail dengan Dropdown */}
+                              <div className="relative inline-block text-left">
+                                <Button size="sm" variant="outline" onClick={async (e) => {
+                                  e.preventDefault();
+                                  // Ambil NIP pegawai dari relasi atau form_data
+                                  let nip = l.recipient?.nip;
+                                  if (!nip) {
+                                    let fd = l.form_data;
+                                    if (typeof fd === 'string') {
+                                      try { fd = JSON.parse(fd); } catch { fd = {}; }
+                                    }
+                                    nip = fd.nippegawai;
+                                  }
+                                  if (nip) await handleShowPegawaiLetters(nip);
+                                }}>
+                                  <FileText className="w-4 h-4" /> Detail
+                                </Button>
+                                {/* Dropdown surat pegawai */}
+                                {selectedPegawaiNip && selectedPegawaiNip === (l.recipient?.nip || (typeof l.form_data === 'string' ? (() => { try { return JSON.parse(l.form_data).nippegawai } catch { return undefined } })() : l.form_data?.nippegawai)) && pegawaiLetters.length > 0 && (
+                                  <div className="absolute z-20 mt-2 w-72 bg-white border border-gray-200 rounded shadow-lg">
+                                    <div className="max-h-60 overflow-y-auto">
+                                      {pegawaiLetters.map((srt: any) => (
+                                        <button
+                                          key={srt.id}
+                                          className="w-full text-left px-4 py-2 hover:bg-green-50 border-b last:border-b-0"
+                                          onClick={() => {
+                                            setSelectedLetterForPreview(srt);
+                                            setModalOpen(true);
+                                            setPdfUrl(null);
+                                          }}
+                                        >
+                                          <div className="font-semibold">{srt.letter_number}</div>
+                                          <div className="text-xs text-gray-500">{typeof srt.form_data === 'string' ? (() => { try { return JSON.parse(srt.form_data).tanggal } catch { return '-' } })() : srt.form_data?.tanggal}</div>
+                                          <div className="text-xs text-gray-500">{srt.template_name}</div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -145,6 +265,27 @@ const Letters: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      {/* Modal Preview Surat */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          {selectedLetterForPreview && (
+            <div className="space-y-4">
+              <div className="font-bold text-lg mb-2">Preview Surat</div>
+              <div className="border p-2 rounded bg-gray-50 max-h-[400px] overflow-auto">
+                {renderPreviewByTemplate(selectedLetterForPreview)}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button onClick={() => handleGeneratePdf(selectedLetterForPreview.id)} disabled={pdfLoading}>
+                  {pdfLoading ? 'Membuat PDF...' : 'Generate PDF'}
+                </Button>
+                {pdfUrl && (
+                  <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-green-700 underline text-sm">Download PDF</a>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
