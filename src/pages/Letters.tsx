@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Printer, ExternalLink } from 'lucide-react';
+import { FileText, Printer, ExternalLink, Eye, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -56,9 +56,10 @@ const Letters: React.FC = () => {
   const [expandedSurat, setExpandedSurat] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Group surat by pegawai
+  // Group surat by pegawai, SPTJM (template 9) ke 'Tanpa Pegawai' saja
   const grouped: Record<string, any[]> = letters.reduce((acc, surat) => {
-    const nama = surat.namapegawai || 'Tanpa Pegawai';
+    const isSPTJM = surat.template_id === 9;
+    const nama = isSPTJM ? 'Tanpa Pegawai' : (surat.namapegawai || 'Tanpa Pegawai');
     if (!acc[nama]) acc[nama] = [];
     acc[nama].push(surat);
     return acc;
@@ -193,137 +194,103 @@ const Letters: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Riwayat Surat</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <h1 className="text-2xl font-bold mb-4">Riwayat Surat</h1>
-            <input
-              type="text"
-              className="border rounded px-3 py-2 mb-4 w-full max-w-md"
-              placeholder="Cari nama pegawai atau nomor surat..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-            <div className="space-y-4">
-              {filteredGrouped.length === 0 && <div className="text-center text-muted-foreground">Tidak ada data</div>}
-              {filteredGrouped.map(([nama, suratList]) => (
-                <div key={nama} className="border rounded-lg overflow-hidden">
-                  <button
-                    className="w-full text-left px-4 py-3 bg-gray-100 hover:bg-gray-200 font-semibold flex items-center justify-between"
-                    onClick={() => setExpandedPegawai(expandedPegawai === nama ? null : nama)}
-                  >
-                    <span>{nama}</span>
-                    <span className={`transition-transform ${expandedPegawai === nama ? 'rotate-90' : ''}`}>▶</span>
-                  </button>
-                  <div
-                    className={`transition-all duration-300 overflow-hidden ${expandedPegawai === nama ? 'max-h-[1000px] py-2' : 'max-h-0 py-0'}`}
-                    style={{ background: '#fff' }}
-                  >
-                    {expandedPegawai === nama && (
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-4 py-2">No.</th>
-                            <th className="px-4 py-2">Jenis Surat</th>
-                            <th className="px-4 py-2">Nomor Surat</th>
-                            <th className="px-4 py-2">Penandatangan</th>
-                            <th className="px-4 py-2">Status</th>
-                            <th className="px-4 py-2">Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {suratList.map((surat, idx) => (
-                            <>
-                              <tr key={surat.id} className="border-b">
-                                <td className="px-4 py-2">{idx + 1}</td>
-                                <td className="px-4 py-2">{TEMPLATE_SHORT[surat.template_id] || '-'}</td>
-                                <td className="px-4 py-2">{surat.letter_number}</td>
-                                <td className="px-4 py-2">{surat.namapejabat}</td>
-                                <td className="px-4 py-2"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">{surat.status}</span></td>
-                                <td className="px-4 py-2">
-                                  <button
-                                    className="text-blue-600 hover:underline mr-2"
-                                    onClick={() => setExpandedSurat(expandedSurat === surat.id ? null : surat.id)}
-                                  >
-                                    {expandedSurat === surat.id ? 'Tutup' : 'Detail'}
-                                  </button>
-                                  <button
-                                    className="text-green-600 hover:underline"
-                                    onClick={() => {
-                                      setSelectedLetterForPreview(surat);
-                                      setModalOpen(true);
-                                    }}
-                                  >
-                                    Preview
-                                  </button>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td colSpan={6} className="p-0">
-                                  <div
-                                    className={`transition-all duration-300 bg-gray-50 ${expandedSurat === surat.id ? 'max-h-[500px] p-4' : 'max-h-0 p-0 overflow-hidden'}`}
-                                  >
-                                    {expandedSurat === surat.id && (
-                                      <div>
-                                        <div className="font-semibold mb-2">Detail Surat</div>
-                                        <div className="text-xs whitespace-pre-wrap">
-                                          {/* Tampilkan detail surat sesuai kebutuhan, misal: */}
-                                          <div>Nomor Surat: {surat.letter_number}</div>
-                                          <div>Status: {surat.status}</div>
-                                          <div>Penandatangan: {surat.namapejabat}</div>
-                                          {/* Tambahkan field lain sesuai kebutuhan */}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            </>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
+        <h1 className="text-2xl font-bold mb-4">Riwayat Surat</h1>
+        <input
+          type="text"
+          className="border rounded px-3 py-2 mb-4 w-full max-w-md"
+          placeholder="Cari nama pegawai, nomor surat, atau penandatangan..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="px-4 py-2">No.</th>
+                <th className="px-4 py-2">Jenis Surat</th>
+                <th className="px-4 py-2">Nomor Surat</th>
+                <th className="px-4 py-2">Pegawai</th>
+                <th className="px-4 py-2">Penandatangan</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {letters
+                .filter(surat => {
+                  if (!searchTerm) return true;
+                  return (
+                    (surat.namapegawai || surat.recipient?.nama || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (surat.letter_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (surat.namapejabat || surat.signing_official?.nama || '').toLowerCase().includes(searchTerm.toLowerCase())
+                  );
+                })
+                .map((surat, idx) => (
+                  <React.Fragment key={surat.id}>
+                    <tr className="border-b">
+                      <td className="px-4 py-2">{idx + 1}</td>
+                      <td className="px-4 py-2">{TEMPLATE_SHORT[surat.template_id] || '-'}</td>
+                      <td className="px-4 py-2">{surat.letter_number}</td>
+                      <td className="px-4 py-2">{surat.namapegawai || surat.recipient?.nama || '-'}</td>
+                      <td className="px-4 py-2">{surat.namapejabat || surat.signing_official?.nama || '-'}</td>
+                      <td className="px-4 py-2"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">{surat.status}</span></td>
+                      <td className="px-4 py-2">
+                        <button className="text-blue-600 hover:underline" onClick={() => setExpandedSurat(expandedSurat === surat.id ? null : surat.id)}>
+                          <FileText className="inline w-4 h-4 mr-1" /> {expandedSurat === surat.id ? 'Tutup' : 'Detail'}
+                        </button>
+                      </td>
+                    </tr>
+                    <tr key={surat.id + '-detail'}>
+                      {/* Kolom kosong untuk No., Jenis Surat, Nomor Surat, Pegawai, Penandatangan, Status */}
+                      <td colSpan={6}></td>
+                      {/* Kolom Aksi */}
+                      <td className="p-0">
+                        <div className={`transition-all duration-300 bg-gray-50 ${expandedSurat === surat.id ? 'max-h-[200px] p-4' : 'max-h-0 p-0 overflow-hidden'}`}>
+                          {expandedSurat === surat.id && (
+                            <button className="text-green-600 hover:underline flex items-center" onClick={() => { setSelectedLetterForPreview(surat); setModalOpen(true); }}>
+                              <Eye className="inline w-4 h-4 mr-1" /> Preview
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Modal Preview Surat tetap ada */}
+        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+          <DialogContent className="max-w-4xl w-full">
+            {selectedLetterForPreview && (
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="font-bold mt-2">Preview Surat</div>
+                  <div className="flex gap-2 mr-8 mt-2">
+                    <button
+                      className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                      onClick={() => window.open(`/letters/${selectedLetterForPreview.id}/preview`, '_blank')}
+                    >
+                      Open in New Tab
+                    </button>
+                    <button
+                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      onClick={() => window.print()}
+                    >
+                      Cetak
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      {/* Modal Preview Surat */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-4xl w-full">
-          {selectedLetterForPreview && (
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <div className="font-bold">Preview Surat</div>
-                <div className="space-x-2">
-                  <button
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                    onClick={() => window.open(`/letters/${selectedLetterForPreview.id}/preview`, '_blank')}
-                  >
-                    Open in New Tab
-                  </button>
-                  <button
-                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    onClick={() => window.print()}
-                  >
-                    Cetak
-                  </button>
+                <div className="bg-white p-4 rounded shadow max-h-[70vh] overflow-auto">
+                  <SuratPreviewContainer>
+                    {renderPreviewByTemplate(selectedLetterForPreview)}
+                  </SuratPreviewContainer>
                 </div>
               </div>
-              <div className="bg-white p-4 rounded shadow max-h-[70vh] overflow-auto">
-                {/* Gunakan komponen preview surat sesuai kebutuhan */}
-                <SuratPreviewContainer>
-                  {renderPreviewByTemplate(selectedLetterForPreview)}
-                </SuratPreviewContainer>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </>
   );
 };
