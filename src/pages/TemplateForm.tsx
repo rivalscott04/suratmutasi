@@ -441,6 +441,11 @@ const TemplateForm: React.FC = () => {
           ...template8Data,
           ...template9Data,
           tanggal: tanggalIndo,
+          // Always merge these fields for all templates
+          unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
+          ukerpegawai: selectedPegawai?.unit_kerja || '',
+          unitkerjapejabat: selectedPejabat?.unit_kerja || '',
+          ukerpejabat: selectedPejabat?.unit_kerja || '',
         },
         status: 'draft',
       };
