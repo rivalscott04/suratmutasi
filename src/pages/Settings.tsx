@@ -291,9 +291,7 @@ const Settings = () => {
           if (!office && user?.kabkota) {
             office = res.offices?.find((o: any) => o.kabkota === user.kabkota);
           }
-          if (!office && res.offices?.length > 0) {
-            office = res.offices[0];
-          }
+          // Hapus fallback ke kantor lain, biarkan kosong jika tidak ada yang cocok
           if (office) {
             setOfficeId(office.id);
             setOfficeSettings({
@@ -307,6 +305,15 @@ const Settings = () => {
             });
           } else {
             setOfficeId(null);
+            setOfficeSettings({
+              namakantor: '',
+              kabkota: '',
+              alamat: '',
+              telepon: '',
+              fax: '',
+              email: '',
+              website: ''
+            });
           }
         })
         .catch(() => setErrorOffice('Gagal mengambil data kantor'))
