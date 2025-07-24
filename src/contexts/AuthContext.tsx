@@ -8,6 +8,7 @@ interface User {
   full_name: string;
   role: 'admin' | 'operator' | 'user';
   office_id?: string;
+  kabkota?: string;
 }
 
 interface AuthContextType {

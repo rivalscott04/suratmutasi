@@ -105,11 +105,11 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
           <thead>
             <tr>
               <th>No.</th>
-              <th>Nama & NIP</th>
-              <th>Pangkat/Golongan</th>
+              <th>Nama</th>
+              <th>NIP</th>
+              <th className="text-center">Pangkat/Golongan</th>
               <th>Jabatan</th>
               <th>Unit Kerja</th>
-              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -121,18 +121,11 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
               paginatedEmployees.map((emp, i) => (
                 <tr key={emp.id}>
                   <td>{(currentPage - 1) * pageSize + i + 1}</td>
-                  <td>
-                    <div className="font-medium leading-tight">
-                      <CopyableText text={emp.nama} />
-                    </div>
-                    <div className="text-sm text-gray-700 font-semibold">
-                      <CopyableText text={emp.nip} />
-                    </div>
-                  </td>
-                  <td>{emp.golongan}</td>
+                  <td className="font-medium leading-tight"><CopyableText text={emp.nama} /></td>
+                  <td className="text-base text-gray-700 font-semibold"><CopyableText text={emp.nip} /></td>
+                  <td className="text-center">{emp.golongan}</td>
                   <td>{emp.jabatan}</td>
                   <td>{emp.unit_kerja}</td>
-                  <td>{emp.aktif ? 'Aktif' : 'Nonaktif'}</td>
                 </tr>
               ))
             )}
@@ -195,7 +188,16 @@ const Settings = () => {
       setLoadingOffice(true);
       apiGet('/api/offices', token)
         .then(res => {
-          const office = res.offices && res.offices.length > 0 ? res.offices[0] : null;
+          let office = null;
+          if (user?.office_id) {
+            office = res.offices?.find((o: any) => o.id === user.office_id);
+          }
+          if (!office && user?.kabkota) {
+            office = res.offices?.find((o: any) => o.kabkota === user.kabkota);
+          }
+          if (!office && res.offices?.length > 0) {
+            office = res.offices[0];
+          }
           if (office) {
             setOfficeId(office.id);
             setOfficeSettings({
@@ -214,7 +216,7 @@ const Settings = () => {
         .catch(() => setErrorOffice('Gagal mengambil data kantor'))
         .finally(() => setLoadingOffice(false));
     }
-  }, [token]);
+  }, [token, user]);
 
   const handleSaveOfficeSettings = async () => {
     setFieldError(null);
