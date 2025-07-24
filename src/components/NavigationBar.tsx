@@ -156,7 +156,7 @@ const NavigationBar = () => {
             <div className="flex items-center">
               <Link to="/dashboard" className="flex items-center space-x-3">
                 <img 
-                  src="/src/assets/logo-kemenag.png" 
+                  src="/logo-kemenag.png"
                   alt="Kementerian Agama" 
                   className="h-8 w-8"
                 />

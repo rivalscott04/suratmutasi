@@ -12,7 +12,7 @@ export const Template3: React.FC<Template3Props> = ({ data }) => {
       {/* Header */}
       <div className="text-center mb-6 border-b-2 border-black pb-3 relative">
         <img 
-          src="/src/assets/logo-kemenag.png" 
+          src="/logo-kemenag.png" 
           alt="Logo Kementerian Agama" 
           className="w-20 h-20 absolute top-1 left-2"
         />
