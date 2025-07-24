@@ -9,8 +9,8 @@ interface Template1Props {
 
 export const Template1: React.FC<Template1Props> = ({ data }) => {
   return (
-    <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt' }}>
-      <section className="sheet">
+    <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt', margin: 0, padding: 0 }}>
+      <section className="sheet" style={{ margin: 0, padding: 0 }}>
         {/* Header */}
         <div className="header" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 12 }}>
           <img src="/logo-kemenag.png" alt="Logo Kementerian Agama" style={{ width: 90, height: 90, objectFit: 'contain', flexShrink: 0 }} />

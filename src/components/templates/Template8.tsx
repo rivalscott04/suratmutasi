@@ -8,7 +8,7 @@ interface Template8Props {
 
 export const Template8: React.FC<Template8Props> = ({ data }) => {
   return (
-    <div className="template-preview p-8 bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt' }}>
+    <div className="template-preview bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt', margin: 0, padding: 0 }}>
       {/* Header */}
       <div className="header" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 12 }}>
         <img 
