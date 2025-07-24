@@ -106,34 +106,43 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
           </div>
 
           <p className="mb-4">
-            Telah dilakukan analisis jabatan dan analisis beban kerja dengan hasil sebagai berikut :
+            Dengan ini menerangkan jumlah jabatan Pegawai Negeri Sipil pada Unit Kerja {data.unitkerja} sebagai berikut :
           </p>
 
-          <div className="mb-4">
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Nama Jabatan</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.namajabatan}</div>
-            </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Beban Kerja</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.bbnkerja}</div>
-            </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Eksisting</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.eksisting}</div>
-            </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Kelebihan</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.kelebihan}</div>
-            </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Kekurangan</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.kekurangan}</div>
+          {/* Analysis Table */}
+          <div className="mb-6">
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="border border-gray-300 px-3 py-2 text-left font-medium">No.</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left font-medium">Nama Jabatan</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left font-medium">Jumlah Beban Kerja</th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-medium" colSpan={3}>Jumlah Pegawai</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left font-medium">Keterangan</th>
+                  </tr>
+                  <tr>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-medium"></th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-medium"></th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-medium"></th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-medium">Eksisting</th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-medium">Kelebihan</th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-medium">Kekurangan</th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-gray-300 px-3 py-2 text-center">1</td>
+                    <td className="border border-gray-300 px-3 py-2">{data.namajabatan}</td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">{data.bbnkerja}</td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">{data.eksisting}</td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">{data.kelebihan}</td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">{data.kekurangan}</td>
+                    <td className="border border-gray-300 px-3 py-2">Perlu diisi melalui mutasi PNS</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
