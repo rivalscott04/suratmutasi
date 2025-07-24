@@ -1281,6 +1281,7 @@ const TemplateForm: React.FC = () => {
                       <Label htmlFor="tanggal">Tanggal</Label>
                       <Input
                         id="tanggal"
+                        type="date"
                         value={baseData.tanggal || ''}
                         onChange={(e) => handleBaseDataChange('tanggal', e.target.value)}
                       />

@@ -22,7 +22,7 @@ export const Template8: React.FC<Template8Props> = ({ data }) => {
               KEMENTERIAN AGAMA REPUBLIK INDONESIA
             </div>
             <div style={{ fontWeight: 'bold', fontSize: '11pt', marginTop: 2 }}>
-              KANTOR KEMENTERIAN AGAMA {data.kabkota}
+              KANTOR KEMENTERIAN AGAMA {formatKabKota(data.kabkota)}
             </div>
             <div style={{ fontWeight: 'normal', fontSize: '9pt', marginTop: 4 }}>
               {data.jln}<br />
