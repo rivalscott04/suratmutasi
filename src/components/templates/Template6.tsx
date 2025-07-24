@@ -8,13 +8,14 @@ interface Template6Props {
 
 export const Template6: React.FC<Template6Props> = ({ data }) => {
   return (
-    <div className="template-preview bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt', margin: 0, padding: 0 }}>
+    <div className="template-preview bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', margin: 0, padding: 0 }}>
       {/* Header */}
       <div className="text-center mb-6 border-b-2 border-black pb-3 relative">
         <img 
           src="/logo-kemenag.png" 
           alt="Logo Kementerian Agama" 
           className="w-20 h-20 absolute top-1 left-2"
+          style={{ width: 100, height: 100 }}
         />
         <div className="overflow-hidden">
           <div className="font-bold leading-tight mb-1">

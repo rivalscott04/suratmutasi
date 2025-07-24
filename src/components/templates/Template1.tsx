@@ -9,14 +9,14 @@ interface Template1Props {
 
 export const Template1: React.FC<Template1Props> = ({ data }) => {
   return (
-    <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt', margin: 0, padding: 0 }}>
+    <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', margin: 0, padding: 0 }}>
       <section className="sheet" style={{ margin: 0, padding: 0 }}>
         {/* Header */}
         <div style={{ position: 'relative', minHeight: 100, marginBottom: 20 }}>
           <img
             src="/logo-kemenag.png"
             alt="Logo Kementerian Agama"
-            style={{ position: 'absolute', left: 0, top: 0, width: 110, height: 110, objectFit: 'contain' }}
+            style={{ position: 'absolute', left: 0, top: 0, width: 100, height: 100, objectFit: 'contain' }}
           />
           <div style={{ width: '100%', textAlign: 'center', paddingLeft: 90, boxSizing: 'border-box' }}>
             <div style={{ display: 'inline-block', minWidth: 400, maxWidth: 700, textAlign: 'center' }}>
