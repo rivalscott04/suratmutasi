@@ -43,3 +43,12 @@ export function formatTanggalIndonesia(tanggal: string): string {
     return tanggal; // Return original if error
   }
 }
+
+// Format nama kabupaten/kota agar rapi (Kota Mataram, Kabupaten Lombok Timur)
+export function formatKabKota(str: string): string {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .replace(/^(kota|kabupaten)/, (m) => m.charAt(0).toUpperCase() + m.slice(1))
+    .replace(/(^| )([a-z])/g, (s) => s.toUpperCase());
+}

@@ -1359,7 +1359,7 @@ const TemplateForm: React.FC = () => {
             <div className="flex flex-col gap-2 w-full">
               <button
                 className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-lg font-semibold"
-                onClick={() => navigate(`/letters/${suratId}`)}
+                onClick={() => navigate('/letters')}
               >
                 Lihat Data Surat
               </button>

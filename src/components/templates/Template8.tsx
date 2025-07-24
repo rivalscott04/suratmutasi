@@ -1,6 +1,6 @@
 import React from 'react';
 import { Template8Data } from '@/types/template';
-import { formatTanggalIndonesia } from '@/lib/utils';
+import { formatTanggalIndonesia, formatKabKota } from '@/lib/utils';
 
 interface Template8Props {
   data: Template8Data;
