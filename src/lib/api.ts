@@ -1,6 +1,9 @@
 // Helper API untuk request ke backend dengan JWT
 export async function apiFetch(method: string, url: string, options: { data?: any; token?: string; headers?: any } = {}) {
   const { data, token, headers = {} } = options;
+  const BASE_URL = 'https://bemutasi.rivaldev.site';
+  // Jika url tidak diawali http/https, tambahkan BASE_URL
+  const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
   const fetchOptions: RequestInit = {
     method,
     headers: {
@@ -12,7 +15,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   if (data) {
     fetchOptions.body = JSON.stringify(data);
   }
-  const res = await fetch(url, fetchOptions);
+  const res = await fetch(fullUrl, fetchOptions);
   const contentType = res.headers.get('content-type');
   let responseData;
   if (contentType && contentType.includes('application/json')) {
