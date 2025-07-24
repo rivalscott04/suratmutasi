@@ -20,10 +20,10 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
           />
           <div style={{ width: '100%', textAlign: 'center', paddingLeft: 90, boxSizing: 'border-box' }}>
             <div style={{ display: 'inline-block', minWidth: 400, maxWidth: 700, textAlign: 'center' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '14pt', lineHeight: 1.2 }}>
+              <div style={{ fontWeight: 'bold', fontSize: '15pt', lineHeight: 1.2 }}>
                 KEMENTERIAN AGAMA REPUBLIK INDONESIA
               </div>
-              <div style={{ fontWeight: 'bold', fontSize: '11.5pt', marginTop: 2 }}>
+              <div style={{ fontWeight: 'bold', fontSize: '11pt', marginTop: 2 }}>
                 KANTOR KEMENTERIAN AGAMA {data.kabkota.toUpperCase()}
               </div>
               <div style={{ fontWeight: 'normal', fontSize: '9pt', marginTop: 4 }}>
@@ -32,7 +32,7 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
                 Email: {data.email}<br />
                 Website: {data.website}
               </div>
-              <div style={{ borderBottom: '3px solid #000', width: '100%', margin: '8px auto 0 auto', display: 'block' }}></div>
+              <div style={{ borderBottom: '3px solid #000', width: 'auto', margin: '8px 2cm 0 2cm', display: 'block' }}></div>
             </div>
           </div>
         </div>
