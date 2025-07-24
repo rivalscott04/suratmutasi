@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '../lib/api';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 
 const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
   const [copied, setCopied] = useState(false);
@@ -34,6 +35,11 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editData, setEditData] = useState<any | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(search), 300);
@@ -110,12 +116,13 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
               <th className="text-center">Pangkat/Golongan</th>
               <th>Jabatan</th>
               <th>Unit Kerja</th>
+              <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {paginatedEmployees.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center">Tidak ada data pegawai</td>
+                <td colSpan={7} className="text-center">Tidak ada data pegawai</td>
               </tr>
             ) : (
               paginatedEmployees.map((emp, i) => (
@@ -123,9 +130,12 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
                   <td>{(currentPage - 1) * pageSize + i + 1}</td>
                   <td className="font-medium leading-tight"><CopyableText text={emp.nama} /></td>
                   <td className="text-base text-gray-700 font-semibold"><CopyableText text={emp.nip} /></td>
-                  <td className="text-center">{emp.golongan}</td>
+                  <td className="text-center">{emp.golongan || emp.pangkat_gol}</td>
                   <td>{emp.jabatan}</td>
                   <td>{emp.unit_kerja}</td>
+                  <td>
+                    <Button size="sm" variant="outline" onClick={() => { setEditData(emp); setEditModalOpen(true); }}>Edit</Button>
+                  </td>
                 </tr>
               ))
             )}
@@ -153,6 +163,88 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
           <Button size="sm" variant="outline" onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages}>&raquo;</Button>
         </div>
       )}
+      {/* Modal Edit Pegawai */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Data Pegawai</DialogTitle>
+            <DialogDescription>Edit data pegawai lalu klik simpan untuk memperbarui.</DialogDescription>
+          </DialogHeader>
+          {editData && (
+            <form className="space-y-3" onSubmit={async e => {
+              e.preventDefault();
+              setSaving(true);
+              try {
+                await apiPut(`/api/employees/${editData.nip}`, editData, token);
+                toast({ title: 'Update data pegawai berhasil', variant: 'default' });
+                setEditModalOpen(false);
+                // Refresh data
+                setLoading(true);
+                apiGet('/api/employees', token)
+                  .then(res => setEmployees(res.pegawai || []))
+                  .catch(err => setError(err.message || 'Gagal mengambil data pegawai'))
+                  .finally(() => setLoading(false));
+              } catch (err: any) {
+                toast({ title: 'Update data pegawai gagal', description: err.message, variant: 'destructive' });
+              } finally {
+                setSaving(false);
+              }
+            }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label>NIP</Label>
+                  <Input value={editData.nip || ''} disabled readOnly className="bg-gray-100" />
+                </div>
+                <div>
+                  <Label>Nama</Label>
+                  <Input value={editData.nama || ''} onChange={e => setEditData({ ...editData, nama: e.target.value })} disabled={user?.role !== 'admin'} className={user?.role !== 'admin' ? 'bg-gray-100' : ''} />
+                </div>
+                <div>
+                  <Label>Pangkat/Golongan</Label>
+                  <Input value={editData.golongan || ''} onChange={e => setEditData({ ...editData, golongan: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Jabatan</Label>
+                  <Input value={editData.jabatan || ''} onChange={e => setEditData({ ...editData, jabatan: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Unit Kerja</Label>
+                  <Input value={editData.unit_kerja || ''} onChange={e => setEditData({ ...editData, unit_kerja: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Induk Unit</Label>
+                  <Input value={editData.induk_unit || ''} onChange={e => setEditData({ ...editData, induk_unit: e.target.value })} />
+                </div>
+                <div>
+                  <Label>TMT Pensiun</Label>
+                  <Input type="date" value={editData.tmt_pensiun ? String(editData.tmt_pensiun).slice(0,10) : ''} onChange={e => setEditData({ ...editData, tmt_pensiun: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Kantor ID</Label>
+                  <Input value={editData.kantor_id || ''} onChange={e => setEditData({ ...editData, kantor_id: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Jenis Pegawai</Label>
+                  <Input value={editData.jenis_pegawai || ''} onChange={e => setEditData({ ...editData, jenis_pegawai: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Aktif</Label>
+                  <select className="w-full border rounded h-10 px-2" value={editData.aktif ? 'true' : 'false'} onChange={e => setEditData({ ...editData, aktif: e.target.value === 'true' })}>
+                    <option value="true">Aktif</option>
+                    <option value="false">Tidak Aktif</option>
+                  </select>
+                </div>
+              </div>
+              <DialogFooter className="mt-4">
+                <Button type="submit" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan'}</Button>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">Batal</Button>
+                </DialogClose>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
