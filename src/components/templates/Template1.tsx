@@ -16,7 +16,7 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
           <img
             src="/logo-kemenag.png"
             alt="Logo Kementerian Agama"
-            style={{ position: 'absolute', left: 0, top: 0, width: 90, height: 90, objectFit: 'contain' }}
+            style={{ position: 'absolute', left: 0, top: 0, width: 110, height: 110, objectFit: 'contain' }}
           />
           <div style={{ width: '100%', textAlign: 'center', paddingLeft: 90, boxSizing: 'border-box' }}>
             <div style={{ display: 'inline-block', minWidth: 400, maxWidth: 700, textAlign: 'center' }}>
