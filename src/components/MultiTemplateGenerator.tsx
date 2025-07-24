@@ -1,25 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { TemplateCard } from '@/components/TemplateCard';
-import { PegawaiSearchInput } from '@/components/PegawaiSearchInput';
-import { FormSection } from '@/components/FormSection';
-import { AutoFilledInput } from '@/components/AutoFilledInput';
-import { Template1 } from '@/components/templates/Template1';
-import { Template2 } from '@/components/templates/Template2';
-import { Template3 } from '@/components/templates/Template3';
-import { Template4 } from '@/components/templates/Template4';
-import { Template5 } from '@/components/templates/Template5';
-import { Template6 } from '@/components/templates/Template6';
-import { Template7 } from '@/components/templates/Template7';
-import { Template8 } from '@/components/templates/Template8';
-import { Template9 } from '@/components/templates/Template9';
+import { FormSection } from './FormSection';
+import { TemplateCard } from './TemplateCard';
+import { PegawaiSearchInput } from './PegawaiSearchInput';
+import { AutoFilledInput } from './AutoFilledInput';
+import SuratPreviewContainer from './SuratPreviewContainer';
+import { Template1 } from './templates/Template1';
+import { Template2 } from './templates/Template2';
+import { Template3 } from './templates/Template3';
+import { Template4 } from './templates/Template4';
+import { Template5 } from './templates/Template5';
+import { Template6 } from './templates/Template6';
+import { Template7 } from './templates/Template7';
+import { Template8 } from './templates/Template8';
+import { Template9 } from './templates/Template9';
 import { BaseTemplateData, Template1Data, Template2Data, Template3Data, Template4Data, Template5Data, Template6Data, Template7Data, Template8Data, Template9Data, Pegawai } from '@/types/template';
 import { Printer, FileText } from 'lucide-react';
+
+// Konstanta untuk kabupaten/kota NTB
+const KABUPATEN_KOTA_NTB = [
+  'Kota Mataram',
+  'Kabupaten Lombok Barat',
+  'Kabupaten Lombok Tengah',
+  'Kabupaten Lombok Timur',
+  'Kabupaten Lombok Utara',
+  'Kabupaten Sumbawa Barat',
+  'Kabupaten Sumbawa',
+  'Kabupaten Dompu',
+  'Kabupaten Bima',
+  'Kota Bima'
+];
 
 const TEMPLATES = [
   {
@@ -84,7 +101,7 @@ const MultiTemplateGenerator: React.FC = () => {
   const [selectedPegawai, setSelectedPegawai] = useState<Pegawai | undefined>();
   
   // Base data that applies to all templates
-  const [baseData, setBaseData] = useState<BaseTemplateData>({
+  const [baseData, setBaseData] = useState({
     // Office data (should be auto-populated from settings)
     kabkota: 'LOMBOK BARAT',
     jln: 'Jl. Gajah Mada No. 1 Gerung, Lombok Barat 83511',
@@ -111,7 +128,7 @@ const MultiTemplateGenerator: React.FC = () => {
   });
 
   // Template-specific data states
-  const [template1Data, setTemplate1Data] = useState<Partial<Template1Data>>({
+  const [template1Data, setTemplate1Data] = useState({
     nosrt: '',
     blnno: '',
     thnno: '',
@@ -119,7 +136,7 @@ const MultiTemplateGenerator: React.FC = () => {
     ukerpegawai: ''
   });
 
-  const [template2Data, setTemplate2Data] = useState<Partial<Template2Data>>({
+  const [template2Data, setTemplate2Data] = useState({
     nosurat: '',
     blnnomor: '',
     tahunskrg: '',
@@ -131,7 +148,7 @@ const MultiTemplateGenerator: React.FC = () => {
     kekurangan: ''
   });
 
-  const [template3Data, setTemplate3Data] = useState<Partial<Template3Data>>({
+  const [template3Data, setTemplate3Data] = useState({
     nosrt: '',
     blnno: '',
     thnno: '',
@@ -141,7 +158,7 @@ const MultiTemplateGenerator: React.FC = () => {
     tglmulai: ''
   });
 
-  const [template4Data, setTemplate4Data] = useState<Partial<Template4Data>>({
+  const [template4Data, setTemplate4Data] = useState({
     nosrt: '',
     blnsrt: '',
     thnskrg: '',
@@ -149,7 +166,7 @@ const MultiTemplateGenerator: React.FC = () => {
     keperluan: ''
   });
 
-  const [template5Data, setTemplate5Data] = useState<Partial<Template5Data>>({
+  const [template5Data, setTemplate5Data] = useState({
     nosrt: '',
     blnno: '',
     thnno: '',
@@ -157,7 +174,7 @@ const MultiTemplateGenerator: React.FC = () => {
     tempattugas: ''
   });
 
-  const [template6Data, setTemplate6Data] = useState<Partial<Template6Data>>({
+  const [template6Data, setTemplate6Data] = useState({
     nosrt: '',
     blnno: '',
     thnno: '',
@@ -165,7 +182,7 @@ const MultiTemplateGenerator: React.FC = () => {
     ukerpegawai: ''
   });
 
-  const [template7Data, setTemplate7Data] = useState<Partial<Template7Data>>({
+  const [template7Data, setTemplate7Data] = useState({
     nosurat: '',
     blnnomor: '',
     tahunskrg: '',
@@ -176,7 +193,7 @@ const MultiTemplateGenerator: React.FC = () => {
     kabataukotatujuan: ''
   });
 
-  const [template8Data, setTemplate8Data] = useState<Partial<Template8Data>>({
+  const [template8Data, setTemplate8Data] = useState({
     nosrt: '',
     blnno: '',
     thnno: '',
@@ -185,7 +202,7 @@ const MultiTemplateGenerator: React.FC = () => {
     tempattugasbaru: ''
   });
 
-  const [template9Data, setTemplate9Data] = useState<Partial<Template9Data>>({
+  const [template9Data, setTemplate9Data] = useState({
     nosrt: '',
     blnno: '',
     thnno: '',
@@ -268,43 +285,43 @@ const MultiTemplateGenerator: React.FC = () => {
     }
   };
 
-  const handleBaseDataChange = (field: keyof BaseTemplateData, value: string) => {
+  const handleBaseDataChange = (field: keyof typeof baseData, value: string) => {
     setBaseData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate1DataChange = (field: keyof Template1Data, value: string) => {
+  const handleTemplate1DataChange = (field: keyof typeof template1Data, value: string) => {
     setTemplate1Data(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate2DataChange = (field: keyof Template2Data, value: string) => {
+  const handleTemplate2DataChange = (field: keyof typeof template2Data, value: string) => {
     setTemplate2Data(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate3DataChange = (field: keyof Template3Data, value: string) => {
+  const handleTemplate3DataChange = (field: keyof typeof template3Data, value: string) => {
     setTemplate3Data(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate4DataChange = (field: keyof Template4Data, value: string) => {
+  const handleTemplate4DataChange = (field: keyof typeof template4Data, value: string) => {
     setTemplate4Data(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate5DataChange = (field: keyof Template5Data, value: string) => {
+  const handleTemplate5DataChange = (field: keyof typeof template5Data, value: string) => {
     setTemplate5Data(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate6DataChange = (field: keyof Template6Data, value: string) => {
+  const handleTemplate6DataChange = (field: keyof typeof template6Data, value: string) => {
     setTemplate6Data(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate7DataChange = (field: keyof Template7Data, value: string) => {
+  const handleTemplate7DataChange = (field: keyof typeof template7Data, value: string) => {
     setTemplate7Data(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate8DataChange = (field: keyof Template8Data, value: string) => {
+  const handleTemplate8DataChange = (field: keyof typeof template8Data, value: string) => {
     setTemplate8Data(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTemplate9DataChange = (field: keyof Template9Data, value: string) => {
+  const handleTemplate9DataChange = (field: keyof typeof template9Data, value: string) => {
     setTemplate9Data(prev => ({ ...prev, [field]: value }));
   };
 
@@ -511,12 +528,16 @@ const MultiTemplateGenerator: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="kabkota2">Kabupaten/Kota</Label>
-                <Input
-                  id="kabkota2"
-                  value={template3Data.kabkota2}
-                  onChange={(e) => handleTemplate3DataChange('kabkota2', e.target.value)}
-                  placeholder="Nama kabupaten/kota"
-                />
+                <Select onValueChange={(value) => handleTemplate3DataChange('kabkota2', value)} value={template3Data.kabkota2}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih kabupaten/kota" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KABUPATEN_KOTA_NTB.map(kota => (
+                      <SelectItem key={kota} value={kota}>{kota}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="tglmulai">Tanggal Mulai Mengajar</Label>
@@ -525,7 +546,6 @@ const MultiTemplateGenerator: React.FC = () => {
                   type="date"
                   value={template3Data.tglmulai}
                   onChange={(e) => handleTemplate3DataChange('tglmulai', e.target.value)}
-                  placeholder="dd Bulan yyyy"
                 />
               </div>
             </div>
@@ -729,12 +749,16 @@ const MultiTemplateGenerator: React.FC = () => {
               </div>
               <div>
                 <Label htmlFor="kabkota27">Kabupaten/Kota Asal</Label>
-                <Input
-                  id="kabkota27"
-                  value={template7Data.kabkota2}
-                  onChange={(e) => handleTemplate7DataChange('kabkota2', e.target.value)}
-                  placeholder="Kabupaten/kota asal"
-                />
+                <Select onValueChange={(value) => handleTemplate7DataChange('kabkota2', value)} value={template7Data.kabkota2}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih kabupaten/kota asal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KABUPATEN_KOTA_NTB.map(kota => (
+                      <SelectItem key={kota} value={kota}>{kota}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -759,12 +783,16 @@ const MultiTemplateGenerator: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="kabataukotatujuan">Kabupaten/Kota Tujuan</Label>
-              <Input
-                id="kabataukotatujuan"
-                value={template7Data.kabataukotatujuan}
-                onChange={(e) => handleTemplate7DataChange('kabataukotatujuan', e.target.value)}
-                placeholder="Kabupaten/kota tujuan"
-              />
+              <Select onValueChange={(value) => handleTemplate7DataChange('kabataukotatujuan', value)} value={template7Data.kabataukotatujuan}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih kabupaten/kota tujuan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {KABUPATEN_KOTA_NTB.map(kota => (
+                    <SelectItem key={kota} value={kota}>{kota}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         );

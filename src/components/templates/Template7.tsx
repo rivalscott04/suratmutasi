@@ -1,5 +1,6 @@
 import React from 'react';
 import { Template7Data } from '@/types/template';
+import { formatTanggalIndonesia } from '@/lib/utils';
 
 interface Template7Props {
   data: Template7Data;
@@ -115,7 +116,7 @@ export const Template7: React.FC<Template7Props> = ({ data }) => {
         {/* Signature */}
         <div className="mt-8 ml-auto w-48 text-left text-xs">
           <div className="mb-1">
-            {data.ibukota}, {data.tanggal}
+            {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>
           <div>
             Kepala,

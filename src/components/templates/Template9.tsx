@@ -1,5 +1,6 @@
 import React from 'react';
 import { Template9Data } from '@/types/template';
+import { formatTanggalIndonesia } from '@/lib/utils';
 
 interface Template9Props {
   data: Template9Data;
@@ -31,13 +32,13 @@ export const Template9: React.FC<Template9Props> = ({ data }) => {
 
       <div className="mx-4">
         {/* Title */}
-        <div className="text-center font-bold text-xs mb-4">
-          <strong>SURAT PERNYATAAN TANGGUNG JAWAB MUTLAK</strong>
+        <div className="text-center font-bold text-xs mb-4 underline">
+          SURAT PERNYATAAN TANGGUNG JAWAB MUTLAK (SPTJM)
         </div>
       
         {/* Nomor Surat */}
         <div className="text-center mb-5 text-xs">
-          Nomor : B-{data.nosrt}/Kk.18.08/1/Kp.01.2/{data.blnno}/{data.thnno}
+          Nomor : B-{data.nosrt}/Kk.18.08/1/Kp.07.6/{data.blnno}/{data.thnno}
         </div>
 
         {/* Content */}
@@ -69,25 +70,29 @@ export const Template9: React.FC<Template9Props> = ({ data }) => {
               <div className="flex-grow">{data.jabatanpejabat}</div>
             </div>
             <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Unit/Satuan Kerja</div>
+              <div className="w-32 flex-shrink-0">Unit Kerja</div>
               <div className="w-5 flex-shrink-0">:</div>
               <div className="flex-grow">{data.ukerpejabat}</div>
             </div>
           </div>
 
+          <div className="font-bold mb-3">
+            Dengan ini menyatakan dengan sesungguhnya bahwa :
+          </div>
+
           <p className="mb-4">
-            Dengan menyatakan dan menjamin kebenaran serta bertanggung jawab atas dokumen dan data yang disampaikan telah sesuai dengan ketentuan peraturan perundang-undangan yang berlaku dan data yang disampaikan adalah data terkini dan valid berdasarkan data Sistem Informasi Manajemen Kepegawaian (SIMPEG) Kementerian Agama
+            Saya bertanggung jawab penuh atas kebenaran dan keabsahan dokumen serta data yang saya sampaikan dalam surat ini. Apabila dikemudian hari terdapat kesalahan atau ketidakbenaran dalam dokumen dan data tersebut, saya bersedia menerima sanksi sesuai dengan ketentuan peraturan perundang-undangan yang berlaku.
           </p>
 
           <p>
-            Demikian pernyataan ini dibuat dengan sesungguhnya untuk dipergunakan sebagaimana mestinya.
+            Demikian surat pernyataan tanggung jawab mutlak ini dibuat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya.
           </p>
         </div>
 
         {/* Signature */}
         <div className="mt-8 ml-auto w-48 text-left text-xs">
           <div className="mb-1">
-            {data.ibukota}, {data.tanggal}
+            {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>
           <div>
             Kepala,

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PegawaiSearchInput } from '@/components/PegawaiSearchInput';
 import { FormSection } from '@/components/FormSection';
@@ -25,6 +27,20 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DialogTitle, DialogDescription } from '@radix-ui/react-dialog';
 import SuratPreviewContainer from '@/components/SuratPreviewContainer';
+
+// Konstanta untuk kabupaten/kota NTB
+const KABUPATEN_KOTA_NTB = [
+  'Kota Mataram',
+  'Kabupaten Lombok Barat',
+  'Kabupaten Lombok Tengah',
+  'Kabupaten Lombok Timur',
+  'Kabupaten Lombok Utara',
+  'Kabupaten Sumbawa Barat',
+  'Kabupaten Sumbawa',
+  'Kabupaten Dompu',
+  'Kabupaten Bima',
+  'Kota Bima'
+];
 
 const TEMPLATES = [
   {
@@ -648,20 +664,24 @@ const TemplateForm: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="kabkota2">Kabupaten/Kota</Label>
-              <Input
-                id="kabkota2"
-                value={template3Data.kabkota2 || ''}
-                onChange={(e) => handleTemplate3DataChange('kabkota2', e.target.value)}
-                placeholder="Nama kabupaten/kota"
-              />
+              <Select onValueChange={(value) => handleTemplate3DataChange('kabkota2', value)} value={template3Data.kabkota2 || ''}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih kabupaten/kota" />
+                </SelectTrigger>
+                <SelectContent>
+                  {KABUPATEN_KOTA_NTB.map(kota => (
+                    <SelectItem key={kota} value={kota}>{kota}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="tglmulai">Tanggal Mulai</Label>
               <Input
                 id="tglmulai"
+                type="date"
                 value={template3Data.tglmulai || ''}
                 onChange={(e) => handleTemplate3DataChange('tglmulai', e.target.value)}
-                placeholder="dd Bulan yyyy"
               />
             </div>
           </div>
@@ -832,12 +852,16 @@ const TemplateForm: React.FC = () => {
               </div>
               <div>
                 <Label htmlFor="kabkota27">Kabupaten/Kota Asal</Label>
-                <Input
-                  id="kabkota27"
-                  value={template7Data.kabkota2 || ''}
-                  onChange={(e) => handleTemplate7DataChange('kabkota2', e.target.value)}
-                  placeholder="Kabupaten/kota asal"
-                />
+                <Select onValueChange={(value) => handleTemplate7DataChange('kabkota2', value)} value={template7Data.kabkota2 || ''}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih kabupaten/kota" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KABUPATEN_KOTA_NTB.map(kota => (
+                      <SelectItem key={kota} value={kota}>{kota}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -862,12 +886,16 @@ const TemplateForm: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="kabataukotatujuan">Kabupaten/Kota Tujuan</Label>
-              <Input
-                id="kabataukotatujuan"
-                value={template7Data.kabataukotatujuan || ''}
-                onChange={(e) => handleTemplate7DataChange('kabataukotatujuan', e.target.value)}
-                placeholder="Kabupaten/kota tujuan"
-              />
+              <Select onValueChange={(value) => handleTemplate7DataChange('kabataukotatujuan', value)} value={template7Data.kabataukotatujuan || ''}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih kabupaten/kota" />
+                </SelectTrigger>
+                <SelectContent>
+                  {KABUPATEN_KOTA_NTB.map(kota => (
+                    <SelectItem key={kota} value={kota}>{kota}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         );

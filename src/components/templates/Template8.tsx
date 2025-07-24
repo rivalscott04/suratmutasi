@@ -1,5 +1,6 @@
 import React from 'react';
 import { Template8Data } from '@/types/template';
+import { formatTanggalIndonesia } from '@/lib/utils';
 
 interface Template8Props {
   data: Template8Data;
@@ -115,7 +116,7 @@ export const Template8: React.FC<Template8Props> = ({ data }) => {
         {/* Signature */}
         <div className="mt-8 ml-auto w-48 text-left text-xs">
           <div className="mb-1">
-            {data.ibukota}, {data.tanggal}
+            {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>
           <div>
             Kepala,

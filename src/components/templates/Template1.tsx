@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Template1Data } from '@/types/template';
+import { formatTanggalIndonesia } from '@/lib/utils';
 import logoKemenag from '@/assets/logo-kemenag.png';
 
 interface Template1Props {
@@ -8,27 +9,6 @@ interface Template1Props {
 }
 
 export const Template1: React.FC<Template1Props> = ({ data }) => {
-  // Tambahkan fungsi formatTanggalIndonesia jika belum ada
-  const formatTanggalIndonesia = (tanggal: string) => {
-    if (!tanggal) return '';
-    const bulanIndo = [
-      '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    let d, m, y;
-    if (/\d{4}-\d{2}-\d{2}/.test(tanggal)) {
-      [y, m, d] = tanggal.split('-');
-    } else if (/\d{2}-\d{2}-\d{4}/.test(tanggal)) {
-      [d, m, y] = tanggal.split('-');
-    } else if (/\d{2}\/\d{2}\/\d{4}/.test(tanggal)) {
-      [d, m, y] = tanggal.split('/');
-    } else {
-      return tanggal;
-    }
-    const bulan = bulanIndo[parseInt(m, 10)] || m;
-    return `${d} ${bulan} ${y}`;
-  };
-
   return (
     <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif' }}>
       <section className="sheet">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Template4Data } from '@/types/template';
+import { formatTanggalIndonesia } from '@/lib/utils';
 
 interface Template4Props {
   data: Template4Data;
@@ -13,7 +14,7 @@ export const Template4: React.FC<Template4Props> = ({ data }) => {
         <img 
           src="/src/assets/logo-kemenag.png" 
           alt="Logo Kementerian Agama" 
-          className="w-16 h-16 float-left mr-4 mt-1"
+          className="w-20 h-20 absolute top-1 left-2"
         />
         <div className="overflow-hidden">
           <div className="font-bold text-sm leading-tight mb-1">
@@ -30,48 +31,52 @@ export const Template4: React.FC<Template4Props> = ({ data }) => {
       </div>
 
       <div className="mx-4">
-        {/* Surat Info */}
-        <div className="mb-5">
-          <div className="flex justify-between items-start mb-1">
-            <div className="flex">
-              <div className="w-20 flex-shrink-0 text-xs">Nomor</div>
-              <div className="w-5 flex-shrink-0 text-xs">:</div>
-              <div className="flex-grow text-xs">B-{data.nosrt}/Kk.18.08/1/Kp.01.2/{data.blnsrt}/{data.thnskrg}</div>
-            </div>
-            <div className="ml-5 text-xs">{data.tanggal}</div>
-          </div>
-          <div className="flex mb-1">
-            <div className="w-20 flex-shrink-0 text-xs">Sifat</div>
-            <div className="w-5 flex-shrink-0 text-xs">:</div>
-            <div className="flex-grow text-xs">Biasa</div>
-          </div>
-          <div className="flex mb-1">
-            <div className="w-20 flex-shrink-0 text-xs">Lampiran</div>
-            <div className="w-5 flex-shrink-0 text-xs">:</div>
-            <div className="flex-grow text-xs">1(satu) berkas</div>
-          </div>
-          <div className="flex mb-1">
-            <div className="w-20 flex-shrink-0 text-xs">Hal</div>
-            <div className="w-5 flex-shrink-0 text-xs">:</div>
-            <div className="flex-grow text-xs">Permohonan penerbitan surat Keterangan Bebas Temuan</div>
-          </div>
+        {/* Title */}
+        <div className="text-center font-bold text-xs mb-4 underline">
+          SURAT PERMOHONAN PENERBITAN SURAT KETERANGAN BEBAS TEMUAN
         </div>
-
-        {/* Addressee */}
-        <div className="text-left mb-5 text-xs">
-          Yth. Kepala Kantor Wilayah Kementerian Agama<br />
-          Provinsi Nusa Tenggara Barat<br />
-          Mataram
+      
+        {/* Nomor Surat */}
+        <div className="text-center mb-5 text-xs">
+          Nomor : B-{data.nosrt}/Kk.18.08/1/Kp.07.6/{data.blnsrt}/{data.thnskrg}
         </div>
 
         {/* Content */}
         <div className="text-justify mb-4 text-xs">
           <div className="mb-4">
-            Dengan hormat,
+            Yang bertanda tangan di bawah ini :
+          </div>
+
+          {/* Data Pejabat */}
+          <div className="mb-4">
+            <div className="flex mb-1">
+              <div className="w-32 flex-shrink-0">Nama</div>
+              <div className="w-5 flex-shrink-0">:</div>
+              <div className="flex-grow">{data.namapejabat}</div>
+            </div>
+            <div className="flex mb-1">
+              <div className="w-32 flex-shrink-0">NIP</div>
+              <div className="w-5 flex-shrink-0">:</div>
+              <div className="flex-grow">{data.nippejabat}</div>
+            </div>
+            <div className="flex mb-1">
+              <div className="w-32 flex-shrink-0">Pangkat/Gol.Ruang</div>
+              <div className="w-5 flex-shrink-0">:</div>
+              <div className="flex-grow">{data.pangkatgolpejabat}</div>
+            </div>
+            <div className="flex mb-1">
+              <div className="w-32 flex-shrink-0">Jabatan</div>
+              <div className="w-5 flex-shrink-0">:</div>
+              <div className="flex-grow">{data.jabatanpejabat}</div>
+            </div>
+          </div>
+
+          <div className="font-bold mb-3">
+            Dengan hormat mengajukan permohonan :
           </div>
 
           <p className="mb-4">
-            Memperhatikan Peraturan Badan Kepegawaian Negara Nomor 5 Tahun 2019 tentang Tata Cara Pelaksanaan Mutasi pada BAB II Pasal 3 angka(1) huruf j, dengan ini kami sampaikan permohonan penerbitan Surat Keterangan Bebas Temuan Pegawai Negeri Sipil sebagai berikut :
+            Mohon diterbitkan Surat Keterangan Bebas Temuan untuk keperluan {data.keperluan} atas nama :
           </p>
 
           {/* Data Pegawai */}
@@ -101,20 +106,18 @@ export const Template4: React.FC<Template4Props> = ({ data }) => {
               <div className="w-5 flex-shrink-0">:</div>
               <div className="flex-grow">{data.unitkerja}</div>
             </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Keperluan</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.keperluan}</div>
-            </div>
           </div>
 
           <p>
-            Demikian permohonan ini, atas perhatian dan Kerja sama yang baik kami ucapkan terima kasih.
+            Demikian permohonan ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.
           </p>
         </div>
 
         {/* Signature */}
         <div className="mt-8 ml-auto w-48 text-left text-xs">
+          <div className="mb-1">
+            {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
+          </div>
           <div>
             Kepala,
           </div>

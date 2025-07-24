@@ -1,5 +1,6 @@
 import React from 'react';
 import { Template3Data } from '@/types/template';
+import { formatTanggalIndonesia } from '@/lib/utils';
 
 interface Template3Props {
   data: Template3Data;
@@ -31,19 +32,19 @@ export const Template3: React.FC<Template3Props> = ({ data }) => {
 
       <div className="mx-4">
         {/* Title */}
-        <div className="text-center font-bold text-xs mb-4">
-          <strong>SURAT KETERANGAN PENGALAMAN MENGAJAR</strong>
+        <div className="text-center font-bold text-xs mb-4 underline">
+          SURAT KETERANGAN PENGALAMAN MENGAJAR
         </div>
       
         {/* Nomor Surat */}
         <div className="text-center mb-5 text-xs">
-          NOMOR: B-{data.nosrt}/Kk.18.08/1/KP.07.6/{data.blnno}/{data.thnno}
+          Nomor : B-{data.nosrt}/Kk.18.08/1/Kp.07.6/{data.blnno}/{data.thnno}
         </div>
 
         {/* Content */}
         <div className="text-justify mb-4 text-xs">
           <div className="mb-4">
-            Yang bertanda tangan dibawah ini :
+            Yang bertanda tangan di bawah ini :
           </div>
 
           {/* Data Pejabat */}
@@ -59,7 +60,7 @@ export const Template3: React.FC<Template3Props> = ({ data }) => {
               <div className="flex-grow">{data.nippejabat}</div>
             </div>
             <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Pangkat/Gol/Ruang</div>
+              <div className="w-32 flex-shrink-0">Pangkat/Gol.Ruang</div>
               <div className="w-5 flex-shrink-0">:</div>
               <div className="flex-grow">{data.pangkatgolpejabat}</div>
             </div>
@@ -71,7 +72,7 @@ export const Template3: React.FC<Template3Props> = ({ data }) => {
           </div>
 
           <div className="font-bold mb-3">
-            Memberi keterangan kepada yang bersangkutan :
+            Memberikan keterangan bahwa :
           </div>
 
           {/* Data Pegawai */}
@@ -87,7 +88,7 @@ export const Template3: React.FC<Template3Props> = ({ data }) => {
               <div className="flex-grow">{data.nippegawai}</div>
             </div>
             <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Pangkat/Gol/Ruang</div>
+              <div className="w-32 flex-shrink-0">Pangkat/Gol.Ruang</div>
               <div className="w-5 flex-shrink-0">:</div>
               <div className="flex-grow">{data.pangkatgolpegawai}</div>
             </div>
@@ -104,18 +105,18 @@ export const Template3: React.FC<Template3Props> = ({ data }) => {
           </div>
 
           <p className="mb-4">
-            Dengan ini memberikan keterangan yang sebenar-benarnya bahwa yang bersangkutan di atas benar-benar guru {data.sekolah} Lingkup Kantor Kementerian Agama {data.kabkota2} Provinsi Nusa Tenggara Barat sejak <strong>{data.tglmulai}</strong> sampai dengan sekarang.
+            Bahwa yang bersangkutan telah mengajar di {data.sekolah} lingkup Kantor Kementerian Agama {data.kabkota2} Provinsi Nusa Tenggara Barat sejak <strong>{formatTanggalIndonesia(data.tglmulai)}</strong> sampai dengan sekarang.
           </p>
 
           <p>
-            Demikian surat keterangan ini di buat untuk dapat dipergunakan sebagaimana mestinya.
+            Demikian surat keterangan ini dibuat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya.
           </p>
         </div>
 
         {/* Signature */}
         <div className="mt-8 ml-auto w-48 text-left text-xs">
           <div className="mb-1">
-            {data.ibukota}, {data.tanggal}
+            {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>
           <div>
             Kepala,

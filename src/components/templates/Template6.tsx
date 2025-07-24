@@ -1,5 +1,6 @@
 import React from 'react';
 import { Template6Data } from '@/types/template';
+import { formatTanggalIndonesia } from '@/lib/utils';
 
 interface Template6Props {
   data: Template6Data;
@@ -31,21 +32,19 @@ export const Template6: React.FC<Template6Props> = ({ data }) => {
 
       <div className="mx-4">
         {/* Title */}
-        <div className="text-center font-bold text-xs mb-4">
-          <strong>SURAT PERNYATAAN</strong><br />
-          <strong>TIDAK SEDANG MENJALANI PROSES PIDANA</strong><br />
-          <strong>ATAU PERNAH DIPIDANA PENJARA</strong>
+        <div className="text-center font-bold text-xs mb-4 underline">
+          SURAT PERNYATAAN TIDAK SEDANG MENJALANI PROSES PIDANA ATAU PERNAH DIPIDANA
         </div>
       
         {/* Nomor Surat */}
         <div className="text-center mb-5 text-xs">
-          Nomor: B-{data.nosrt}/Kk.18.08/1/Kh.04.1/{data.blnno}/{data.thnno}
+          Nomor : B-{data.nosrt}/Kk.18.08/1/Kp.07.6/{data.blnno}/{data.thnno}
         </div>
 
         {/* Content */}
         <div className="text-justify mb-4 text-xs">
           <div className="mb-4">
-            Yang bertanda tangan dibawah ini :
+            Yang bertanda tangan di bawah ini :
           </div>
 
           {/* Data Pejabat */}
@@ -61,7 +60,7 @@ export const Template6: React.FC<Template6Props> = ({ data }) => {
               <div className="flex-grow">{data.nippejabat}</div>
             </div>
             <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Pangkat / golongan</div>
+              <div className="w-32 flex-shrink-0">Pangkat/Gol.Ruang</div>
               <div className="w-5 flex-shrink-0">:</div>
               <div className="flex-grow">{data.pangkatgolpejabat}</div>
             </div>
@@ -71,7 +70,7 @@ export const Template6: React.FC<Template6Props> = ({ data }) => {
               <div className="flex-grow">{data.jabatanpejabat}</div>
             </div>
             <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Satuan Kerja</div>
+              <div className="w-32 flex-shrink-0">Unit Kerja</div>
               <div className="w-5 flex-shrink-0">:</div>
               <div className="flex-grow">{data.ukerpejabat}</div>
             </div>
@@ -94,7 +93,7 @@ export const Template6: React.FC<Template6Props> = ({ data }) => {
               <div className="flex-grow">{data.nippegawai}</div>
             </div>
             <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Pangkat / golongan</div>
+              <div className="w-32 flex-shrink-0">Pangkat/Gol.Ruang</div>
               <div className="w-5 flex-shrink-0">:</div>
               <div className="flex-grow">{data.pangkatgolpegawai}</div>
             </div>
@@ -104,25 +103,25 @@ export const Template6: React.FC<Template6Props> = ({ data }) => {
               <div className="flex-grow">{data.jabatanpegawai}</div>
             </div>
             <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Unit/Satuan Kerja</div>
+              <div className="w-32 flex-shrink-0">Unit Kerja</div>
               <div className="w-5 flex-shrink-0">:</div>
               <div className="flex-grow">{data.ukerpegawai}</div>
             </div>
           </div>
 
           <p className="mb-4">
-            Memang benar yang bersangkutan tidak sedang menjalani proses pidana atau pernah dipidana penjara berdasarkan putusan pengadilan yang telah berkekuatan tetap karena melakukan tindak pidana umum maupun kejahatan jabatan atau tindak pidana kejahatan yang ada hubungannya dengan jabatan.
+            Memang benar bahwa yang bersangkutan tidak sedang menjalani proses pidana atau pernah dipidana.
           </p>
 
           <p>
-            Demikian surat Pernyataan ini dibuat dengan sesungguhnya untuk dipergunakan sebagaimana mestinya.
+            Demikian pernyataan ini dibuat dengan sesungguhnya untuk dipergunakan sebagaimana mestinya.
           </p>
         </div>
 
         {/* Signature */}
         <div className="mt-8 ml-auto w-48 text-left text-xs">
           <div className="mb-1">
-            {data.ibukota}, {data.tanggal}
+            {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>
           <div>
             Kepala,
