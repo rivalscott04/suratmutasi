@@ -8,20 +8,22 @@ interface Template8Props {
 
 export const Template8: React.FC<Template8Props> = ({ data }) => {
   return (
-    <div className="template-preview p-8 bg-white text-black">
+    <div className="template-preview p-8 bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt' }}>
       {/* Header */}
-      <div className="text-center mb-6 border-b-2 border-black pb-3 relative">
+      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 12 }}>
         <img 
           src="/logo-kemenag.png" 
           alt="Logo Kementerian Agama" 
-          className="w-20 h-20 absolute top-1 left-2"
+          style={{ width: 90, height: 90, objectFit: 'contain', flexShrink: 0 }}
         />
-        <div className="overflow-hidden">
-          <div className="font-bold text-sm leading-tight mb-1">
+        <div className="header-content" style={{ flex: 1, textAlign: 'center' }}>
+          <div className="header-text" style={{ fontWeight: 'bold', fontSize: '16pt', letterSpacing: 0, whiteSpace: 'nowrap', lineHeight: 1.2 }}>
             KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
-            <span className="text-xs">KANTOR KEMENTERIAN AGAMA {data.kabkota}</span>
+            <span className="sub-header" style={{ fontWeight: 'bold', fontSize: '14pt', display: 'block', marginTop: 2, whiteSpace: 'nowrap' }}>
+              KANTOR KEMENTERIAN AGAMA {data.kabkota}
+            </span>
           </div>
-          <div className="header-info">
+          <div className="header-info" style={{ fontSize: '11pt', marginTop: 4 }}>
             {data.jln}<br />
             Telp. {data.telfon} Fax. {data.fax}<br />
             Email: {data.email}<br />

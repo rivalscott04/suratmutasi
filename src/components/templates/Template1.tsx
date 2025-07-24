@@ -9,19 +9,19 @@ interface Template1Props {
 
 export const Template1: React.FC<Template1Props> = ({ data }) => {
   return (
-    <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif' }}>
+    <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt' }}>
       <section className="sheet">
         {/* Header */}
-        <div className="header" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <img src="/logo-kemenag.png" alt="Logo Kementerian Agama" className="logo" />
+        <div className="header" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 12 }}>
+          <img src="/logo-kemenag.png" alt="Logo Kementerian Agama" style={{ width: 90, height: 90, objectFit: 'contain', flexShrink: 0 }} />
           <div className="header-content" style={{ flex: 1, textAlign: 'center' }}>
-            <div className="header-text" style={{ fontWeight: 'bold', fontSize: '18.7px', letterSpacing: 0 }}>
+            <div className="header-text" style={{ fontWeight: 'bold', fontSize: '16pt', letterSpacing: 0, whiteSpace: 'nowrap', lineHeight: 1.2 }}>
               KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
-              <span className="sub-header" style={{ fontWeight: 'bold', fontSize: '16px', display: 'block', marginTop: 2 }}>
+              <span className="sub-header" style={{ fontWeight: 'bold', fontSize: '14pt', display: 'block', marginTop: 2, whiteSpace: 'nowrap' }}>
                 KANTOR KEMENTERIAN AGAMA {data.kabkota.toUpperCase()}
               </span>
             </div>
-            <div className="header-info" style={{ fontSize: '12px', marginTop: 4 }}>
+            <div className="header-info" style={{ fontSize: '11pt', marginTop: 4 }}>
               {data.jln}<br />
               Telp. {data.telfon} Fax. {data.fax}<br />
               Email: {data.email}<br />
