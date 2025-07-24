@@ -60,7 +60,7 @@ const Login = () => {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img
-              src="/src/assets/logo-kemenag.png"
+              src={import.meta.env.BASE_URL + 'logo-kemenag.png'}
               alt="Logo Kementerian Agama"
               className="w-16 h-16 object-contain"
             />
