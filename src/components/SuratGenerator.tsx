@@ -454,6 +454,7 @@ const SuratGenerator: React.FC = () => {
                     <Label htmlFor="tanggal">Tanggal</Label>
                     <Input
                       id="tanggal"
+                      type="date"
                       value={suratData.tanggal}
                       onChange={(e) => handleInputChange('tanggal', e.target.value)}
                       placeholder="dd-mm-yyyy"
