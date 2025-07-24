@@ -367,30 +367,26 @@ const Settings = () => {
     }
     setFieldError(null);
     if (!token) return;
+    // Selalu ambil officeId dari user.office_id
+    const officeIdToUse = user?.office_id || officeId;
+    if (!officeIdToUse) {
+      toast({
+        title: 'Kantor belum terhubung',
+        description: 'Akun Anda belum terhubung ke kantor manapun. Hubungi admin.',
+        variant: 'destructive',
+      });
+      return;
+    }
     try {
-      let res;
-      if (officeId) {
-        res = await apiPut(`/api/offices/${officeId}`, {
-          name: officeSettings.namakantor,
-          kabkota: officeSettings.kabkota,
-          address: officeSettings.alamat,
-          phone: officeSettings.telepon,
-          fax: officeSettings.fax,
-          email: officeSettings.email,
-          website: officeSettings.website
-        }, token);
-      } else {
-        res = await apiPost('/api/offices', {
-          name: officeSettings.namakantor,
-          kabkota: officeSettings.kabkota,
-          address: officeSettings.alamat,
-          phone: officeSettings.telepon,
-          fax: officeSettings.fax,
-          email: officeSettings.email,
-          website: officeSettings.website
-        }, token);
-        setOfficeId(res.office?.id);
-      }
+      await apiPut(`/api/offices/${officeIdToUse}`, {
+        name: officeSettings.namakantor,
+        kabkota: officeSettings.kabkota,
+        address: officeSettings.alamat,
+        phone: officeSettings.telepon,
+        fax: officeSettings.fax,
+        email: officeSettings.email,
+        website: officeSettings.website
+      }, token);
       setOfficeModalSuccess(true);
       setOfficeModalMessage('Pengaturan kantor berhasil disimpan! Data kantor akan digunakan otomatis di header surat.');
       setShowOfficeModal(true);
