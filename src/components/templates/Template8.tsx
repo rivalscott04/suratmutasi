@@ -10,24 +10,27 @@ export const Template8: React.FC<Template8Props> = ({ data }) => {
   return (
     <div className="template-preview bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt', margin: 0, padding: 0 }}>
       {/* Header */}
-      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 12 }}>
-        <img 
-          src="/logo-kemenag.png" 
-          alt="Logo Kementerian Agama" 
-          style={{ width: 90, height: 90, objectFit: 'contain', flexShrink: 0 }}
+      <div style={{ position: 'relative', minHeight: 100, marginBottom: 12 }}>
+        <img
+          src="/logo-kemenag.png"
+          alt="Logo Kementerian Agama"
+          style={{ position: 'absolute', left: 0, top: 0, width: 90, height: 90, objectFit: 'contain' }}
         />
-        <div className="header-content" style={{ flex: 1, textAlign: 'left', marginLeft: 24 }}>
-          <div className="header-text" style={{ fontWeight: 'bold', fontSize: '16pt', letterSpacing: 0, lineHeight: 1.2 }}>
-            KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
-            <span className="sub-header" style={{ fontWeight: 'bold', fontSize: '14pt', display: 'block', marginTop: 2 }}>
+        <div style={{ width: '100%', textAlign: 'center', paddingLeft: 90, boxSizing: 'border-box' }}>
+          <div style={{ display: 'inline-block', minWidth: 400, maxWidth: 700, textAlign: 'center' }}>
+            <div style={{ fontWeight: 'bold', fontSize: '14pt', lineHeight: 1.2 }}>
+              KEMENTERIAN AGAMA REPUBLIK INDONESIA
+            </div>
+            <div style={{ fontWeight: 'bold', fontSize: '11.5pt', marginTop: 2 }}>
               KANTOR KEMENTERIAN AGAMA {data.kabkota}
-            </span>
-          </div>
-          <div className="header-info" style={{ fontSize: '11pt', marginTop: 4 }}>
-            {data.jln}<br />
-            Telp. {data.telfon} Fax. {data.fax}<br />
-            Email: {data.email}<br />
-            Website: {data.website}
+            </div>
+            <div style={{ fontWeight: 'normal', fontSize: '9pt', marginTop: 4 }}>
+              {data.jln}<br />
+              Telp. {data.telfon} Fax. {data.fax}<br />
+              Email: {data.email}<br />
+              Website: {data.website}
+            </div>
+            <div style={{ borderBottom: '3px solid #000', width: '100%', margin: '8px auto 0 auto', display: 'block' }}></div>
           </div>
         </div>
       </div>
