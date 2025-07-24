@@ -82,46 +82,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
-      <Dialog open={showOfficeModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Pilih Kantor/Kabupaten/Kota</DialogTitle>
-            <DialogDescription>
-              Silakan pilih kantor/kabupaten/kota yang sesuai. Anda hanya bisa memilih satu kali dan tidak bisa diubah lagi.
-            </DialogDescription>
-          </DialogHeader>
-          <Select value={selectedOffice} onValueChange={setSelectedOffice}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Pilih kantor/kabupaten/kota..." />
-            </SelectTrigger>
-            <SelectContent>
-              {offices.map((office: any) => (
-                <SelectItem key={office.id} value={office.id}>
-                  {office.kabkota} - {office.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button onClick={handleSaveOffice} disabled={!selectedOffice || saving}>
-              {saving ? 'Menyimpan...' : 'Simpan'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {notif && (
-        <Dialog open={!!notif} onOpenChange={() => setNotif(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{notif.success ? 'Berhasil' : 'Gagal'}</DialogTitle>
-              <DialogDescription>{notif.message}</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button onClick={() => setNotif(null)}>Tutup</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };
