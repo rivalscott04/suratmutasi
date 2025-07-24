@@ -123,7 +123,7 @@ const MultiTemplateGenerator: React.FC = () => {
     jabatanpegawai: '',
     
     // Signature data
-    ibukota: 'Gerung',
+    ibukota: '',
     tanggal: ''
   });
 

@@ -147,7 +147,7 @@ const TemplateForm: React.FC = () => {
     pangkatgolpegawai: '',
     jabatanpegawai: '',
     ibukota: '', // default kosong
-    tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    tanggal: ''
   });
 
   // Inisialisasi state tahun di semua templateXData
