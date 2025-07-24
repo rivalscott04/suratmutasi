@@ -1302,18 +1302,10 @@ const TemplateForm: React.FC = () => {
                 <Button
                   className="bg-teal-700 hover:bg-teal-800 text-white flex items-center gap-2"
                   onClick={() => {
-                    const w = window.open();
-                    if (w) {
-                      const headLinks = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'));
-                      w.document.write('<html><head>');
-                      headLinks.forEach(link => {
-                        w.document.write(link.outerHTML);
-                      });
-                      w.document.write('</head><body style="background:#f8fafc;">');
-                      const previewHTML = document.querySelector('.preview-container')?.outerHTML || '';
-                      w.document.write(previewHTML);
-                      w.document.write('</body></html>');
-                      w.document.close();
+                    if (suratId) {
+                      window.open(`/letters/${suratId}/preview`, '_blank');
+                    } else {
+                      alert('Surat belum disimpan. Simpan surat terlebih dahulu untuk membuka preview di tab baru.');
                     }
                   }}
                   type="button"
