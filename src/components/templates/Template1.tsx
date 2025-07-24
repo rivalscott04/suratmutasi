@@ -2,7 +2,6 @@
 import React from 'react';
 import { Template1Data } from '@/types/template';
 import { formatTanggalIndonesia } from '@/lib/utils';
-import logoKemenag from '@/assets/logo-kemenag.png';
 
 interface Template1Props {
   data: Template1Data;
@@ -14,7 +13,7 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
       <section className="sheet">
         {/* Header */}
         <div className="header" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <img src={logoKemenag} alt="Logo Kementerian Agama" className="logo" />
+          <img src="/logo-kemenag.png" alt="Logo Kementerian Agama" className="logo" />
           <div className="header-content" style={{ flex: 1, textAlign: 'center' }}>
             <div className="header-text" style={{ fontWeight: 'bold', fontSize: '18.7px', letterSpacing: 0 }}>
               KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />

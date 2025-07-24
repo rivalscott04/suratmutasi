@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import logoKemenag from '@/assets/logo-kemenag.png';
 
 interface SuratData {
   // Header Info
@@ -87,7 +86,7 @@ const SuratGenerator: React.FC = () => {
         <section className="sheet">
           {/* Header - EXACT COPY FROM HTML */}
           <div className="header">
-            <img src={logoKemenag} alt="Logo Kementerian Agama" className="logo" />
+            <img src="/logo-kemenag.png" alt="Logo Kementerian Agama" className="logo" />
             <div className="header-content">
               <div className="header-text">
                 KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
