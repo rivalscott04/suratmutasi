@@ -55,6 +55,10 @@ const Letters: React.FC = () => {
   const [expandedPegawai, setExpandedPegawai] = useState<string | null>(null);
   const [expandedSurat, setExpandedSurat] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const totalPages = Math.ceil(sortedLetters.length / pageSize);
+  const pagedLetters = sortedLetters.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Group surat by pegawai, SPTJM (template 9) ke 'Tanpa Pegawai' saja
   const grouped: Record<string, any[]> = letters.reduce((acc, surat) => {
@@ -207,13 +211,25 @@ const Letters: React.FC = () => {
           </Card>
         </div>
         <h1 className="text-2xl font-bold mb-4">Riwayat Surat</h1>
-        <input
-          type="text"
-          className="border rounded px-3 py-2 mb-4 w-full max-w-md"
-          placeholder="Cari nama pegawai, nomor surat, atau penandatangan..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <label htmlFor="pageSize" className="mr-2 font-medium">Tampilkan</label>
+            <select
+              id="pageSize"
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+              className="border rounded px-2 py-1"
+            >
+              {[10, 20, 50, 100].map(size => (
+                <option key={size} value={size}>{size}</option>
+              ))}
+            </select>
+            <span className="ml-2">data per halaman</span>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Menampilkan {sortedLetters.length === 0 ? 0 : ((currentPage - 1) * pageSize + 1)}–{Math.min(currentPage * pageSize, sortedLetters.length)} dari {sortedLetters.length} surat
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -228,7 +244,7 @@ const Letters: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {letters
+              {pagedLetters
                 .filter(surat => {
                   if (!searchTerm) return true;
                   return (
@@ -240,7 +256,7 @@ const Letters: React.FC = () => {
                 .map((surat, idx) => (
                   <React.Fragment key={surat.id}>
                     <tr className="border-b">
-                      <td className="px-4 py-2">{idx + 1}</td>
+                      <td className="px-4 py-2">{(currentPage - 1) * pageSize + idx + 1}</td>
                       <td className="px-4 py-2">{TEMPLATE_SHORT[surat.template_id] || '-'}</td>
                       <td className="px-4 py-2">{surat.letter_number}</td>
                       <td className="px-4 py-2">{surat.namapegawai || surat.recipient?.nama || '-'}</td>
@@ -271,6 +287,23 @@ const Letters: React.FC = () => {
             </tbody>
           </table>
         </div>
+        {/* Paging navigation */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <Button size="sm" variant="outline" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <Button
+                key={page}
+                size="sm"
+                variant={page === currentPage ? 'default' : 'outline'}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+          </div>
+        )}
         {/* Modal Preview Surat tetap ada */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
           <DialogContent className="max-w-4xl w-full">
