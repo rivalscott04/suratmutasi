@@ -16,7 +16,7 @@ export const Template9: React.FC<Template9Props> = ({ data }) => {
           alt="Logo Kementerian Agama" 
           style={{ width: 90, height: 90, objectFit: 'contain', flexShrink: 0 }}
         />
-        <div className="header-content" style={{ flex: 1, textAlign: 'center' }}>
+        <div className="header-content" style={{ flex: 1, textAlign: 'left', marginLeft: 24 }}>
           <div className="header-text" style={{ fontWeight: 'bold', fontSize: '16pt', letterSpacing: 0, lineHeight: 1.2 }}>
             KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
             <span className="sub-header" style={{ fontWeight: 'bold', fontSize: '14pt', display: 'block', marginTop: 2 }}>
