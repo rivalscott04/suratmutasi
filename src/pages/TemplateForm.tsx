@@ -240,6 +240,12 @@ const TemplateForm: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [savedLetter, setSavedLetter] = useState<any>(null);
+
+  useEffect(() => {
+    if (!suratId || !token) return;
+    apiGet(`/api/letters/${suratId}`, token).then(res => setSavedLetter(res.letter)).catch(() => setSavedLetter(null));
+  }, [suratId, token]);
 
   React.useEffect(() => {
     if (!token) return;
@@ -1343,34 +1349,50 @@ const TemplateForm: React.FC = () => {
         </div>
       </div>
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="max-w-md w-full text-center">
-          <div className="flex flex-col items-center justify-center py-6">
-            <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
-            <div className="text-2xl font-bold mb-2">Surat Berhasil Disimpan!</div>
-            <div className="text-gray-600 mb-6">Surat siap digenerate PDF atau dicetak.</div>
-            <div className="flex flex-col gap-2 w-full">
-              <button
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-lg font-semibold"
-                onClick={() => navigate('/letters')}
-              >
-                Lihat Data Surat
-              </button>
-              <button
-                className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-lg font-semibold"
-                onClick={() => navigate('/generator')}
-              >
-                Template Surat
-              </button>
-              <button
-                className="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 text-lg font-semibold"
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  navigate('/letters');
-                }}
-              >
-                Keluar
-              </button>
-            </div>
+        <DialogContent className="max-w-4xl w-full">
+          <DialogTitle>Preview Surat</DialogTitle>
+          <div className="mb-4">Surat berhasil disimpan. Berikut preview surat dari database:</div>
+          <div className="bg-white p-4 rounded shadow max-h-[70vh] overflow-auto">
+            <SuratPreviewContainer>
+              {savedLetter ? (
+                // Render preview by template id, pakai logic fallback nomor surat seperti di Letters.tsx
+                (() => {
+                  let data = savedLetter.form_data;
+                  if (typeof data === 'string') {
+                    try { data = JSON.parse(data); } catch { data = {}; }
+                  }
+                  if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
+                  const id = String(savedLetter.template_id);
+                  const nomorParts = (savedLetter.letter_number || '').split('/');
+                  const matchNoSurat = savedLetter.letter_number?.match(/^B-([^/]+)/);
+                  const fallback = {
+                    nosrt: data.nosrt || (matchNoSurat ? matchNoSurat[1] : ''),
+                    nosurat: data.nosurat || (matchNoSurat ? matchNoSurat[1] : ''),
+                    blnno: data.blnno || nomorParts[5] || '',
+                    blnnomor: data.blnnomor || nomorParts[5] || '',
+                    thnno: data.thnno || nomorParts[6] || '',
+                    tahunskrg: data.tahunskrg || nomorParts[6] || '',
+                  };
+                  const mergedData = { ...data, ...fallback };
+                  if (id === '1') return <Template1 data={mergedData} />;
+                  if (id === '2') return <Template2 data={mergedData} />;
+                  if (id === '3') return <Template3 data={mergedData} />;
+                  if (id === '4') return <Template4 data={mergedData} />;
+                  if (id === '5') return <Template5 data={mergedData} />;
+                  if (id === '6') return <Template6 data={mergedData} />;
+                  if (id === '7') return <Template7 data={mergedData} />;
+                  if (id === '8') return <Template8 data={mergedData} />;
+                  if (id === '9') return <Template9 data={mergedData} />;
+                  return <div className="text-error">Template tidak dikenali</div>;
+                })()
+              ) : (
+                <div className="text-center text-muted-foreground">Memuat data surat...</div>
+              )}
+            </SuratPreviewContainer>
+          </div>
+          <div className="flex gap-2 mt-4">
+            <Button onClick={() => setShowSuccessModal(false)}>Tutup</Button>
+            <Button onClick={() => window.open(`/letters/${suratId}/preview`, '_blank')} variant="outline">Open in New Tab</Button>
           </div>
         </DialogContent>
       </Dialog>
