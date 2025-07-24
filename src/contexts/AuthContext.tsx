@@ -12,18 +12,23 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  originalUser: User | null; // User asli sebelum impersonate
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
+  isImpersonating: boolean;
+  impersonateUser: (user: User) => void;
+  stopImpersonating: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await apiPost('/api/auth/login', { email, password });
       setToken(res.token);
       setUser(res.user);
+      setOriginalUser(res.user); // Set original user saat login
       localStorage.setItem('token', res.token);
     } finally {
       setLoading(false);
@@ -55,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setToken(null);
     setUser(null);
+    setOriginalUser(null);
     localStorage.removeItem('token');
   };
 
@@ -64,13 +71,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await apiGet('/api/auth/me', token);
       setUser(res.user);
+      // Jangan update originalUser saat refresh
     } finally {
       setLoading(false);
     }
   };
 
+  const impersonateUser = (userToImpersonate: User) => {
+    if (!originalUser) {
+      setOriginalUser(user); // Set original user jika belum ada
+    }
+    setUser(userToImpersonate);
+  };
+
+  const stopImpersonating = () => {
+    if (originalUser) {
+      setUser(originalUser);
+      setOriginalUser(null);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, refreshUser, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      originalUser,
+      token, 
+      loading, 
+      login, 
+      logout, 
+      refreshUser, 
+      isAuthenticated: !!user,
+      isImpersonating: !!originalUser && originalUser.id !== user?.id,
+      impersonateUser,
+      stopImpersonating
+    }}>
       {children}
     </AuthContext.Provider>
   );

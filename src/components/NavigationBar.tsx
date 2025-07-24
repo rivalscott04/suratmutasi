@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiGet } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,6 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -26,15 +34,31 @@ import {
   LogOut, 
   Menu, 
   X,
-  AlertTriangle
+  AlertTriangle,
+  UserCheck,
+  Users,
+  UserX,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'admin' | 'operator' | 'user';
+  office_id?: string;
+}
+
 const NavigationBar = () => {
-  const { user, logout } = useAuth();
+  const { user, originalUser, isImpersonating, impersonateUser, stopImpersonating, logout, token } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showImpersonateModal, setShowImpersonateModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const navigationItems = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -42,6 +66,32 @@ const NavigationBar = () => {
     { name: 'Riwayat Surat', href: '/letters', icon: FileText },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
+
+  // Fetch available users untuk impersonate
+  useEffect(() => {
+    if (showImpersonateModal && originalUser?.role === 'admin') {
+      fetchAvailableUsers();
+    }
+  }, [showImpersonateModal, originalUser?.role]);
+
+  const fetchAvailableUsers = async () => {
+    if (!token) return;
+    
+    setLoadingUsers(true);
+    try {
+      const response = await apiGet('/api/users', token);
+      // Filter out current user dan admin lain
+      const filteredUsers = response.users.filter((u: User) => 
+        u.id !== originalUser?.id && u.role !== 'admin'
+      );
+      setAvailableUsers(filteredUsers);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      setAvailableUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   // Deteksi active, support /letters dan /letters/:id
   const isActive = (path: string) => {
@@ -59,6 +109,26 @@ const NavigationBar = () => {
   const handleLogoutConfirm = () => {
     logout();
     setShowLogoutModal(false);
+  };
+
+  const handleImpersonateClick = () => {
+    setShowImpersonateModal(true);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleImpersonateConfirm = () => {
+    if (selectedUser) {
+      const userToImpersonate = availableUsers.find(u => u.id === selectedUser);
+      if (userToImpersonate) {
+        impersonateUser(userToImpersonate);
+        setShowImpersonateModal(false);
+        setSelectedUser('');
+      }
+    }
+  };
+
+  const handleStopImpersonating = () => {
+    stopImpersonating();
   };
 
   return (
@@ -84,6 +154,24 @@ const NavigationBar = () => {
                 </div>
               </Link>
             </div>
+
+            {/* Impersonate Indicator */}
+            {isImpersonating && (
+              <div className="hidden md:flex items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-1">
+                <UserCheck className="w-4 h-4 text-blue-600 mr-2" />
+                <span className="text-sm text-blue-700">
+                  Impersonating: {user?.full_name}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleStopImpersonating}
+                  className="ml-2 h-6 px-2 text-blue-600 hover:text-blue-700"
+                >
+                  <UserX className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
@@ -126,9 +214,34 @@ const NavigationBar = () => {
                       <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                       <p className="text-xs leading-none text-gray-500">Role: {user?.role}</p>
                       {user?.office_id && <p className="text-xs leading-none text-gray-500">Office ID: {user.office_id}</p>}
+                      {isImpersonating && (
+                        <p className="text-xs leading-none text-blue-600">
+                          Impersonating as {user?.full_name}
+                        </p>
+                      )}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {/* Stop Impersonating option */}
+                  {isImpersonating && (
+                    <>
+                      <DropdownMenuItem onClick={handleStopImpersonating} className="text-blue-600">
+                        <UserX className="mr-2 h-4 w-4" />
+                        <span>Stop Impersonating</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  {/* Impersonate option hanya untuk admin */}
+                  {originalUser?.role === 'admin' && !isImpersonating && (
+                    <>
+                      <DropdownMenuItem onClick={handleImpersonateClick} className="text-blue-600">
+                        <Users className="mr-2 h-4 w-4" />
+                        <span>Impersonate User</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={handleLogoutClick} className="text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Logout</span>
@@ -175,6 +288,26 @@ const NavigationBar = () => {
                     </Link>
                   );
                 })}
+                {/* Stop Impersonating option untuk mobile */}
+                {isImpersonating && (
+                  <button
+                    onClick={handleStopImpersonating}
+                    className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full"
+                  >
+                    <UserX className="h-5 w-5" />
+                    <span>Stop Impersonating</span>
+                  </button>
+                )}
+                {/* Impersonate option untuk mobile */}
+                {originalUser?.role === 'admin' && !isImpersonating && (
+                  <button
+                    onClick={handleImpersonateClick}
+                    className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full"
+                  >
+                    <Users className="h-5 w-5" />
+                    <span>Impersonate User</span>
+                  </button>
+                )}
                 <button
                   onClick={handleLogoutClick}
                   className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 w-full"
@@ -212,6 +345,70 @@ const NavigationBar = () => {
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               Logout
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Impersonate User Modal */}
+      <Dialog open={showImpersonateModal} onOpenChange={setShowImpersonateModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="w-5 h-5 text-blue-500" />
+              Impersonate User
+            </DialogTitle>
+            <DialogDescription>
+              Pilih user yang ingin Anda impersonate. Anda akan melihat sistem dari perspektif user tersebut.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Pilih User:</label>
+              {loadingUsers ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <span className="text-sm text-gray-500">Loading users...</span>
+                </div>
+              ) : (
+                <Select value={selectedUser} onValueChange={setSelectedUser}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Pilih user untuk impersonate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers.length === 0 ? (
+                      <div className="px-2 py-1 text-sm text-gray-500">
+                        Tidak ada user yang tersedia
+                      </div>
+                    ) : (
+                      availableUsers.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{user.full_name}</span>
+                            <span className="text-xs text-gray-500">{user.email}</span>
+                            <span className="text-xs text-gray-500">{user.role} - {user.office_id || 'No Office'}</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button 
+              onClick={() => setShowImpersonateModal(false)}
+              variant="outline"
+            >
+              Batal
+            </Button>
+            <Button 
+              onClick={handleImpersonateConfirm}
+              disabled={!selectedUser || loadingUsers}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Impersonate
             </Button>
           </div>
         </DialogContent>
