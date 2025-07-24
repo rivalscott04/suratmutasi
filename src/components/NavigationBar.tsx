@@ -38,7 +38,8 @@ import {
   UserCheck,
   Users,
   UserX,
-  Loader2
+  Loader2,
+  UserCog
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -60,12 +61,27 @@ const NavigationBar = () => {
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
-  const navigationItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Template Generator', href: '/generator', icon: FileText },
-    { name: 'Riwayat Surat', href: '/letters', icon: FileText },
-    { name: 'Settings', href: '/settings', icon: Settings },
-  ];
+  // Navigation items berdasarkan role
+  const getNavigationItems = () => {
+    const baseItems = [
+      { name: 'Dashboard', href: '/dashboard', icon: Home },
+      { name: 'Template Generator', href: '/generator', icon: FileText },
+      { name: 'Riwayat Surat', href: '/letters', icon: FileText },
+    ];
+
+    // Tambahkan Management User untuk admin
+    // Gunakan originalUser?.role jika sedang impersonate, atau user?.role jika tidak
+    const isAdmin = isImpersonating ? originalUser?.role === 'admin' : user?.role === 'admin';
+    if (isAdmin) {
+      baseItems.push({ name: 'Management User', href: '/users', icon: UserCog });
+    }
+
+    baseItems.push({ name: 'Settings', href: '/settings', icon: Settings });
+
+    return baseItems;
+  };
+
+  const navigationItems = getNavigationItems();
 
   // Fetch available users untuk impersonate
   useEffect(() => {
