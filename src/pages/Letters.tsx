@@ -7,7 +7,7 @@ import { FileText, Printer, ExternalLink, Eye, ChevronRight } from 'lucide-react
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Template1 } from '@/components/templates/Template1';
 import { Template2 } from '@/components/templates/Template2';
 import { Template3 } from '@/components/templates/Template3';
@@ -274,6 +274,7 @@ const Letters: React.FC = () => {
         {/* Modal Preview Surat tetap ada */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
           <DialogContent className="max-w-4xl w-full">
+            <DialogTitle>Preview Surat</DialogTitle>
             {selectedLetterForPreview && (
               <div>
                 <div className="flex justify-between items-start mb-4">
