@@ -123,11 +123,12 @@ const Letters: React.FC = () => {
     }
     if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
     const id = String(letter.template_id);
-    // Fallback nomor surat universal
+    // Fallback nomor surat universal (pakai regex agar tidak kosong setelah B-)
     const nomorParts = (letter.letter_number || '').split('/');
+    const matchNoSurat = letter.letter_number?.match(/^B-([^/]+)/);
     const fallback = {
-      nosrt: data.nosrt || nomorParts[0]?.replace('B-', '') || '',
-      nosurat: data.nosurat || nomorParts[0]?.replace('B-', '') || '',
+      nosrt: data.nosrt || (matchNoSurat ? matchNoSurat[1] : ''),
+      nosurat: data.nosurat || (matchNoSurat ? matchNoSurat[1] : ''),
       blnno: data.blnno || nomorParts[5] || '',
       blnnomor: data.blnnomor || nomorParts[5] || '',
       thnno: data.thnno || nomorParts[6] || '',

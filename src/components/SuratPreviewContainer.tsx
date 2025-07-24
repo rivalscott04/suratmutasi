@@ -8,7 +8,7 @@ const SuratPreviewContainer: React.FC<{ children: React.ReactNode }> = ({ childr
     {/* Print style for container and img/logo */}
     <style>{`
       @media print {
-        body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+        body { background: #fff !important; margin: 0 !important; padding: 0 !important; font-size: 12pt !important; font-family: Arial, sans-serif !important; }
         .preview-container, .template-preview, .letter-body, .sheet {
           max-width: 100% !important;
           width: 100% !important;
@@ -16,6 +16,8 @@ const SuratPreviewContainer: React.FC<{ children: React.ReactNode }> = ({ childr
           padding: 0 !important;
           border-radius: 0 !important;
           box-shadow: none !important;
+          font-size: 12pt !important;
+          font-family: Arial, sans-serif !important;
         }
         .preview-container img { max-width: 120px !important; height: auto !important; display: block !important; margin: 0 auto 16px auto !important; }
       }
