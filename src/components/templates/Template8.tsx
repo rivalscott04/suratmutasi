@@ -110,7 +110,7 @@ export const Template8: React.FC<Template8Props> = ({ data }) => {
           </div>
 
           <p className="mb-4">
-            Dengan ini kami tidak keberatan / menyetujui menerima yang bersangkutan untuk pindah tugas dari {data.tempattugas} menjadi {data.jabatanbaru} pada {data.tempattugasbaru} lingkup Kementerian Agama {data.kabkota} Provinsi Nusa Tenggara Barat dengan ketentuan bahwa Pegawai Negeri Sipil yang bersangkutan tetap melaksanakan tugas sehari-hari di tempat semula sebelum ada keputusan pengankatan pada Instansi yang baru.
+            Dengan ini kami tidak keberatan / menyetujui menerima yang bersangkutan untuk pindah tugas dari {data.tempattugas} menjadi {data.jabatanbaru} pada {data.tempattugasbaru} lingkup Kementerian Agama {formatKabKota(data.kabkota)} Provinsi Nusa Tenggara Barat dengan ketentuan bahwa Pegawai Negeri Sipil yang bersangkutan tetap melaksanakan tugas sehari-hari di tempat semula sebelum ada keputusan pengankatan pada Instansi yang baru.
           </p>
 
           <p>
