@@ -37,17 +37,17 @@ export const Template8: React.FC<Template8Props> = ({ data }) => {
 
       <div className="mx-4">
         {/* Title */}
-        <div className="text-center font-bold text-xs mb-4">
+        <div className="text-center font-bold mb-4">
           <strong>SURAT PERSETUJUAN PENERIMAAN</strong>
         </div>
       
         {/* Nomor Surat */}
-        <div className="text-center mb-5 text-xs">
+        <div className="text-center mb-5">
           Nomor : B-{data.nosrt}/Kk.18.08/1/Kp.07.6/{data.blnno}/{data.thnno}
         </div>
 
         {/* Content */}
-        <div className="text-justify mb-4 text-xs">
+        <div className="text-justify mb-4">
           <div className="mb-4">
             Yang Bertanda Tangan di bawah ini :
           </div>
@@ -119,7 +119,7 @@ export const Template8: React.FC<Template8Props> = ({ data }) => {
         </div>
 
         {/* Signature */}
-        <div className="mt-8 ml-auto w-48 text-left text-xs">
+        <div className="mt-8 ml-auto w-48 text-left">
           <div className="mb-1">
             {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>

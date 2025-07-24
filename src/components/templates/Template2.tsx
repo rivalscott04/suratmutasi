@@ -18,9 +18,9 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
           className="w-20 h-20 absolute top-1 left-2"
         />
         <div className="overflow-hidden">
-          <div className="font-bold text-sm leading-tight mb-1">
+          <div className="font-bold leading-tight mb-1">
             KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
-            <span className="text-xs">KANTOR KEMENTERIAN AGAMA {data.kabkota}</span>
+            <span>KANTOR KEMENTERIAN AGAMA {data.kabkota}</span>
           </div>
           <div className="header-info">
             {data.jln}<br />
@@ -33,17 +33,17 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
 
       <div className="mx-4">
         {/* Title */}
-        <div className="text-center font-bold text-xs mb-4 underline">
+        <div className="text-center font-bold mb-4 underline">
           SURAT KETERANGAN ANALISIS JABATAN DAN ANALISIS BEBAN KERJA PNS
         </div>
       
         {/* Nomor Surat */}
-        <div className="text-center mb-5 text-xs">
+        <div className="text-center mb-5">
           Nomor : B-{data.nosurat}/Kk.18.08/1/Kp.07.6/{data.blnnomor}/{data.tahunskrg}
         </div>
 
         {/* Content */}
-        <div className="text-justify mb-4 text-xs">
+        <div className="text-justify mb-4">
           <div className="mb-4">
             Yang bertanda tangan di bawah ini :
           </div>
@@ -112,7 +112,7 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
           {/* Analysis Table */}
           <div className="mb-6">
             <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <table className="w-full text-xs">
+              <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="border border-gray-300 px-3 py-2 text-left font-medium">No.</th>
@@ -152,7 +152,7 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
         </div>
 
         {/* Signature */}
-        <div className="mt-8 ml-auto w-48 text-left text-xs">
+        <div className="mt-8 ml-auto w-48 text-left">
           <div className="mb-1">
             {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>
