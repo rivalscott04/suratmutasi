@@ -123,7 +123,7 @@ const Dashboard = () => {
             Dashboard
           </h1>
           <p className="text-gray-600">
-            Selamat datang, {user?.full_name} - {user?.role}
+            Selamat datang, {user?.full_name || user?.email || 'User'} - {user?.role || 'Operator'}
           </p>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">

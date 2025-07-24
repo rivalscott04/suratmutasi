@@ -1324,11 +1324,34 @@ const TemplateForm: React.FC = () => {
       </div>
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
         <DialogContent className="max-w-md w-full text-center">
-          <div className="text-2xl font-bold mb-2">Surat berhasil disimpan!</div>
-          <div className="mb-4">Surat siap digenerate PDF dan dapat dilihat di Riwayat Surat.</div>
-          <Button className="w-full bg-teal-700 hover:bg-teal-800 text-white" onClick={() => navigate('/letters')}>
-            Lihat Riwayat Surat
-          </Button>
+          <div className="flex flex-col items-center justify-center py-6">
+            <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
+            <div className="text-2xl font-bold mb-2">Surat Berhasil Disimpan!</div>
+            <div className="text-gray-600 mb-6">Surat siap digenerate PDF atau dicetak.</div>
+            <div className="flex flex-col gap-2 w-full">
+              <button
+                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-lg font-semibold"
+                onClick={() => navigate(`/letters/${suratId}`)}
+              >
+                Lihat Data Surat
+              </button>
+              <button
+                className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-lg font-semibold"
+                onClick={() => navigate('/generator')}
+              >
+                Template Surat
+              </button>
+              <button
+                className="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 text-lg font-semibold"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate('/letters');
+                }}
+              >
+                Keluar
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -92,7 +92,7 @@ const TemplateSelection = () => {
               />
               <Button 
                 onClick={() => handleCreateLetter(template.id)}
-                className="w-full"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
                 size="lg"
               >
                 <FileText className="w-4 h-4 mr-2" />

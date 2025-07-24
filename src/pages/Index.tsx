@@ -6,17 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -31,17 +39,10 @@ const Login = () => {
 
     try {
       await login(email, password);
-      toast({
-        title: "Login berhasil",
-        description: "Selamat datang kembali!",
-      });
-      navigate('/dashboard');
+      setShowSuccessModal(true);
     } catch (error) {
-      toast({
-        title: "Login gagal",
-        description: "Email atau password tidak valid.",
-        variant: "destructive",
-      });
+      setErrorMessage('Email atau password tidak valid.');
+      setShowErrorModal(true);
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +56,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-md shadow-xl relative z-10">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img
@@ -65,15 +66,15 @@ const Login = () => {
             />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Sistem Informasi Pegawai
+            Sistem Surat Mutasi
           </CardTitle>
           <CardDescription className="text-base text-gray-600">
-            Kementerian Agama Republik Indonesia
+            Kanwil Kemenag Provinsi NTB
           </CardDescription>
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 relative">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -83,7 +84,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@kemenag.go.id"
                 required
-                className="h-11"
+                className="h-11 relative z-20"
                 autoComplete="email"
                 autoFocus
               />
@@ -99,14 +100,14 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
                   required
-                  className="h-11 pr-10"
+                  className="h-11 pr-10 relative z-20"
                   autoComplete="current-password"
                   onKeyDown={handleKeyDown}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors z-30"
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -120,7 +121,7 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full h-11 text-base font-medium"
+              className="w-full h-11 text-base font-medium bg-green-600 hover:bg-green-700 text-white relative z-20"
               disabled={isLoading || !email || !password}
             >
               {isLoading ? (
@@ -133,19 +134,57 @@ const Login = () => {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Untuk akses demo, gunakan:
-            </p>
-            <div className="mt-2 text-xs text-gray-500 space-y-1">
-              <p>• ahmad.fauzi@kemenag.go.id (DAERAH)</p>
-              <p>• siti.aminah@kemenag.go.id (ADMINKANWIL)</p>
-              <p>• muhammad.yusuf@kemenag.go.id (ROLEPUSAT)</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
+
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Login Berhasil
+            </DialogTitle>
+            <DialogDescription>
+              Selamat datang kembali! Anda akan dialihkan ke dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button 
+              onClick={() => {
+                setShowSuccessModal(false);
+                navigate('/dashboard');
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Lanjutkan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Error Modal */}
+      <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-500" />
+              Login Gagal
+            </DialogTitle>
+            <DialogDescription>
+              {errorMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button 
+              onClick={() => setShowErrorModal(false)}
+              variant="outline"
+            >
+              Tutup
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

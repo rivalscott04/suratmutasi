@@ -94,6 +94,21 @@
   color: #000;
 }
 
+/* Prevent autofill overlay interference */
+[data-autofill-overlay] {
+  display: none !important;
+}
+
+.autofill-overlay {
+  display: none !important;
+}
+
+/* Ensure form elements have proper z-index */
+input, button, form {
+  position: relative;
+  z-index: 1;
+}
+
 .sheet {
   padding: 1.5cm 2cm;
   margin: 0 auto;
