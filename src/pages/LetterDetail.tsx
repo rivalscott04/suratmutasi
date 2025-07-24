@@ -18,6 +18,7 @@ import { Template9 } from '@/components/templates/Template9';
 import { apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import SuratPreviewContainer from '@/components/SuratPreviewContainer';
 
 const LetterDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -67,15 +68,15 @@ const LetterDetail: React.FC = () => {
       }
     }
     if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
-    if (String(letter.template_id) === '1') return <Template1 data={data} />;
-    if (String(letter.template_id) === '2') return <Template2 data={data} />;
-    if (String(letter.template_id) === '3') return <Template3 data={data} />;
-    if (String(letter.template_id) === '4') return <Template4 data={data} />;
-    if (String(letter.template_id) === '5') return <Template5 data={data} />;
-    if (String(letter.template_id) === '6') return <Template6 data={data} />;
-    if (String(letter.template_id) === '7') return <Template7 data={data} />;
-    if (String(letter.template_id) === '8') return <Template8 data={data} />;
-    if (String(letter.template_id) === '9') return <Template9 data={data} />;
+    if (String(letter.template_id) === '1') return <SuratPreviewContainer><Template1 data={data} /></SuratPreviewContainer>;
+    if (String(letter.template_id) === '2') return <SuratPreviewContainer><Template2 data={data} /></SuratPreviewContainer>;
+    if (String(letter.template_id) === '3') return <SuratPreviewContainer><Template3 data={data} /></SuratPreviewContainer>;
+    if (String(letter.template_id) === '4') return <SuratPreviewContainer><Template4 data={data} /></SuratPreviewContainer>;
+    if (String(letter.template_id) === '5') return <SuratPreviewContainer><Template5 data={data} /></SuratPreviewContainer>;
+    if (String(letter.template_id) === '6') return <SuratPreviewContainer><Template6 data={data} /></SuratPreviewContainer>;
+    if (String(letter.template_id) === '7') return <SuratPreviewContainer><Template7 data={data} /></SuratPreviewContainer>;
+    if (String(letter.template_id) === '8') return <SuratPreviewContainer><Template8 data={data} /></SuratPreviewContainer>;
+    if (String(letter.template_id) === '9') return <SuratPreviewContainer><Template9 data={data} /></SuratPreviewContainer>;
     return <div className="text-error">Template tidak dikenali</div>;
   };
 
