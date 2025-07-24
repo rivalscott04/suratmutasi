@@ -30,7 +30,7 @@ export const Template5: React.FC<Template5Props> = ({ data }) => {
               Email: {data.email}<br />
               Website: {data.website}
             </div>
-            <div style={{ borderBottom: '3px solid #000', width: 'auto', margin: '8px 2cm 0 2cm', display: 'block' }}></div>
+            <div style={{ borderBottom: '3px solid #000', width: '100%', margin: '8px auto 0 auto', display: 'block' }}></div>
           </div>
         </div>
       </div>
