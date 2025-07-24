@@ -8,8 +8,161 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Building, Users, Settings as SettingsIcon, Save, Upload, Download } from 'lucide-react';
+import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '../lib/api';
+
+const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+  return (
+    <span className={`inline-flex items-center gap-1 cursor-pointer group ${className || ''}`} onClick={handleCopy} title="Salin">
+      <span>{text}</span>
+      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Clipboard className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />}
+    </span>
+  );
+};
+
+const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    if (!token) return;
+    setLoading(true);
+    apiGet('/api/employees', token)
+      .then(res => setEmployees(res.pegawai || []))
+      .catch(err => setError(err.message || 'Gagal mengambil data pegawai'))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const filteredEmployees = employees.filter(emp =>
+    emp.nama?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    emp.nip?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    emp.unit_kerja?.toLowerCase().includes(debouncedSearch.toLowerCase())
+  );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredEmployees.length / pageSize);
+  const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Windowing logic for page numbers
+  const getPageNumbers = () => {
+    const maxPagesToShow = 5;
+    if (totalPages <= maxPagesToShow) {
+      return Array.from({ length: totalPages }, (_, idx) => idx + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, currentPage + 2);
+    if (currentPage <= 3) {
+      end = maxPagesToShow;
+      start = 1;
+    } else if (currentPage >= totalPages - 2) {
+      end = totalPages;
+      start = totalPages - maxPagesToShow + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+  };
+  const pageNumbers = getPageNumbers();
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset ke halaman 1 jika search berubah
+  }, [debouncedSearch]);
+
+  if (loading) return <div className="py-8 text-center">Loading data pegawai...</div>;
+  if (error) return <div className="py-8 text-center text-error">{error}</div>;
+
+  return (
+    <div className="mb-6">
+      <div className="mb-4 flex justify-end">
+        <Input
+          placeholder="Cari nama/NIP/unit kerja..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-64"
+        />
+      </div>
+      <div className="overflow-x-auto">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Nama & NIP</th>
+              <th>Pangkat/Golongan</th>
+              <th>Jabatan</th>
+              <th>Unit Kerja</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedEmployees.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center">Tidak ada data pegawai</td>
+              </tr>
+            ) : (
+              paginatedEmployees.map((emp, i) => (
+                <tr key={emp.id}>
+                  <td>{(currentPage - 1) * pageSize + i + 1}</td>
+                  <td>
+                    <div className="font-medium leading-tight">
+                      <CopyableText text={emp.nama} />
+                    </div>
+                    <div className="text-sm text-gray-700 font-semibold">
+                      <CopyableText text={emp.nip} />
+                    </div>
+                  </td>
+                  <td>{emp.golongan}</td>
+                  <td>{emp.jabatan}</td>
+                  <td>{emp.unit_kerja}</td>
+                  <td>{emp.aktif ? 'Aktif' : 'Nonaktif'}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-1 mt-4 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => handlePageChange(1)} disabled={currentPage === 1}>&laquo;</Button>
+          <Button size="sm" variant="outline" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>&lt;</Button>
+          {pageNumbers[0] > 1 && <span className="px-1">...</span>}
+          {pageNumbers.map(page => (
+            <Button
+              key={page}
+              size="sm"
+              variant={currentPage === page ? 'default' : 'outline'}
+              onClick={() => handlePageChange(page)}
+            >
+              {page}
+            </Button>
+          ))}
+          {pageNumbers[pageNumbers.length - 1] < totalPages && <span className="px-1">...</span>}
+          <Button size="sm" variant="outline" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>&gt;</Button>
+          <Button size="sm" variant="outline" onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages}>&raquo;</Button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Settings = () => {
   const { user, token } = useAuth();
@@ -317,25 +470,7 @@ const Settings = () => {
               <CardTitle>Manajemen Data Pegawai</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Manajemen Pegawai
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Kelola data pegawai dan pejabat untuk template surat
-                </p>
-                <div className="flex justify-center space-x-4">
-                  <Button onClick={handleImportData} variant="outline">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import Data
-                  </Button>
-                  <Button onClick={handleExportData} variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Data
-                  </Button>
-                </div>
-              </div>
+              <EmployeesTable token={token} />
             </CardContent>
           </Card>
         </TabsContent>
