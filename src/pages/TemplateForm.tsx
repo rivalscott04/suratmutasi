@@ -110,13 +110,14 @@ function formatTanggalIndonesia(tanggal: string) {
   if (/\d{4}-\d{2}-\d{2}/.test(tanggal)) {
     // yyyy-mm-dd
     [y, m, d] = tanggal.split('-');
+    return `${parseInt(d, 10)} ${bulanIndo[parseInt(m, 10)]} ${y}`;
   } else if (/\d{2}-\d{2}-\d{4}/.test(tanggal)) {
     // dd-mm-yyyy
     [d, m, y] = tanggal.split('-');
+    return `${parseInt(d, 10)} ${bulanIndo[parseInt(m, 10)]} ${y}`;
   } else {
     return tanggal;
   }
-  return `${parseInt(d)} ${bulanIndo[parseInt(m)]} ${y}`;
 }
 
 const TemplateForm: React.FC = () => {
