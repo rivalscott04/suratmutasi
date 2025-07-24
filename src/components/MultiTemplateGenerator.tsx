@@ -124,7 +124,7 @@ const MultiTemplateGenerator: React.FC = () => {
     
     // Signature data
     ibukota: 'Gerung',
-    tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    tanggal: new Date().toISOString().slice(0, 10)
   });
 
   // Template-specific data states
