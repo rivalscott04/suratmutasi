@@ -8,7 +8,7 @@ interface Template4Props {
 
 export const Template4: React.FC<Template4Props> = ({ data }) => {
   return (
-    <div className="template-preview p-8 bg-white text-black">
+    <div className="template-preview bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt', margin: 0, padding: 0 }}>
       {/* Header */}
       <div className="text-center mb-6 border-b-2 border-black pb-3 relative">
         <img 
