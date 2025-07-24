@@ -12,7 +12,7 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
     <div className="letter-body" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12pt', margin: 0, padding: 0 }}>
       <section className="sheet" style={{ margin: 0, padding: 0 }}>
         {/* Header */}
-        <div style={{ position: 'relative', minHeight: 100, marginBottom: 12 }}>
+        <div style={{ position: 'relative', minHeight: 100, marginBottom: 20 }}>
           <img
             src="/logo-kemenag.png"
             alt="Logo Kementerian Agama"
@@ -32,9 +32,9 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
                 Email: {data.email}<br />
                 Website: {data.website}
               </div>
-              <div style={{ borderBottom: '3px solid #000', width: '100%', margin: '8px auto 0 auto', display: 'block' }}></div>
             </div>
           </div>
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, borderBottom: '3px solid #000', width: '100%', marginTop: 8 }}></div>
         </div>
 
         <div className="content-wrapper">
