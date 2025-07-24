@@ -457,7 +457,6 @@ const SuratGenerator: React.FC = () => {
                       type="date"
                       value={suratData.tanggal}
                       onChange={(e) => handleInputChange('tanggal', e.target.value)}
-                      placeholder="dd-mm-yyyy"
                     />
                   </div>
                 </CardContent>

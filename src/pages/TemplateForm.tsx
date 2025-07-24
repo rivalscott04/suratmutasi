@@ -1283,7 +1283,6 @@ const TemplateForm: React.FC = () => {
                         id="tanggal"
                         value={baseData.tanggal || ''}
                         onChange={(e) => handleBaseDataChange('tanggal', e.target.value)}
-                        placeholder="dd-mm-yyyy"
                       />
                     </div>
                   </div>
