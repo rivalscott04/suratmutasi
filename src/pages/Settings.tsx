@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '../lib/api';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
 
 const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
   const [copied, setCopied] = useState(false);
@@ -274,6 +275,9 @@ const Settings = () => {
     website: React.useRef<HTMLInputElement>(null),
     fax: React.useRef<HTMLInputElement>(null),
   };
+  const [showOfficeModal, setShowOfficeModal] = useState(false);
+  const [officeModalSuccess, setOfficeModalSuccess] = useState<boolean | null>(null);
+  const [officeModalMessage, setOfficeModalMessage] = useState('');
 
   useEffect(() => {
     if (token) {
@@ -380,17 +384,13 @@ const Settings = () => {
         }, token);
         setOfficeId(res.office?.id);
       }
-      toast({
-        title: 'Pengaturan kantor berhasil disimpan!',
-        description: 'Data kantor akan digunakan otomatis di header surat.',
-        variant: 'default',
-      });
+      setOfficeModalSuccess(true);
+      setOfficeModalMessage('Pengaturan kantor berhasil disimpan! Data kantor akan digunakan otomatis di header surat.');
+      setShowOfficeModal(true);
     } catch (err: any) {
-      toast({
-        title: 'Gagal menyimpan pengaturan kantor',
-        description: err.message || 'Terjadi kesalahan saat menyimpan data kantor.',
-        variant: 'destructive',
-      });
+      setOfficeModalSuccess(false);
+      setOfficeModalMessage('Gagal menyimpan pengaturan kantor: ' + (err.message || 'Terjadi kesalahan saat menyimpan data kantor.'));
+      setShowOfficeModal(true);
     }
   };
 
@@ -588,6 +588,17 @@ const Settings = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      <AlertDialog open={showOfficeModal} onOpenChange={setShowOfficeModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{officeModalSuccess ? 'Berhasil' : 'Gagal'}</AlertDialogTitle>
+            <AlertDialogDescription>{officeModalMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowOfficeModal(false)}>Tutup</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Pegawai } from '@/types/template';
+import { apiGet } from '@/lib/api';
 
 export const usePegawaiSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,10 +18,7 @@ export const usePegawaiSearch = () => {
     setError(null);
     const timeoutId = setTimeout(() => {
       const token = localStorage.getItem('token');
-      fetch(`/api/employees/search?q=${encodeURIComponent(searchTerm)}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      })
-        .then(res => res.json())
+      apiGet(`/api/employees/search?q=${encodeURIComponent(searchTerm)}`, token)
         .then(data => setResults(data.pegawai || data.employees || []))
         .catch(() => setError('Gagal mencari pegawai'))
         .finally(() => setIsLoading(false));
