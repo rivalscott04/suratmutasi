@@ -123,15 +123,26 @@ const Letters: React.FC = () => {
     }
     if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
     const id = String(letter.template_id);
-    if (id === '1') return <Template1 data={data} />;
-    if (id === '2') return <Template2 data={data} />;
-    if (id === '3') return <Template3 data={data} />;
-    if (id === '4') return <Template4 data={data} />;
-    if (id === '5') return <Template5 data={data} />;
-    if (id === '6') return <Template6 data={data} />;
-    if (id === '7') return <Template7 data={data} />;
-    if (id === '8') return <Template8 data={data} />;
-    if (id === '9') return <Template9 data={data} />;
+    // Fallback nomor surat universal
+    const nomorParts = (letter.letter_number || '').split('/');
+    const fallback = {
+      nosrt: data.nosrt || nomorParts[0]?.replace('B-', '') || '',
+      nosurat: data.nosurat || nomorParts[0]?.replace('B-', '') || '',
+      blnno: data.blnno || nomorParts[5] || '',
+      blnnomor: data.blnnomor || nomorParts[5] || '',
+      thnno: data.thnno || nomorParts[6] || '',
+      tahunskrg: data.tahunskrg || nomorParts[6] || '',
+    };
+    const mergedData = { ...data, ...fallback };
+    if (id === '1') return <Template1 data={mergedData} />;
+    if (id === '2') return <Template2 data={mergedData} />;
+    if (id === '3') return <Template3 data={mergedData} />;
+    if (id === '4') return <Template4 data={mergedData} />;
+    if (id === '5') return <Template5 data={mergedData} />;
+    if (id === '6') return <Template6 data={mergedData} />;
+    if (id === '7') return <Template7 data={mergedData} />;
+    if (id === '8') return <Template8 data={mergedData} />;
+    if (id === '9') return <Template9 data={mergedData} />;
     return <div className="text-error">Template tidak dikenali</div>;
   };
 
