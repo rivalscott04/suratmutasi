@@ -43,7 +43,7 @@ export const Template9: React.FC<Template9Props> = ({ data }) => {
       
         {/* Nomor Surat */}
         <div className="text-center mb-5">
-          Nomor : B-{data.nosrt}/Kk.18.08/1/Kp.01.2/{data.blnno}/{data.thnno}
+          Nomor : B-{data.nosrt}/Kk.{data.office?.kode_kabko || data.kode_kabko || "-"}/1/Kp.01.2/{data.blnno}/{data.thnno}
         </div>
 
         {/* Content */}
