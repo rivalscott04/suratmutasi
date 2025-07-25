@@ -35,7 +35,7 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
       <div className="mx-4">
         {/* Title */}
         <div className="text-center font-bold mb-4 underline">
-          SURAT KETERANGAN ANALISIS JABATAN DAN ANALISIS BEBAN KERJA PNS
+          SURAT KETERANGAN JABATAN DAN ANALISIS BEBAN KERJA
         </div>
       
         {/* Nomor Surat */}
@@ -74,7 +74,7 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
           </div>
 
           <p className="mb-4">
-            Dengan ini menerangkan jumlah jabatan Pegawai Negeri Sipil pada Unit Kerja {data.unitkerja} sebagai berikut :
+            Dengan ini menerangkan jumlah jabatan Pegawai Negeri Sipil pada {data.unitkerja} sebagai berikut :
           </p>
 
           {/* Analysis Table */}
