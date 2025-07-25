@@ -509,19 +509,6 @@ const Letters: React.FC = () => {
                                         >
                                           <Eye className="w-4 h-4" />
                                         </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleGeneratePdf(letter.id)}
-                                          disabled={pdfLoading}
-                                        >
-                                          <Printer className="w-4 h-4" />
-                                        </Button>
-                                        <Button asChild variant="outline" size="sm">
-                                          <Link to={`/letters/${letter.id}`}>
-                                            <ExternalLink className="w-4 h-4" />
-                                          </Link>
-                                        </Button>
                                       </div>
                                     </TableCell>
                                   </TableRow>
