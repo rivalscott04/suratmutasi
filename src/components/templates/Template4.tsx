@@ -39,7 +39,7 @@ export const Template4: React.FC<Template4Props> = ({ data }) => {
       
         {/* Nomor Surat */}
         <div className="text-center mb-5">
-          Nomor : B-{data.nosrt}/Kk.{data.office?.kode_kabko || data.kode_kabko || "-"}/1/Kp.07.6/{data.blnsrt}/{data.thnskrg}
+          Nomor : B-{data.nosrt}/Kk.18.{data.office?.kode_kabko || data.kode_kabko || "-"}/1/Kp.07.6/{data.blnsrt}/{data.thnskrg}
         </div>
 
         {/* Content */}
