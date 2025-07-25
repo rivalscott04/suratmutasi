@@ -41,7 +41,7 @@ const Login = () => {
       await login(email, password);
       setShowSuccessModal(true);
     } catch (error) {
-      setErrorMessage('Email atau password tidak valid.');
+      setErrorMessage('Email atau password yang Anda masukkan tidak sesuai. Silakan periksa kembali kredensial Anda.');
       setShowErrorModal(true);
     } finally {
       setIsLoading(false);
@@ -167,18 +167,39 @@ const Login = () => {
       <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-500" />
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <XCircle className="w-6 h-6 text-red-500" />
               Login Gagal
             </DialogTitle>
-            <DialogDescription>
-              {errorMessage}
+            <DialogDescription className="text-left space-y-3">
+              <p className="text-red-600 font-medium">
+                {errorMessage}
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-2">
+                <p className="text-sm text-red-700 font-medium">Saran untuk mengatasi masalah:</p>
+                <ul className="text-sm text-red-600 space-y-1 list-disc list-inside">
+                  <li>Pastikan email yang dimasukkan sudah benar</li>
+                  <li>Periksa kembali password Anda</li>
+                  <li>Pastikan Caps Lock tidak aktif</li>
+                  <li>Hubungi admin jika masalah berlanjut</li>
+                </ul>
+              </div>
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end">
+          <div className="flex justify-end space-x-2">
+            <Button 
+              onClick={() => {
+                setShowErrorModal(false);
+                setPassword(''); // Clear password field
+              }}
+              variant="outline"
+              className="border-red-200 text-red-600 hover:bg-red-50"
+            >
+              Coba Lagi
+            </Button>
             <Button 
               onClick={() => setShowErrorModal(false)}
-              variant="outline"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               Tutup
             </Button>

@@ -477,10 +477,28 @@ const TemplateForm: React.FC = () => {
           tahunskrg: template2Data.tahunskrg || template7Data.tahunskrg || template8Data.thnno || '',
           blnsrt: template4Data.blnsrt || '',
           thnskrg: template4Data.thnskrg || '',
+          // Pastikan field Template 7 ter-include dengan eksplisit
+          nosurat: template7Data.nosurat || '',
+          tempattugas: template7Data.tempattugas || '',
+          kabkota2: template7Data.kabkota2 || '',
+          jabatnpegawai2: template7Data.jabatnpegawai2 || '',
+          tempattugas2: template7Data.tempattugas2 || '',
+          kabataukotatujuan: template7Data.kabataukotatujuan || '',
         },
         status: 'draft',
       };
       console.log('PAYLOAD', payload);
+      console.log('TEMPLATE 7 DATA:', template7Data);
+      console.log('FORM DATA TEMPLATE 7:', {
+        nosurat: template7Data.nosurat,
+        blnnomor: template7Data.blnnomor,
+        tahunskrg: template7Data.tahunskrg,
+        tempattugas: template7Data.tempattugas,
+        kabkota2: template7Data.kabkota2,
+        jabatnpegawai2: template7Data.jabatnpegawai2,
+        tempattugas2: template7Data.tempattugas2,
+        kabataukotatujuan: template7Data.kabataukotatujuan,
+      });
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
       setShowSuccessModal(true);
