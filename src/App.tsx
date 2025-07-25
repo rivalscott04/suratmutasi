@@ -96,24 +96,19 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => {
+const AppInner = () => {
   const [showSessionExpiredModal, setShowSessionExpiredModal] = React.useState(false);
   const navigate = useNavigate();
-  // Global handler untuk modal sesi berakhir
   React.useEffect(() => {
     window.showSessionExpiredModal = () => setShowSessionExpiredModal(true);
-    // Optional: global token update handler
     window.dispatchTokenUpdate = (token) => {
-      // Update token di AuthContext jika perlu (bisa trigger refreshUser dsb)
       localStorage.setItem('token', token);
-      // Bisa trigger event atau custom logic jika AuthContext support
     };
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {/* Global Modal Sesi Berakhir */}
         {showSessionExpiredModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center animate-fade-in">
@@ -133,14 +128,18 @@ const App = () => {
             </div>
           </div>
         )}
-        <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
-        </BrowserRouter>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
 };
+
+const App = () => (
+  <BrowserRouter>
+    <AppInner />
+  </BrowserRouter>
+);
 
 export default App;
