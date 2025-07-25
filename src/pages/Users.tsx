@@ -87,6 +87,9 @@ const Users = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAddUserResultModal, setShowAddUserResultModal] = useState(false);
+  const [addUserSuccess, setAddUserSuccess] = useState<boolean | null>(null);
+  const [addUserMessage, setAddUserMessage] = useState('');
 
   // Check if user is admin
   if (user?.role !== 'admin') {
@@ -167,17 +170,13 @@ const Users = () => {
           delete updateData.password; // Don't send empty password
         }
         await apiPut(`/api/users/${selectedUser.id}`, updateData, token);
-        toast({
-          title: "Sukses",
-          description: "User berhasil diperbarui",
-        });
+        setAddUserSuccess(true);
+        setAddUserMessage('User berhasil diperbarui.');
       } else {
         // Create new user
         await apiPost('/api/users', formData, token);
-        toast({
-          title: "Sukses",
-          description: "User berhasil ditambahkan",
-        });
+        setAddUserSuccess(true);
+        setAddUserMessage('User berhasil ditambahkan.');
       }
       
       fetchUsers();
@@ -190,15 +189,12 @@ const Users = () => {
         role: 'user',
         office_id: ''
       });
-    } catch (error) {
-      console.error('Failed to save user:', error);
-      toast({
-        title: "Error",
-        description: "Gagal menyimpan user",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      setAddUserSuccess(false);
+      setAddUserMessage(error?.message || 'Gagal menyimpan user.');
     } finally {
       setIsSubmitting(false);
+      setShowAddUserResultModal(true);
     }
   };
 
@@ -248,6 +244,36 @@ const Users = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Modal Hasil Tambah User */}
+      {showAddUserResultModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center animate-fade-in">
+            {addUserSuccess ? (
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <h2 className="text-2xl font-bold mb-2 text-gray-900">Berhasil</h2>
+                <p className="text-gray-600 mb-6 text-center">{addUserMessage}</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </div>
+                <h2 className="text-2xl font-bold mb-2 text-gray-900">Gagal</h2>
+                <p className="text-gray-600 mb-6 text-center">{addUserMessage}</p>
+              </div>
+            )}
+            <button
+              className="w-full py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white text-lg font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
+              onClick={() => setShowAddUserResultModal(false)}
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
