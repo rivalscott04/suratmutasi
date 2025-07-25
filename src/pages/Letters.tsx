@@ -560,7 +560,18 @@ const Letters: React.FC = () => {
       {/* Preview Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogTitle>Preview Surat</DialogTitle>
+          <div className="flex justify-between items-center mb-2">
+            <DialogTitle>Preview Surat</DialogTitle>
+            {selectedLetterForPreview && (
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => window.open(`/letters/${selectedLetterForPreview.id}/preview`, '_blank')}
+              >
+                Open in New Tab
+              </Button>
+            )}
+          </div>
           {selectedLetterForPreview && (
             <div className="mt-4">
               {renderPreviewByTemplate(selectedLetterForPreview)}
