@@ -52,7 +52,7 @@ interface User {
 }
 
 const NavigationBar = () => {
-  const { user, originalUser, isImpersonating, impersonateUser, stopImpersonating, logout, token } = useAuth();
+  const { user, originalUser, isImpersonating, impersonateUser, stopImpersonating, logout, token, loading } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -218,7 +218,13 @@ const NavigationBar = () => {
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-green-100 text-green-700">
-                        {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'}
+                        {loading ? (
+                          <span className="animate-pulse w-6 h-6 block bg-green-200 rounded-full mx-auto" />
+                        ) : user?.full_name ? (
+                          user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+                        ) : (
+                          '?'
+                        )}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
