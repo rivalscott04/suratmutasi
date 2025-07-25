@@ -258,8 +258,7 @@ const TemplateForm: React.FC = () => {
           const res = await apiGet(`/api/offices/${user.office_id}`, token);
           officeData = res.office;
         } else {
-          const res = await apiGet('/api/offices', token);
-          officeData = res.offices && res.offices.length > 0 ? res.offices[0] : null;
+          officeData = null; // Jangan fallback ke office lain
         }
         if (officeData) {
           setOffice(officeData);
@@ -382,6 +381,7 @@ const TemplateForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('office yang dipakai:', office);
     console.log('SUBMIT', { selectedPegawai, selectedPejabat, office, user, templateId });
     setSaving(true);
     setSubmitError(null);
