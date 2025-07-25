@@ -12,6 +12,7 @@ import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clip
 import { apiGet, apiPost, apiPut } from '../lib/api';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
   const [copied, setCopied] = useState(false);
@@ -94,7 +95,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
     setCurrentPage(1); // Reset ke halaman 1 jika search berubah
   }, [debouncedSearch]);
 
-  if (loading) return <div className="py-8 text-center">Loading data pegawai...</div>;
+  if (loading) return <div className="py-8 text-center"><Skeleton className="h-8 w-1/2 mx-auto mb-4" /><Skeleton className="h-10 w-full mb-2" /><Skeleton className="h-10 w-full mb-2" /><Skeleton className="h-10 w-full mb-2" /></div>;
   if (error) return <div className="py-8 text-center text-error">{error}</div>;
 
   return (
@@ -436,7 +437,15 @@ const Settings = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {loadingOffice ? (
-                <div>Loading data kantor...</div>
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-1/3 mb-2" />
+                  <Skeleton className="h-10 w-full mb-2" />
+                  <Skeleton className="h-10 w-full mb-2" />
+                  <Skeleton className="h-24 w-full mb-2" />
+                  <Skeleton className="h-10 w-1/2 mb-2" />
+                  <Skeleton className="h-10 w-1/2 mb-2" />
+                  <Skeleton className="h-10 w-1/2 mb-2" />
+                </div>
               ) : errorOffice ? (
                 <div className="text-error">{errorOffice}</div>
               ) : (

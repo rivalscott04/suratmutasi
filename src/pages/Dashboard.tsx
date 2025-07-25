@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, TrendingUp, Clock, Users, ArrowRight, BarChart3, Calendar, Settings as SettingsIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Dashboard = () => {
   const { user, token, loading } = useAuth();
@@ -45,7 +46,7 @@ const Dashboard = () => {
     }
   }, [user, token]);
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  if (loading) return <div className="flex flex-col items-center justify-center min-h-screen"><Skeleton className="h-8 w-1/2 mb-4" /><Skeleton className="h-10 w-1/3 mb-2" /><Skeleton className="h-10 w-1/3 mb-2" /><Skeleton className="h-10 w-1/3 mb-2" /></div>;
 
   // Statistik dinamis
   const stats = [

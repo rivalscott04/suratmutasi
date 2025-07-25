@@ -20,6 +20,7 @@ import { Template9 } from '@/components/templates/Template9';
 import { apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import SuratPreviewContainer from '@/components/SuratPreviewContainer';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Letters: React.FC = () => {
   const { token } = useAuth();
@@ -178,6 +179,8 @@ const Letters: React.FC = () => {
     8: 'PENERIMAAN',
     9: 'SPTJM',
   };
+
+  if (loading) return <div className="py-8 text-center"><Skeleton className="h-8 w-1/2 mx-auto mb-4" /><Skeleton className="h-10 w-full mb-2" /><Skeleton className="h-10 w-full mb-2" /><Skeleton className="h-10 w-full mb-2" /></div>;
 
   return (
     <>

@@ -19,6 +19,7 @@ import { apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SuratPreviewContainer from '@/components/SuratPreviewContainer';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const LetterDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +46,7 @@ const LetterDetail: React.FC = () => {
       .finally(() => setLoading(false));
   }, [id, token]);
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  if (loading) return <div className="flex justify-center items-center min-h-screen"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-96 w-full mt-8" /></div>;
   if (error || !letter) return <div className="flex flex-col items-center justify-center min-h-screen"><div className="text-error mb-4">{error || 'Surat tidak ditemukan'}</div><Link to="/dashboard" className="btn btn-primary">Kembali ke Dashboard</Link></div>;
 
   // Parse form_data jika string
