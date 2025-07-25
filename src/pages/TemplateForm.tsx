@@ -749,35 +749,42 @@ const TemplateForm: React.FC = () => {
         );
       case '5':
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="nosrt5">Nomor Surat</Label>
-                <Input
-                  id="nosrt5"
-                  value={template5Data.nosrt || ''}
-                  onChange={(e) => handleTemplate5DataChange('nosrt', e.target.value)}
-                  placeholder="e.g., 123"
-                />
-              </div>
-              <div>
-                <Label htmlFor="blnno5">Bulan (Angka)</Label>
-                <Input
-                  id="blnno5"
-                  value={template5Data.blnno || ''}
-                  onChange={(e) => handleTemplate5DataChange('blnno', e.target.value)}
-                  placeholder="e.g., 12"
-                />
-              </div>
-              <div>
-                <Label htmlFor="thnno5">Tahun</Label>
-                <Input
-                  id="thnno5"
-                  value={template5Data.thnno || ''}
-                  onChange={(e) => handleTemplate5DataChange('thnno', e.target.value)}
-                  placeholder="e.g., 2024"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="nosrt5">Nomor Surat</Label>
+              <Input
+                id="nosrt5"
+                value={template5Data.nosrt || ''}
+                onChange={(e) => handleTemplate5DataChange('nosrt', e.target.value)}
+                placeholder="e.g., 123"
+              />
+            </div>
+            <div>
+              <Label htmlFor="blnno5">Bulan (Angka)</Label>
+              <Input
+                id="blnno5"
+                value={template5Data.blnno || ''}
+                onChange={(e) => handleTemplate5DataChange('blnno', e.target.value)}
+                placeholder="e.g., 12"
+              />
+            </div>
+            <div>
+              <Label htmlFor="thnno5">Tahun</Label>
+              <Input
+                id="thnno5"
+                value={template5Data.thnno || ''}
+                onChange={(e) => handleTemplate5DataChange('thnno', e.target.value)}
+                placeholder="e.g., 2024"
+              />
+            </div>
+            <div className="md:col-span-3">
+              <Label htmlFor="tempattugas5">Satuan Kerja</Label>
+              <Input
+                id="tempattugas5"
+                value={template5Data.tempattugas || ''}
+                onChange={(e) => handleTemplate5DataChange('tempattugas', e.target.value)}
+                placeholder="Masukkan satuan kerja pegawai"
+              />
             </div>
           </div>
         );

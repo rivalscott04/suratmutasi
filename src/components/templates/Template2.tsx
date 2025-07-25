@@ -73,39 +73,6 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
             </div>
           </div>
 
-          <div className="font-bold mb-3">
-            Memberikan keterangan bahwa :
-          </div>
-
-          {/* Data Pegawai */}
-          <div className="mb-4">
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Nama</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.namapegawai}</div>
-            </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">NIP</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.nippegawai}</div>
-            </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Pangkat/Gol.Ruang</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.pangkatgolpegawai}</div>
-            </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Jabatan</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.jabatanpegawai}</div>
-            </div>
-            <div className="flex mb-1">
-              <div className="w-32 flex-shrink-0">Unit Kerja</div>
-              <div className="w-5 flex-shrink-0">:</div>
-              <div className="flex-grow">{data.unitkerja}</div>
-            </div>
-          </div>
-
           <p className="mb-4">
             Dengan ini menerangkan jumlah jabatan Pegawai Negeri Sipil pada Unit Kerja {data.unitkerja} sebagai berikut :
           </p>
