@@ -296,10 +296,10 @@ const Settings = () => {
           if (office) {
             setOfficeId(office.id);
             setOfficeSettings({
-              namakantor: office.name || '',
+              namakantor: office.namakantor || office.name || '',
               kabkota: office.kabkota || '',
-              alamat: office.address || '',
-              telepon: office.phone || '',
+              alamat: office.alamat || office.address || '',
+              telepon: office.telepon || office.phone || '',
               fax: office.fax || '',
               email: office.email || '',
               website: office.website || ''

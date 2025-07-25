@@ -137,7 +137,7 @@ const Letters: React.FC = () => {
   const getStatusBadge = (status: string) => {
     if (status === 'generated') return <Badge className="bg-green-100 text-green-700 border-green-200">Generated</Badge>;
     if (status === 'signed') return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Signed</Badge>;
-    return <Badge className="bg-gray-100 text-gray-700 border-gray-200">Draft</Badge>;
+    return null; // Hilangkan badge Draft
   };
 
   const handleShowPegawaiLetters = async (nip: string, letterId: string) => {
@@ -367,19 +367,6 @@ const Letters: React.FC = () => {
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <Printer className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Draft</p>
-                <p className="text-2xl font-bold text-gray-600">{byStatus('draft')}</p>
-              </div>
-              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-gray-600" />
               </div>
             </div>
           </CardContent>
