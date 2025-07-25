@@ -48,6 +48,11 @@ const Letters: React.FC = () => {
   const [expandedSurat, setExpandedSurat] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // State untuk pagination per kantor
+  const [officePaging, setOfficePaging] = useState<Record<string, { currentPage: number; pageSize: number }>>({});
+  // State untuk mapping officeId -> nama kantor/kabkota
+  const [officeMap, setOfficeMap] = useState<Record<string, { namakantor?: string; kabkota?: string }>>({});
+
   // Filter letters berdasarkan search
   const filteredLetters = letters.filter(l =>
     l.letter_number?.toLowerCase().includes(search.toLowerCase()) ||
@@ -68,9 +73,13 @@ const Letters: React.FC = () => {
     return String(bVal).localeCompare(String(aVal));
   });
 
-  // Group surat by office
+  // Group surat by office (dengan fallback mapping office_id)
   const groupedByOffice: Record<string, any[]> = sortedLetters.reduce((acc, surat) => {
-    const officeName = surat.office?.namakantor || surat.office?.kabkota || 'Kantor Tidak Diketahui';
+    let officeName = surat.office?.namakantor || surat.office?.kabkota;
+    if (!officeName && surat.office_id && officeMap[surat.office_id]) {
+      officeName = officeMap[surat.office_id].namakantor || officeMap[surat.office_id].kabkota;
+    }
+    if (!officeName) officeName = 'Kantor Tidak Diketahui';
     if (!acc[officeName]) acc[officeName] = [];
     acc[officeName].push(surat);
     return acc;
@@ -90,6 +99,20 @@ const Letters: React.FC = () => {
       .then(res => setLetters(res.letters || []))
       .catch(() => setError('Gagal mengambil data surat'))
       .finally(() => setLoading(false));
+  }, [token]);
+
+  // Fetch offices saat mount
+  useEffect(() => {
+    if (!token) return;
+    apiGet('/api/offices', token)
+      .then(res => {
+        const map: Record<string, { namakantor?: string; kabkota?: string }> = {};
+        (res.offices || []).forEach((office: any) => {
+          map[office.id] = { namakantor: office.namakantor, kabkota: office.kabkota };
+        });
+        setOfficeMap(map);
+      })
+      .catch(() => {});
   }, [token]);
 
   // Ringkasan
@@ -168,6 +191,27 @@ const Letters: React.FC = () => {
     } finally {
       setPdfLoading(false);
     }
+  };
+
+  // Helper untuk update paging per kantor
+  const setOfficePage = (officeName: string, page: number) => {
+    setOfficePaging(prev => ({
+      ...prev,
+      [officeName]: {
+        ...(prev[officeName] || { currentPage: 1, pageSize: 10 }),
+        currentPage: page,
+      },
+    }));
+  };
+  const setOfficePageSize = (officeName: string, size: number) => {
+    setOfficePaging(prev => ({
+      ...prev,
+      [officeName]: {
+        ...(prev[officeName] || { currentPage: 1, pageSize: 10 }),
+        pageSize: size,
+        currentPage: 1,
+      },
+    }));
   };
 
   // Empty state component
@@ -370,101 +414,143 @@ const Letters: React.FC = () => {
               </div>
             ) : (
               <Accordion type="multiple" className="space-y-2">
-                {filteredGrouped.map(([officeName, officeLetters], officeIndex) => (
-                  <AccordionItem key={officeIndex} value={`office-${officeIndex}`} className="border rounded-lg">
-                    <AccordionTrigger className="px-6 py-4 hover:bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <Building2 className="w-4 h-4 text-green-600" />
+                {filteredGrouped.map(([officeName, officeLetters], officeIndex) => {
+                  // Paging state per kantor
+                  const paging = officePaging[officeName] || { currentPage: 1, pageSize: 10 };
+                  const totalPages = Math.ceil(officeLetters.length / paging.pageSize);
+                  const pagedLetters = officeLetters.slice((paging.currentPage - 1) * paging.pageSize, paging.currentPage * paging.pageSize);
+                  return (
+                    <AccordionItem key={officeIndex} value={`office-${officeIndex}`} className="border rounded-lg">
+                      <AccordionTrigger className="px-6 py-4 hover:bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                              <Building2 className="w-4 h-4 text-green-600" />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="font-semibold text-gray-900">{officeName}</h3>
+                              <p className="text-sm text-gray-600">{officeLetters.length} surat</p>
+                            </div>
                           </div>
-                          <div className="text-left">
-                            <h3 className="font-semibold text-gray-900">{officeName}</h3>
-                            <p className="text-sm text-gray-600">{officeLetters.length} surat</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">{officeLetters.length}</Badge>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{officeLetters.length}</Badge>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-6 pb-4">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-2">
+                          <div className="flex items-center gap-2">
+                            <label htmlFor={`pageSize-${officeIndex}`} className="text-sm">Tampilkan</label>
+                            <select
+                              id={`pageSize-${officeIndex}`}
+                              value={paging.pageSize}
+                              onChange={e => setOfficePageSize(officeName, Number(e.target.value))}
+                              className="border rounded px-2 py-1 text-sm"
+                            >
+                              {[10, 20, 50, 100].map(size => (
+                                <option key={size} value={size}>{size}</option>
+                              ))}
+                            </select>
+                            <span className="text-sm">data per halaman</span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Menampilkan {officeLetters.length === 0 ? 0 : ((paging.currentPage - 1) * paging.pageSize + 1)}–{Math.min(paging.currentPage * paging.pageSize, officeLetters.length)} dari {officeLetters.length} surat
+                          </div>
                         </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-4">
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>No.</TableHead>
-                              <TableHead>Nomor Surat</TableHead>
-                              <TableHead>Template</TableHead>
-                              <TableHead>Pegawai</TableHead>
-                              <TableHead>Tanggal</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Aksi</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {officeLetters.map((letter, idx) => {
-                              let parsedFormData = letter.form_data;
-                              if (typeof parsedFormData === 'string') {
-                                try {
-                                  parsedFormData = JSON.parse(parsedFormData);
-                                } catch {
-                                  parsedFormData = {};
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>No.</TableHead>
+                                <TableHead>Nomor Surat</TableHead>
+                                <TableHead>Template</TableHead>
+                                <TableHead>Pegawai</TableHead>
+                                <TableHead>Tanggal</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Aksi</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {pagedLetters.map((letter, idx) => {
+                                let parsedFormData = letter.form_data;
+                                if (typeof parsedFormData === 'string') {
+                                  try {
+                                    parsedFormData = JSON.parse(parsedFormData);
+                                  } catch {
+                                    parsedFormData = {};
+                                  }
                                 }
-                              }
-                              return (
-                                <TableRow key={letter.id}>
-                                  <TableCell>{idx + 1}</TableCell>
-                                  <TableCell className="font-mono text-sm">{letter.letter_number}</TableCell>
-                                  <TableCell>{letter.template_name}</TableCell>
-                                  <TableCell>
-                                    {letter.template_id === 9 ? (
-                                      <span className="text-gray-500">Tanpa Pegawai</span>
-                                    ) : (
-                                      <div>
-                                        <div className="font-medium">{parsedFormData.namapegawai}</div>
-                                        <div className="text-sm text-gray-500">{letter.recipient_employee_nip}</div>
+                                return (
+                                  <TableRow key={letter.id}>
+                                    <TableCell>{(paging.currentPage - 1) * paging.pageSize + idx + 1}</TableCell>
+                                    <TableCell className="font-mono text-sm">{letter.letter_number}</TableCell>
+                                    <TableCell>{letter.template_name}</TableCell>
+                                    <TableCell>
+                                      {letter.template_id === 9 ? (
+                                        <span className="text-gray-500">Tanpa Pegawai</span>
+                                      ) : (
+                                        <div>
+                                          <div className="font-medium">{parsedFormData.namapegawai}</div>
+                                          <div className="text-sm text-gray-500">{letter.recipient_employee_nip}</div>
+                                        </div>
+                                      )}
+                                    </TableCell>
+                                    <TableCell>{parsedFormData.tanggal || '-'}</TableCell>
+                                    <TableCell>{getStatusBadge(letter.status)}</TableCell>
+                                    <TableCell>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            setSelectedLetterForPreview(letter);
+                                            setModalOpen(true);
+                                          }}
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleGeneratePdf(letter.id)}
+                                          disabled={pdfLoading}
+                                        >
+                                          <Printer className="w-4 h-4" />
+                                        </Button>
+                                        <Button asChild variant="outline" size="sm">
+                                          <Link to={`/letters/${letter.id}`}>
+                                            <ExternalLink className="w-4 h-4" />
+                                          </Link>
+                                        </Button>
                                       </div>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>{parsedFormData.tanggal || '-'}</TableCell>
-                                  <TableCell>{getStatusBadge(letter.status)}</TableCell>
-                                  <TableCell>
-                                    <div className="flex gap-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                          setSelectedLetterForPreview(letter);
-                                          setModalOpen(true);
-                                        }}
-                                      >
-                                        <Eye className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleGeneratePdf(letter.id)}
-                                        disabled={pdfLoading}
-                                      >
-                                        <Printer className="w-4 h-4" />
-                                      </Button>
-                                      <Button asChild variant="outline" size="sm">
-                                        <Link to={`/letters/${letter.id}`}>
-                                          <ExternalLink className="w-4 h-4" />
-                                        </Link>
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        {/* Pagination per kantor */}
+                        {totalPages > 1 && (
+                          <div className="flex justify-center items-center gap-2 mt-4">
+                            <Button size="sm" variant="outline" onClick={() => setOfficePage(officeName, Math.max(1, paging.currentPage - 1))} disabled={paging.currentPage === 1}>Prev</Button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                              <Button
+                                key={page}
+                                size="sm"
+                                variant={page === paging.currentPage ? 'default' : 'outline'}
+                                onClick={() => setOfficePage(officeName, page)}
+                              >
+                                {page}
+                              </Button>
+                            ))}
+                            <Button size="sm" variant="outline" onClick={() => setOfficePage(officeName, Math.min(totalPages, paging.currentPage + 1))} disabled={paging.currentPage === totalPages}>Next</Button>
+                          </div>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
               </Accordion>
             )}
           </CardContent>
