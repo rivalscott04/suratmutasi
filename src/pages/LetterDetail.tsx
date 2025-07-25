@@ -68,12 +68,14 @@ const LetterDetail: React.FC = () => {
         data = {};
       }
     }
-    // Gabungkan data dengan office dan kode_kabko
+    // Gabungkan data dengan office dan kode_kabko, serta field root letter
     data = {
       ...data,
       office: letter.office,
       kode_kabko: letter.office?.kode_kabko || data.kode_kabko,
-      letter_number: letter.letter_number
+      letter_number: letter.letter_number,
+      // Gabungkan semua field root letter yang relevan
+      ...letter,
     };
     if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
     if (String(letter.template_id) === '1') return <SuratPreviewContainer><Template1 data={data} /></SuratPreviewContainer>;
