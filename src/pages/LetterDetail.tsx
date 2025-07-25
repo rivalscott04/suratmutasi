@@ -72,7 +72,8 @@ const LetterDetail: React.FC = () => {
     data = {
       ...data,
       office: letter.office,
-      kode_kabko: letter.office?.kode_kabko || data.kode_kabko
+      kode_kabko: letter.office?.kode_kabko || data.kode_kabko,
+      letter_number: letter.letter_number
     };
     if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
     if (String(letter.template_id) === '1') return <SuratPreviewContainer><Template1 data={data} /></SuratPreviewContainer>;

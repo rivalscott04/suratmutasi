@@ -148,7 +148,8 @@ const TemplateForm: React.FC = () => {
     pangkatgolpegawai: '',
     jabatanpegawai: '',
     ibukota: '', // default kosong
-    tanggal: ''
+    tanggal: '',
+    kode_kabko: ''
   });
 
   // Inisialisasi state tahun di semua templateXData
@@ -270,6 +271,7 @@ const TemplateForm: React.FC = () => {
             fax: officeData.fax || '',
             email: officeData.email || '',
             website: officeData.website || '',
+            kode_kabko: officeData.kode_kabko || ''
           }));
         }
       } catch (err) {
