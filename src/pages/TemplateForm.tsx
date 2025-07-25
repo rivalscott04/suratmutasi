@@ -399,7 +399,7 @@ const TemplateForm: React.FC = () => {
       setSaving(false);
       return;
     }
-    if (templateId !== '9' && !selectedPegawai?.nip) {
+    if (templateId !== '2' && templateId !== '9' && !selectedPegawai?.nip) {
       setSubmitError('Pilih pegawai yang akan dinyatakan dalam surat.');
       setSaving(false);
       return;
