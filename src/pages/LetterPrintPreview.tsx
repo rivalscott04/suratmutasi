@@ -43,6 +43,14 @@ const LetterPrintPreview: React.FC = () => {
     if (typeof data === 'string') {
       try { data = JSON.parse(data); } catch { data = {}; }
     }
+    // Gabungkan data dengan office, kode_kabko, letter_number, dan field root letter
+    data = {
+      ...data,
+      office: letter.office,
+      kode_kabko: letter.office?.kode_kabko || data.kode_kabko,
+      letter_number: letter.letter_number,
+      ...letter,
+    };
     if (!data) return <div>Data surat tidak ditemukan</div>;
     const id = String(letter.template_id);
     if (id === '1') return <Template1 data={data} />;
