@@ -51,6 +51,11 @@ const LetterPrintPreview: React.FC = () => {
       letter_number: letter.letter_number,
       ...letter,
     };
+    // Fallback: jika data.nosrt kosong, ambil dari letter_number
+    if (!data.nosrt && letter.letter_number) {
+      const match = letter.letter_number.match(/^B-([^/]+)/);
+      if (match) data.nosrt = match[1];
+    }
     if (!data) return <div>Data surat tidak ditemukan</div>;
     const id = String(letter.template_id);
     if (id === '1') return <Template1 data={data} />;
