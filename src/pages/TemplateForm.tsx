@@ -411,25 +411,26 @@ const TemplateForm: React.FC = () => {
       return;
     }
     // Format nomor surat sesuai template
+    const kodeKabko = office?.kode_kabko || baseData.kode_kabko || '-';
     let letter_number = '';
     if (templateId === '1') {
-      letter_number = `B-${template1Data.nosrt}/Kk.18.08/1/Kp.07.6/${template1Data.blnno}/${template1Data.thnno}`;
+      letter_number = `B-${template1Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.07.6/${template1Data.blnno}/${template1Data.thnno}`;
     } else if (templateId === '2') {
-      letter_number = `B-${template2Data.nosurat}/Kk.18.08/1/KP.07.6/${template2Data.blnnomor}/${template2Data.tahunskrg}`;
+      letter_number = `B-${template2Data.nosurat}/Kk.18.${kodeKabko}/1/KP.07.6/${template2Data.blnnomor}/${template2Data.tahunskrg}`;
     } else if (templateId === '3') {
-      letter_number = `B-${template3Data.nosrt}/Kk.18.08/1/KP.07.6/${template3Data.blnno}/${template3Data.thnno}`;
+      letter_number = `B-${template3Data.nosrt}/Kk.18.${kodeKabko}/1/KP.07.6/${template3Data.blnno}/${template3Data.thnno}`;
     } else if (templateId === '4') {
-      letter_number = `B-${template4Data.nosrt}/Kk.18.08/1/Kp.01.2/${template4Data.blnsrt}/${template4Data.thnskrg}`;
+      letter_number = `B-${template4Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.01.2/${template4Data.blnsrt}/${template4Data.thnskrg}`;
     } else if (templateId === '5') {
-      letter_number = `B-${template5Data.nosrt}/Kk.19.08/1/Kp.04.2/${template5Data.blnno}/${template5Data.thnno}`;
+      letter_number = `B-${template5Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.04.2/${template5Data.blnno}/${template5Data.thnno}`;
     } else if (templateId === '6') {
-      letter_number = `B-${template6Data.nosrt}/Kk.18.08/1/Kh.04.1/${template6Data.blnno}/${template6Data.thnno}`;
+      letter_number = `B-${template6Data.nosrt}/Kk.18.${kodeKabko}/1/Kh.04.1/${template6Data.blnno}/${template6Data.thnno}`;
     } else if (templateId === '7') {
-      letter_number = `B-${template7Data.nosurat}/Kk.18.08/1/Kp.07.6/${template7Data.blnnomor}/${template7Data.tahunskrg}`;
+      letter_number = `B-${template7Data.nosurat}/Kk.18.${kodeKabko}/1/Kp.07.6/${template7Data.blnnomor}/${template7Data.tahunskrg}`;
     } else if (templateId === '8') {
-      letter_number = `B-${template8Data.nosrt}/Kk.18.08/1/Kp.07.6/${template8Data.blnno}/${template8Data.thnno}`;
+      letter_number = `B-${template8Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.07.6/${template8Data.blnno}/${template8Data.thnno}`;
     } else if (templateId === '9') {
-      letter_number = `B-${template9Data.nosrt}/Kk.18.08/1/Kp.01.2/${template9Data.blnno}/${template9Data.thnno}`;
+      letter_number = `B-${template9Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.01.2/${template9Data.blnno}/${template9Data.thnno}`;
     }
     if (!letter_number) {
       console.log('VALIDASI GAGAL: letter_number', letter_number);

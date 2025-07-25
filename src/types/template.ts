@@ -27,7 +27,9 @@ export interface BaseSignatureData {
   tanggal: string;
 }
 
-export interface BaseTemplateData extends BaseOfficeData, BasePejabatData, BasePegawaiData, BaseSignatureData {}
+export interface BaseTemplateData extends BaseOfficeData, BasePejabatData, BasePegawaiData, BaseSignatureData {
+  kode_kabko?: string;
+}
 
 // Template 1: Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar atau Ikatan Dinas
 export interface Template1Data extends BaseTemplateData {
