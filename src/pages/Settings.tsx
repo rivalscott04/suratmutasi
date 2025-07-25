@@ -365,34 +365,22 @@ const Settings = () => {
       });
       return;
     }
-    setFieldError(null);
-    if (!token) return;
-    // Selalu ambil officeId dari user.office_id
-    const officeIdToUse = user?.office_id || officeId;
-    if (!officeIdToUse) {
-      toast({
-        title: 'Kantor belum terhubung',
-        description: 'Akun Anda belum terhubung ke kantor manapun. Hubungi admin.',
-        variant: 'destructive',
-      });
-      return;
-    }
     try {
-      await apiPut(`/api/offices/${officeIdToUse}`, {
-        name: officeSettings.namakantor,
-        kabkota: officeSettings.kabkota,
+      // Kirim hanya field yang boleh diupdate
+      const payload = {
         address: officeSettings.alamat,
         phone: officeSettings.telepon,
         fax: officeSettings.fax,
         email: officeSettings.email,
         website: officeSettings.website
-      }, token);
+      };
+      await apiPut(`/api/offices/${officeId}`, payload, token);
       setOfficeModalSuccess(true);
-      setOfficeModalMessage('Pengaturan kantor berhasil disimpan! Data kantor akan digunakan otomatis di header surat.');
+      setOfficeModalMessage('Pengaturan kantor berhasil disimpan! Data kantor telah diperbarui.');
       setShowOfficeModal(true);
     } catch (err: any) {
       setOfficeModalSuccess(false);
-      setOfficeModalMessage('Gagal menyimpan pengaturan kantor: ' + (err.message || 'Terjadi kesalahan saat menyimpan data kantor.'));
+      setOfficeModalMessage('Gagal menyimpan pengaturan kantor. Silakan coba lagi.');
       setShowOfficeModal(true);
     }
   };
@@ -460,10 +448,8 @@ const Settings = () => {
                         id="namakantor"
                         ref={inputRefs.namakantor}
                         value={officeSettings.namakantor}
-                        onChange={(e) => setOfficeSettings({
-                          ...officeSettings,
-                          namakantor: e.target.value
-                        })}
+                        readOnly
+                        disabled
                         className={fieldError === 'namakantor' ? 'border-red-500' : ''}
                       />
                     </div>
@@ -473,10 +459,8 @@ const Settings = () => {
                         id="kabkota"
                         ref={inputRefs.kabkota}
                         value={officeSettings.kabkota}
-                        onChange={(e) => setOfficeSettings({
-                          ...officeSettings,
-                          kabkota: e.target.value
-                        })}
+                        readOnly
+                        disabled
                         className={fieldError === 'kabkota' ? 'border-red-500' : ''}
                       />
                     </div>
@@ -551,7 +535,7 @@ const Settings = () => {
                     />
                   </div>
 
-                  <Button onClick={handleSaveOfficeSettings} className="w-full">
+                  <Button onClick={handleSaveOfficeSettings} className="w-full bg-teal-900 hover:bg-teal-800 text-white">
                     <Save className="mr-2 h-4 w-4" />
                     Simpan Pengaturan
                   </Button>
