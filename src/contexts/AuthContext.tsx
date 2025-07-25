@@ -31,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [originalToken, setOriginalToken] = useState<string | null>(null); // token admin asli
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(res.token);
       setUser(res.user);
       setOriginalUser(res.user); // Set original user saat login
+      setOriginalToken(null); // Reset impersonate
       localStorage.setItem('token', res.token);
     } finally {
       setLoading(false);
@@ -63,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     setUser(null);
     setOriginalUser(null);
+    setOriginalToken(null);
     localStorage.removeItem('token');
   };
 
@@ -78,19 +81,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const impersonateUser = (userToImpersonate: User) => {
-    if (!originalUser) {
-      setOriginalUser(user); // Set original user jika belum ada
+  // Impersonate: request token baru ke backend, simpan token admin asli, set token impersonate
+  const impersonateUser = async (userToImpersonate: User) => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      // Simpan token admin asli jika belum
+      if (!originalToken) setOriginalToken(token);
+      const res = await apiPost('/api/auth/impersonate', { userId: userToImpersonate.id }, token);
+      setToken(res.token);
+      setUser(res.user);
+      localStorage.setItem('token', res.token);
+    } finally {
+      setLoading(false);
     }
-    setUser(userToImpersonate);
   };
 
-  const stopImpersonating = () => {
-    if (originalUser) {
-      setUser(originalUser);
-      setOriginalUser(null);
+  // Stop impersonate: restore token admin asli
+  const stopImpersonating = async () => {
+    if (originalToken) {
+      setToken(originalToken);
+      localStorage.setItem('token', originalToken);
+      setOriginalToken(null);
+      setLoading(true);
+      try {
+        const res = await apiGet('/api/auth/me', originalToken);
+        setUser(res.user);
+      } finally {
+        setLoading(false);
+      }
     }
   };
+
+  const isImpersonating = !!originalToken;
 
   return (
     <AuthContext.Provider value={{ 
@@ -101,8 +124,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login, 
       logout, 
       refreshUser, 
-      isAuthenticated: !!user,
-      isImpersonating: !!originalUser && originalUser.id !== user?.id,
+      isAuthenticated: !!user && !!token, 
+      isImpersonating,
       impersonateUser,
       stopImpersonating
     }}>

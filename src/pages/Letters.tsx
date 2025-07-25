@@ -3,8 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -53,6 +53,9 @@ const Letters: React.FC = () => {
   // State untuk mapping officeId -> nama kantor/kabkota
   const [officeMap, setOfficeMap] = useState<Record<string, { namakantor?: string; kabkota?: string }>>({});
 
+  const navigate = useNavigate();
+  const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
+
   // Filter letters berdasarkan search
   const filteredLetters = letters.filter(l =>
     l.letter_number?.toLowerCase().includes(search.toLowerCase()) ||
@@ -97,7 +100,13 @@ const Letters: React.FC = () => {
     setLoading(true);
     apiGet('/api/letters', token)
       .then(res => setLetters(res.letters || []))
-      .catch(() => setError('Gagal mengambil data surat'))
+      .catch((err) => {
+        if (err.message && (err.message.includes('Invalid or expired token') || err.message.includes('401'))) {
+          setShowSessionExpiredModal(true);
+        } else {
+          setError('Gagal mengambil data surat');
+        }
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -566,6 +575,27 @@ const Letters: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Session Expired Modal */}
+      {showSessionExpiredModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center animate-fade-in">
+            <Lock className="w-16 h-16 text-yellow-500 mb-4" />
+            <h2 className="text-2xl font-bold mb-2 text-gray-900">Sesi Berakhir</h2>
+            <p className="text-gray-600 mb-6 text-center">Sesi Anda telah habis. Silakan login kembali untuk melanjutkan.</p>
+            <button
+              className="w-full py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white text-lg font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
+              onClick={() => {
+                localStorage.removeItem('token');
+                setShowSessionExpiredModal(false);
+                navigate('/login', { replace: true });
+              }}
+            >
+              Login Ulang
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
