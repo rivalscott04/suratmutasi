@@ -465,6 +465,7 @@ const TemplateForm: React.FC = () => {
           ...template8Data,
           ...template9Data,
           tanggal: tanggalIndo,
+          kode_kabko: office?.kode_kabko || baseData.kode_kabko || '', // pastikan selalu ikut
           // Always merge these fields for all templates
           unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
           ukerpegawai: selectedPegawai?.unit_kerja || '',
