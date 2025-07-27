@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiDelete } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock } from 'lucide-react';
+import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Letters: React.FC = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [letters, setLetters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +55,9 @@ const Letters: React.FC = () => {
 
   const navigate = useNavigate();
   const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [letterToDelete, setLetterToDelete] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Filter letters berdasarkan search
   const filteredLetters = letters.filter(l =>
@@ -199,6 +202,32 @@ const Letters: React.FC = () => {
       toast({ title: 'Gagal generate PDF', description: err.message || 'Terjadi kesalahan', variant: 'destructive' });
     } finally {
       setPdfLoading(false);
+    }
+  };
+
+  const handleDeleteLetter = async (letter: any) => {
+    setLetterToDelete(letter);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!letterToDelete) return;
+    
+    setDeleting(true);
+    try {
+      await apiDelete(`/api/letters/${letterToDelete.id}`, token);
+      toast({ title: 'Surat berhasil dihapus', description: 'Surat telah dihapus dari sistem.' });
+      
+      // Refresh data
+      const res = await apiGet('/api/letters', token);
+      setLetters(res.letters || []);
+      
+      setShowDeleteModal(false);
+      setLetterToDelete(null);
+    } catch (err: any) {
+      toast({ title: 'Gagal menghapus surat', description: err.message || 'Terjadi kesalahan', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -505,6 +534,16 @@ const Letters: React.FC = () => {
                                         >
                                           <Eye className="w-4 h-4" />
                                         </Button>
+                                        {user?.role === 'admin' && (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleDeleteLetter(letter)}
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </Button>
+                                        )}
                                       </div>
                                     </TableCell>
                                   </TableRow>
@@ -580,6 +619,42 @@ const Letters: React.FC = () => {
             >
               Login Ulang
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center animate-fade-in">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <Trash2 className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2 text-gray-900">Hapus Surat</h2>
+            <p className="text-gray-600 mb-6 text-center">
+              Apakah Anda yakin ingin menghapus surat <strong>{letterToDelete?.letter_number}</strong>? 
+              Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setLetterToDelete(null);
+                }}
+                disabled={deleting}
+                className="flex-1"
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {deleting ? 'Menghapus...' : 'Hapus'}
+              </Button>
+            </div>
           </div>
         </div>
       )}
