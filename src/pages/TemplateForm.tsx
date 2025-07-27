@@ -422,7 +422,7 @@ const TemplateForm: React.FC = () => {
     } else if (templateId === '4') {
       letter_number = `B-${template4Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.01.2/${template4Data.blnsrt}/${template4Data.thnskrg}`;
     } else if (templateId === '5') {
-      letter_number = `B-${template5Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.04.2/${template5Data.blnno}/${template5Data.thnno}`;
+      letter_number = `B-${template5Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.07.6/${template5Data.blnno}/${template5Data.thnno}`;
     } else if (templateId === '6') {
       letter_number = `B-${template6Data.nosrt}/Kk.18.${kodeKabko}/1/Kh.04.1/${template6Data.blnno}/${template6Data.thnno}`;
     } else if (templateId === '7') {
@@ -472,8 +472,8 @@ const TemplateForm: React.FC = () => {
           unitkerjapejabat: selectedPejabat?.unit_kerja || '',
           ukerpejabat: selectedPejabat?.unit_kerja || '',
           // Pastikan field bulan/tahun nomor surat ikut di-merge
-          blnno: template1Data.blnno || '',
-          thnno: template1Data.thnno || '',
+          blnno: template1Data.blnno || template5Data.blnno || template6Data.blnno || template8Data.blnno || template9Data.blnno || '',
+          thnno: template1Data.thnno || template5Data.thnno || template6Data.thnno || template8Data.thnno || template9Data.thnno || '',
           blnnomor: template2Data.blnnomor || template7Data.blnnomor || template8Data.blnno || '',
           tahunskrg: template2Data.tahunskrg || template7Data.tahunskrg || template8Data.thnno || '',
           blnsrt: template4Data.blnsrt || '',
@@ -485,6 +485,8 @@ const TemplateForm: React.FC = () => {
           jabatnpegawai2: template7Data.jabatnpegawai2 || '',
           tempattugas2: template7Data.tempattugas2 || '',
           kabataukotatujuan: template7Data.kabataukotatujuan || '',
+          // Pastikan field Template 5 dan 6 ter-include dengan eksplisit
+          nosrt: template6Data.nosrt || template5Data.nosrt || '',
         },
         status: 'draft',
       };
