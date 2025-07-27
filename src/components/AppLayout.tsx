@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { apiGet, apiPut } from '@/lib/api';
 import { Button } from './ui/button';
+import { Toaster } from '@/components/ui/toaster';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -72,6 +73,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <Skeleton className="h-32 w-full" />
           </div>
         </div>
+        <Toaster />
       </div>
     );
   }
@@ -82,6 +84,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+      <Toaster />
     </div>
   );
 };

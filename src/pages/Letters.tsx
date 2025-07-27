@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiDelete } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2 } from 'lucide-react';
+import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -210,22 +210,54 @@ const Letters: React.FC = () => {
     setShowDeleteModal(true);
   };
 
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const res = await apiGet('/api/letters', token);
+      setLetters(res.letters || []);
+    } catch (err: any) {
+      setError('Gagal mengambil data surat');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!letterToDelete) return;
     
     setDeleting(true);
     try {
       await apiDelete(`/api/letters/${letterToDelete.id}`, token);
-      toast({ title: 'Surat berhasil dihapus', description: 'Surat telah dihapus dari sistem.' });
+      
+      toast({ 
+        title: 'Surat berhasil dihapus', 
+        description: 'Surat telah dihapus dari sistem.',
+        duration: 3000
+      });
       
       // Refresh data
-      const res = await apiGet('/api/letters', token);
-      setLetters(res.letters || []);
+      await refreshData();
+      
+      // Reset pagination state
+      setOfficePaging({});
+      
+      // Reset search jika ada
+      if (search) {
+        setSearch('');
+      }
+      if (searchTerm) {
+        setSearchTerm('');
+      }
       
       setShowDeleteModal(false);
       setLetterToDelete(null);
     } catch (err: any) {
-      toast({ title: 'Gagal menghapus surat', description: err.message || 'Terjadi kesalahan', variant: 'destructive' });
+      toast({ 
+        title: 'Gagal menghapus surat', 
+        description: err.message || 'Terjadi kesalahan', 
+        variant: 'destructive',
+        duration: 5000
+      });
     } finally {
       setDeleting(false);
     }
@@ -274,9 +306,9 @@ const Letters: React.FC = () => {
             Buat Surat Baru
           </Link>
         </Button>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          <Search className="w-4 h-4 mr-2" />
-          Refresh Data
+        <Button variant="outline" onClick={refreshData} disabled={loading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? 'Loading...' : 'Refresh Data'}
         </Button>
       </div>
     </div>
@@ -314,8 +346,9 @@ const Letters: React.FC = () => {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Gagal Memuat Data</h3>
           <p className="text-gray-600 mb-6">{error}</p>
-          <Button onClick={() => window.location.reload()}>
-            Coba Lagi
+          <Button onClick={refreshData} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Loading...' : 'Coba Lagi'}
           </Button>
         </div>
       </div>
@@ -331,12 +364,22 @@ const Letters: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900">Riwayat Surat</h1>
             <p className="text-gray-600 mt-1">Kelola dan pantau semua surat yang telah dibuat</p>
           </div>
-          <Button asChild className="bg-green-600 hover:bg-green-700">
-            <Link to="/generator">
-              <FileText className="w-4 h-4 mr-2" />
-              Buat Surat Baru
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={refreshData}
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Loading...' : 'Refresh'}
+            </Button>
+            <Button asChild className="bg-green-600 hover:bg-green-700">
+              <Link to="/generator">
+                <FileText className="w-4 h-4 mr-2" />
+                Buat Surat Baru
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filter */}
