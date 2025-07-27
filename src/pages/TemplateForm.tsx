@@ -468,9 +468,9 @@ const TemplateForm: React.FC = () => {
           kode_kabko: office?.kode_kabko || baseData.kode_kabko || '', // pastikan selalu ikut
           // Always merge these fields for all templates
           unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
-          ukerpegawai: selectedPegawai?.unit_kerja || '',
+          ukerpegawai: selectedPegawai?.unit_kerja || template6Data.ukerpegawai || '',
           unitkerjapejabat: selectedPejabat?.unit_kerja || '',
-          ukerpejabat: selectedPejabat?.unit_kerja || '',
+          ukerpejabat: selectedPejabat?.unit_kerja || template5Data.ukerpejabat || template6Data.ukerpejabat || '',
           // Pastikan field bulan/tahun nomor surat ikut di-merge
           blnno: template1Data.blnno || template5Data.blnno || template6Data.blnno || template8Data.blnno || template9Data.blnno || '',
           thnno: template1Data.thnno || template5Data.thnno || template6Data.thnno || template8Data.thnno || template9Data.thnno || '',
@@ -480,7 +480,7 @@ const TemplateForm: React.FC = () => {
           thnskrg: template4Data.thnskrg || '',
           // Pastikan field Template 7 ter-include dengan eksplisit
           nosurat: template7Data.nosurat || '',
-          tempattugas: template7Data.tempattugas || '',
+          tempattugas: template7Data.tempattugas || template5Data.tempattugas || '',
           kabkota2: template7Data.kabkota2 || '',
           jabatnpegawai2: template7Data.jabatnpegawai2 || '',
           tempattugas2: template7Data.tempattugas2 || '',
