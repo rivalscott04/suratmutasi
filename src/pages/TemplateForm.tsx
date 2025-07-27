@@ -356,7 +356,12 @@ const TemplateForm: React.FC = () => {
   };
 
   const handleTemplate5DataChange = (field: keyof Template5Data, value: string) => {
-    setTemplate5Data(prev => ({ ...prev, [field]: value }));
+    console.log('Template 5 Change:', field, value);
+    setTemplate5Data(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('Template 5 New State:', newData);
+      return newData;
+    });
   };
 
   const handleTemplate6DataChange = (field: keyof Template6Data, value: string) => {
@@ -491,6 +496,9 @@ const TemplateForm: React.FC = () => {
         status: 'draft',
       };
       console.log('PAYLOAD', payload);
+      console.log('TEMPLATE 5 DATA:', template5Data);
+      console.log('TEMPLATE 5 TEMPATTUGAS:', template5Data.tempattugas);
+      console.log('PAYLOAD TEMPATTUGAS:', template7Data.tempattugas || template5Data.tempattugas || '');
       console.log('FORM DATA TEMPLATE 7:', {
         nosurat: template7Data.nosurat,
         blnnomor: template7Data.blnnomor,
@@ -806,7 +814,10 @@ const TemplateForm: React.FC = () => {
               <Input
                 id="tempattugas5"
                 value={template5Data.tempattugas || ''}
-                onChange={(e) => handleTemplate5DataChange('tempattugas', e.target.value)}
+                onChange={(e) => {
+                  console.log('Input change - tempattugas5:', e.target.value);
+                  handleTemplate5DataChange('tempattugas', e.target.value);
+                }}
                 placeholder="Akan terisi otomatis dari data pegawai (atau isi manual)"
                 className={template5Data.tempattugas ? "bg-gray-50" : ""}
               />
@@ -1086,12 +1097,13 @@ const TemplateForm: React.FC = () => {
           />
         );
       case '5':
+        const template5CombinedData = { ...baseData, ...template5Data };
+        console.log('Template 5 Preview Data:', template5CombinedData);
+        console.log('Template 5 tempattugas:', template5Data.tempattugas);
+        console.log('Template 5 Combined tempattugas:', template5CombinedData.tempattugas);
         return (
           <Template5 
-            data={{
-              ...baseData,
-              ...template5Data
-            } as Template5Data}
+            data={template5CombinedData as Template5Data}
           />
         );
       case '6':
@@ -1284,9 +1296,9 @@ const TemplateForm: React.FC = () => {
                       value={selectedPegawai?.unit_kerja ?? ''}
                       placeholder="Akan terisi otomatis"
                     />
-                    {(templateId === '3' || templateId === '5' || templateId === '7' || templateId === '8') && (
+                    {(templateId === '3' || templateId === '7' || templateId === '8') && (
                       <AutoFilledInput
-                        label={templateId === '5' ? "Satuan Kerja" : "Tempat Tugas"}
+                        label="Tempat Tugas"
                         value={selectedPegawai?.tempat_tugas ?? ''}
                         placeholder="Akan terisi otomatis"
                       />

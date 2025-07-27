@@ -7,6 +7,8 @@ interface Template5Props {
 }
 
 export const Template5: React.FC<Template5Props> = ({ data }) => {
+  console.log('Template5 Component - data:', data);
+  console.log('Template5 Component - tempattugas:', data.tempattugas);
   return (
     <div className="template-preview bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', margin: 0, padding: 0 }}>
       {/* Header */}
