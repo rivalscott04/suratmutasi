@@ -491,7 +491,6 @@ const TemplateForm: React.FC = () => {
         status: 'draft',
       };
       console.log('PAYLOAD', payload);
-      console.log('TEMPLATE 7 DATA:', template7Data);
       console.log('FORM DATA TEMPLATE 7:', {
         nosurat: template7Data.nosurat,
         blnnomor: template7Data.blnnomor,
@@ -676,7 +675,9 @@ const TemplateForm: React.FC = () => {
                 id="tempattugas"
                 value={template3Data.tempattugas || ''}
                 onChange={(e) => handleTemplate3DataChange('tempattugas', e.target.value)}
-                placeholder="Tempat tugas pegawai"
+                placeholder="Akan terisi otomatis dari data pegawai"
+                readOnly
+                className="bg-gray-50"
               />
             </div>
             <div>
@@ -807,7 +808,9 @@ const TemplateForm: React.FC = () => {
                 id="tempattugas5"
                 value={template5Data.tempattugas || ''}
                 onChange={(e) => handleTemplate5DataChange('tempattugas', e.target.value)}
-                placeholder="Masukkan satuan kerja pegawai"
+                placeholder="Akan terisi otomatis dari data pegawai"
+                readOnly
+                className="bg-gray-50"
               />
             </div>
           </div>
@@ -885,7 +888,9 @@ const TemplateForm: React.FC = () => {
                   id="tempattugas7"
                   value={template7Data.tempattugas || ''}
                   onChange={(e) => handleTemplate7DataChange('tempattugas', e.target.value)}
-                  placeholder="Tempat tugas asal"
+                  placeholder="Akan terisi otomatis dari data pegawai"
+                  readOnly
+                  className="bg-gray-50"
                 />
               </div>
               <div>
@@ -976,7 +981,9 @@ const TemplateForm: React.FC = () => {
                   id="tempattugas8"
                   value={template8Data.tempattugas || ''}
                   onChange={(e) => handleTemplate8DataChange('tempattugas', e.target.value)}
-                  placeholder="Tempat tugas asal"
+                  placeholder="Akan terisi otomatis dari data pegawai"
+                  readOnly
+                  className="bg-gray-50"
                 />
               </div>
               <div>
@@ -1281,6 +1288,13 @@ const TemplateForm: React.FC = () => {
                       value={selectedPegawai?.unit_kerja ?? ''}
                       placeholder="Akan terisi otomatis"
                     />
+                    {(templateId === '3' || templateId === '5' || templateId === '7' || templateId === '8') && (
+                      <AutoFilledInput
+                        label={templateId === '5' ? "Satuan Kerja" : "Tempat Tugas"}
+                        value={selectedPegawai?.tempat_tugas ?? ''}
+                        placeholder="Akan terisi otomatis"
+                      />
+                    )}
                   </div>
                 </div>
               </FormSection>
