@@ -675,9 +675,8 @@ const TemplateForm: React.FC = () => {
                 id="tempattugas"
                 value={template3Data.tempattugas || ''}
                 onChange={(e) => handleTemplate3DataChange('tempattugas', e.target.value)}
-                placeholder="Akan terisi otomatis dari data pegawai"
-                readOnly
-                className="bg-gray-50"
+                placeholder="Akan terisi otomatis dari data pegawai (atau isi manual)"
+                className={template3Data.tempattugas ? "bg-gray-50" : ""}
               />
             </div>
             <div>
@@ -808,9 +807,8 @@ const TemplateForm: React.FC = () => {
                 id="tempattugas5"
                 value={template5Data.tempattugas || ''}
                 onChange={(e) => handleTemplate5DataChange('tempattugas', e.target.value)}
-                placeholder="Akan terisi otomatis dari data pegawai"
-                readOnly
-                className="bg-gray-50"
+                placeholder="Akan terisi otomatis dari data pegawai (atau isi manual)"
+                className={template5Data.tempattugas ? "bg-gray-50" : ""}
               />
             </div>
           </div>
@@ -888,9 +886,8 @@ const TemplateForm: React.FC = () => {
                   id="tempattugas7"
                   value={template7Data.tempattugas || ''}
                   onChange={(e) => handleTemplate7DataChange('tempattugas', e.target.value)}
-                  placeholder="Akan terisi otomatis dari data pegawai"
-                  readOnly
-                  className="bg-gray-50"
+                  placeholder="Akan terisi otomatis dari data pegawai (atau isi manual)"
+                  className={template7Data.tempattugas ? "bg-gray-50" : ""}
                 />
               </div>
               <div>
@@ -981,9 +978,8 @@ const TemplateForm: React.FC = () => {
                   id="tempattugas8"
                   value={template8Data.tempattugas || ''}
                   onChange={(e) => handleTemplate8DataChange('tempattugas', e.target.value)}
-                  placeholder="Akan terisi otomatis dari data pegawai"
-                  readOnly
-                  className="bg-gray-50"
+                  placeholder="Akan terisi otomatis dari data pegawai (atau isi manual)"
+                  className={template8Data.tempattugas ? "bg-gray-50" : ""}
                 />
               </div>
               <div>
