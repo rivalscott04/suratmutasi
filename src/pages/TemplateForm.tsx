@@ -344,7 +344,12 @@ const TemplateForm: React.FC = () => {
   };
 
   const handleTemplate2DataChange = (field: keyof Template2Data, value: string) => {
-    setTemplate2Data(prev => ({ ...prev, [field]: value }));
+    console.log(`Template 2 Change: ${field} = ${value}`);
+    setTemplate2Data(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('Template 2 New State:', newData);
+      return newData;
+    });
   };
 
   const handleTemplate3DataChange = (field: keyof Template3Data, value: string) => {
