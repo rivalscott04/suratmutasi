@@ -35,6 +35,7 @@ const Letters: React.FC = () => {
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [activeTab, setActiveTab] = useState<'all'|'with-employee'|'without-employee'>('all');
   
   const { toast } = useToast();
   const [selectedPegawaiNip, setSelectedPegawaiNip] = useState<string | null>(null);
@@ -67,8 +68,22 @@ const Letters: React.FC = () => {
     l.office?.kabkota?.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Filter letters berdasarkan tab
+  const getFilteredLettersByTab = () => {
+    switch (activeTab) {
+      case 'with-employee':
+        return filteredLetters.filter(l => ![2, 9].includes(l.template_id));
+      case 'without-employee':
+        return filteredLetters.filter(l => [2, 9].includes(l.template_id));
+      default:
+        return filteredLetters;
+    }
+  };
+
+  const tabFilteredLetters = getFilteredLettersByTab();
+
   // Sort letters
-  const sortedLetters = [...filteredLetters].sort((a, b) => {
+  const sortedLetters = [...tabFilteredLetters].sort((a, b) => {
     let aVal = a[sortBy] || '';
     let bVal = b[sortBy] || '';
     if (sortBy === 'tanggal') {
@@ -415,6 +430,44 @@ const Letters: React.FC = () => {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'all'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Semua Surat ({filteredLetters.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('with-employee')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'with-employee'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Surat dengan Pegawai ({filteredLetters.filter(l => ![2, 9].includes(l.template_id)).length})
+            </button>
+            <button
+              onClick={() => setActiveTab('without-employee')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'without-employee'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Surat Analisis & Pernyataan ({filteredLetters.filter(l => [2, 9].includes(l.template_id)).length})
+            </button>
+          </nav>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>
@@ -470,7 +523,9 @@ const Letters: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5" />
-              Surat Berdasarkan Kantor ({Object.keys(groupedByOffice).length} Kantor)
+              {activeTab === 'all' && `Surat Berdasarkan Kantor (${Object.keys(groupedByOffice).length} Kantor)`}
+              {activeTab === 'with-employee' && `Surat dengan Pegawai (${Object.keys(groupedByOffice).length} Kantor)`}
+              {activeTab === 'without-employee' && `Surat Analisis & Pernyataan (${Object.keys(groupedByOffice).length} Kantor)`}
             </CardTitle>
           </CardHeader>
           <CardContent>
