@@ -580,11 +580,21 @@ const Letters: React.FC = () => {
             </Button>
             {tabFilteredLetters.length > 0 && (
               <Button
-                variant="outline"
+                variant={selectAll ? "destructive" : "outline"}
                 onClick={() => handleSelectAll(!selectAll)}
-                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                className={selectAll ? "bg-red-600 hover:bg-red-700" : "border-blue-200 text-blue-700 hover:bg-blue-50"}
               >
-                {selectAll ? 'Batal Pilih Semua' : 'Pilih Semua'}
+                {selectAll ? (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Batal Pilih Semua
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Pilih Semua
+                  </>
+                )}
               </Button>
             )}
             <Button asChild className="bg-green-600 hover:bg-green-700">
@@ -631,22 +641,24 @@ const Letters: React.FC = () => {
 
       {/* Bulk Selection UI */}
       {selectedLetters.length > 0 && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selectAll}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-blue-900">
-                  {selectedLetters.length} surat dipilih
-                </span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-bold text-blue-600">{selectedLetters.length}</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900">
+                    {selectedLetters.length} surat dipilih
+                  </h3>
+                  <p className="text-sm text-blue-700">
+                    Siap untuk dihapus
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -654,6 +666,7 @@ const Letters: React.FC = () => {
                   setSelectedLetters([]);
                   setSelectAll(false);
                 }}
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
               >
                 Batal Pilih
               </Button>
@@ -661,10 +674,29 @@ const Letters: React.FC = () => {
                 variant="destructive"
                 size="sm"
                 onClick={handleBulkDelete}
+                className="bg-red-600 hover:bg-red-700 shadow-sm"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Hapus {selectedLetters.length} Surat
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Action Button for Bulk Delete */}
+      {selectedLetters.length > 0 && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className="flex flex-col gap-2">
+            <Button
+              size="lg"
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700 shadow-lg rounded-full w-16 h-16"
+            >
+              <Trash2 className="w-6 h-6" />
+            </Button>
+            <div className="bg-white rounded-full px-3 py-1 shadow-lg text-sm font-medium text-gray-700">
+              {selectedLetters.length} surat
             </div>
           </div>
         </div>
@@ -856,15 +888,22 @@ const Letters: React.FC = () => {
                         </div>
                         <div className="overflow-x-auto">
                           <Table>
-                            <TableHeader>
+                            <TableHeader className="bg-gray-50">
                               <TableRow>
                                 <TableHead className="w-12">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectAll}
-                                    onChange={(e) => handleSelectAll(e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                                  />
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectAll}
+                                      onChange={(e) => handleSelectAll(e.target.checked)}
+                                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                    />
+                                    {selectedLetters.length > 0 && (
+                                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                        {selectedLetters.length}
+                                      </span>
+                                    )}
+                                  </div>
                                 </TableHead>
                                 <TableHead>No.</TableHead>
                                 <TableHead>Nomor Surat</TableHead>
@@ -891,7 +930,10 @@ const Letters: React.FC = () => {
                                 const isSelected = selectedLetters.includes(letter.id);
                                 
                                 return (
-                                  <TableRow key={letter.id}>
+                                  <TableRow 
+                                    key={letter.id}
+                                    className={isSelected ? 'bg-blue-50 border-blue-200' : ''}
+                                  >
                                     <TableCell>
                                       <input
                                         type="checkbox"
