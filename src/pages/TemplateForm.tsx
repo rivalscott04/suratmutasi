@@ -552,6 +552,13 @@ const TemplateForm: React.FC = () => {
           blnno: template9Data.blnno,
           thnno: template9Data.thnno,
           ukerpejabat: template9Data.ukerpejabat
+        }),
+        // Exclude pegawai fields for Template 2
+        ...(templateId !== '2' && {
+          namapegawai: baseData.namapegawai,
+          nippegawai: baseData.nippegawai,
+          pangkatgolpegawai: baseData.pangkatgolpegawai,
+          jabatanpegawai: baseData.jabatanpegawai
         })
       },
       status: 'draft',
@@ -598,6 +605,20 @@ const TemplateForm: React.FC = () => {
         
         // Check all form_data keys
         console.log('ALL FORM_DATA KEYS:', Object.keys(payload.form_data));
+        
+        // Show exact Template 2 data that was sent
+        console.log('EXACT TEMPLATE 2 DATA SENT:');
+        console.log('template2Data state:', template2Data);
+        console.log('Template 2 fields in payload:');
+        console.log('- blnnomor:', payload.form_data.blnnomor);
+        console.log('- tahunskrg:', payload.form_data.tahunskrg);
+        console.log('- nosurat:', payload.form_data.nosurat);
+        console.log('- unitkerja:', payload.form_data.unitkerja);
+        console.log('- namajabatan:', payload.form_data.namajabatan);
+        console.log('- bbnkerja:', payload.form_data.bbnkerja);
+        console.log('- eksisting:', payload.form_data.eksisting);
+        console.log('- kelebihan:', payload.form_data.kelebihan);
+        console.log('- kekurangan:', payload.form_data.kekurangan);
       }
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
