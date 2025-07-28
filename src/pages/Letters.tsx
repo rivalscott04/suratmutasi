@@ -301,6 +301,32 @@ const Letters: React.FC = () => {
   };
 
   const handleDeleteLetter = async (letter: any) => {
+    // Debug logging
+    console.log('Delete Letter Debug:', {
+      letterId: letter.id,
+      letterCreatedBy: letter.created_by,
+      userId: user?.id,
+      userRole: user?.role
+    });
+    
+    // Check if user can delete this letter
+    const canDelete = user?.role === 'admin' || letter.created_by === user?.id;
+    
+    console.log('Delete Permission Check:', {
+      canDelete,
+      isAdmin: user?.role === 'admin',
+      isCreator: letter.created_by === user?.id
+    });
+    
+    if (!canDelete) {
+      toast({ 
+        title: 'Tidak dapat menghapus surat', 
+        description: 'Anda hanya dapat menghapus surat yang Anda buat sendiri.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setLetterToDelete(letter);
     setShowDeleteModal(true);
   };
@@ -746,16 +772,14 @@ const Letters: React.FC = () => {
                                         >
                                           <Eye className="w-4 h-4" />
                                         </Button>
-                                        {user?.role === 'admin' && (
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleDeleteLetter(letter)}
-                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                          </Button>
-                                        )}
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleDeleteLetter(letter)}
+                                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
                                       </div>
                                     </TableCell>
                                   </TableRow>
