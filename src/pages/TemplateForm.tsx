@@ -490,7 +490,9 @@ const TemplateForm: React.FC = () => {
           // Signature data
           ibukota: baseData.ibukota,
           tanggal: tanggalIndo,
-          kode_kabko: office?.kode_kabko || baseData.kode_kabko || ''
+          kode_kabko: office?.kode_kabko || baseData.kode_kabko || '',
+          // Add office data for Template 2
+          office: office
         } : {
           // For other templates, include all baseData
           ...baseData,
@@ -575,6 +577,20 @@ const TemplateForm: React.FC = () => {
         // Show complete payload structure
         console.log('COMPLETE PAYLOAD STRUCTURE:');
         console.log(JSON.stringify(payload, null, 2));
+        
+        // Check all fields that Template 2 needs
+        console.log('TEMPLATE 2 ALL REQUIRED FIELDS CHECK:');
+        const allTemplate2Fields = [
+          'kabkota', 'jln', 'telfon', 'fax', 'email', 'website',
+          'namapejabat', 'nippejabat', 'pangkatgolpejabat', 'jabatanpejabat',
+          'unitkerja', 'nosurat', 'blnnomor', 'tahunskrg', 'namajabatan',
+          'bbnkerja', 'eksisting', 'kelebihan', 'kekurangan',
+          'ibukota', 'tanggal', 'kode_kabko', 'office'
+        ];
+        allTemplate2Fields.forEach(field => {
+          const value = payload.form_data[field];
+          console.log(`${field}: ${value} ${value === '' || value === null || value === undefined ? '(MISSING!)' : ''}`);
+        });
       }
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
