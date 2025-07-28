@@ -578,25 +578,30 @@ const Letters: React.FC = () => {
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Loading...' : 'Refresh'}
             </Button>
-            {tabFilteredLetters.length > 0 && (
-              <Button
-                variant={selectAll ? "destructive" : "outline"}
-                onClick={() => handleSelectAll(!selectAll)}
-                className={selectAll ? "bg-red-600 hover:bg-red-700" : "border-blue-200 text-blue-700 hover:bg-blue-50"}
-              >
-                {selectAll ? (
-                  <>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Batal Pilih Semua
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Pilih Semua
-                  </>
-                )}
-              </Button>
-            )}
+            {tabFilteredLetters.length > 0 && (() => {
+              const deletableLettersCount = tabFilteredLetters.filter(letter => 
+                user?.role === 'admin' || letter.created_by === user?.id
+              ).length;
+              return deletableLettersCount > 0 ? (
+                <Button
+                  variant={selectAll ? "destructive" : "outline"}
+                  onClick={() => handleSelectAll(!selectAll)}
+                  className={selectAll ? "bg-red-600 hover:bg-red-700" : "border-blue-200 text-blue-700 hover:bg-blue-50"}
+                >
+                  {selectAll ? (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Batal Pilih Semua
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Pilih Semua ({deletableLettersCount})
+                    </>
+                  )}
+                </Button>
+              ) : null;
+            })()}
             <Button asChild className="bg-green-600 hover:bg-green-700">
               <Link to="/generator">
                 <FileText className="w-4 h-4 mr-2" />
@@ -892,17 +897,27 @@ const Letters: React.FC = () => {
                               <TableRow>
                                 <TableHead className="w-12">
                                   <div className="flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectAll}
-                                      onChange={(e) => handleSelectAll(e.target.checked)}
-                                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                                    />
-                                    {selectedLetters.length > 0 && (
-                                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                                        {selectedLetters.length}
-                                      </span>
-                                    )}
+                                    {(() => {
+                                      const deletableLettersCount = tabFilteredLetters.filter(letter => 
+                                        user?.role === 'admin' || letter.created_by === user?.id
+                                      ).length;
+                                      return (
+                                        <>
+                                          <input
+                                            type="checkbox"
+                                            checked={selectAll}
+                                            onChange={(e) => handleSelectAll(e.target.checked)}
+                                            disabled={deletableLettersCount === 0}
+                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+                                          />
+                                          {selectedLetters.length > 0 && (
+                                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                              {selectedLetters.length}
+                                            </span>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
                                   </div>
                                 </TableHead>
                                 <TableHead>No.</TableHead>
