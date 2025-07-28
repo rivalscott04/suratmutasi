@@ -447,131 +447,134 @@ const TemplateForm: React.FC = () => {
     // Format tanggal Indonesia untuk tanda tangan
     let tanggalIndo = '';
     if (baseData.tanggal) tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
+    
+    // Compose payload sesuai backend
+    const payload: any = {
+      office_id: office.id,
+      created_by: user.id,
+      template_id: Number(templateId),
+      letter_number,
+      subject: selectedTemplate?.title,
+      recipient_employee_nip: selectedPegawai?.nip || null, // Handle null for template 9
+      signing_official_nip: selectedPejabat.nip,
+      form_data: {
+        ...baseData,
+        // Only include template-specific data based on current template
+        ...(templateId === '1' && template1Data),
+        ...(templateId === '2' && template2Data),
+        ...(templateId === '3' && template3Data),
+        ...(templateId === '4' && template4Data),
+        ...(templateId === '5' && template5Data),
+        ...(templateId === '6' && template6Data),
+        ...(templateId === '7' && template7Data),
+        ...(templateId === '8' && template8Data),
+        ...(templateId === '9' && template9Data),
+        tanggal: tanggalIndo,
+        kode_kabko: office?.kode_kabko || baseData.kode_kabko || '', // pastikan selalu ikut
+        // Always merge these fields for all templates
+        unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
+        ukerpegawai: selectedPegawai?.unit_kerja || (templateId === '6' ? template6Data.ukerpegawai : ''),
+        unitkerjapejabat: selectedPejabat?.unit_kerja || '',
+        ukerpejabat: selectedPejabat?.unit_kerja || (templateId === '5' ? template5Data.ukerpejabat : '') || (templateId === '6' ? template6Data.ukerpejabat : ''),
+        // Only include relevant fields based on template
+        ...(templateId === '1' && {
+          blnno: template1Data.blnno,
+          thnno: template1Data.thnno,
+          nosrt: template1Data.nosrt,
+          ukerpejabat: template1Data.ukerpejabat,
+          ukerpegawai: template1Data.ukerpegawai
+        }),
+        ...(templateId === '2' && {
+          blnnomor: template2Data.blnnomor,
+          tahunskrg: template2Data.tahunskrg,
+          nosurat: template2Data.nosurat,
+          unitkerja: template2Data.unitkerja,
+          namajabatan: template2Data.namajabatan,
+          bbnkerja: template2Data.bbnkerja,
+          eksisting: template2Data.eksisting,
+          kelebihan: template2Data.kelebihan,
+          kekurangan: template2Data.kekurangan
+        }),
+        ...(templateId === '3' && {
+          nosrt: template3Data.nosrt,
+          blnno: template3Data.blnno,
+          thnno: template3Data.thnno,
+          tempattugas: template3Data.tempattugas,
+          sekolah: template3Data.sekolah,
+          kabkota2: template3Data.kabkota2,
+          tglmulai: template3Data.tglmulai
+        }),
+        ...(templateId === '4' && {
+          nosrt: template4Data.nosrt,
+          blnsrt: template4Data.blnsrt,
+          thnskrg: template4Data.thnskrg,
+          unitkerja: template4Data.unitkerja,
+          keperluan: template4Data.keperluan
+        }),
+        ...(templateId === '5' && {
+          nosrt: template5Data.nosrt,
+          blnno: template5Data.blnno,
+          thnno: template5Data.thnno,
+          ukerpejabat: template5Data.ukerpejabat,
+          tempattugas: template5Data.tempattugas
+        }),
+        ...(templateId === '6' && {
+          nosrt: template6Data.nosrt,
+          blnno: template6Data.blnno,
+          thnno: template6Data.thnno,
+          ukerpejabat: template6Data.ukerpejabat,
+          ukerpegawai: template6Data.ukerpegawai
+        }),
+        ...(templateId === '7' && {
+          nosurat: template7Data.nosurat,
+          blnnomor: template7Data.blnnomor,
+          tahunskrg: template7Data.tahunskrg,
+          tempattugas: template7Data.tempattugas,
+          kabkota2: template7Data.kabkota2,
+          jabatnpegawai2: template7Data.jabatnpegawai2,
+          tempattugas2: template7Data.tempattugas2,
+          kabataukotatujuan: template7Data.kabataukotatujuan
+        }),
+        ...(templateId === '8' && {
+          nosrt: template8Data.nosrt,
+          blnno: template8Data.blnno,
+          thnno: template8Data.thnno,
+          tempattugas: template8Data.tempattugas,
+          jabatanbaru: template8Data.jabatanbaru,
+          tempattugasbaru: template8Data.tempattugasbaru
+        }),
+        ...(templateId === '9' && {
+          nosrt: template9Data.nosrt,
+          blnno: template9Data.blnno,
+          thnno: template9Data.thnno,
+          ukerpejabat: template9Data.ukerpejabat
+        })
+      },
+      status: 'draft',
+    };
+    
     try {
-      // Compose payload sesuai backend
-      const payload: any = {
-        office_id: office.id,
-        created_by: user.id,
-        template_id: Number(templateId),
-        letter_number,
-        subject: selectedTemplate?.title,
-        recipient_employee_nip: selectedPegawai?.nip || null, // Handle null for template 9
-        signing_official_nip: selectedPejabat.nip,
-        form_data: {
-          ...baseData,
-          // Only include template-specific data based on current template
-          ...(templateId === '1' && template1Data),
-          ...(templateId === '2' && template2Data),
-          ...(templateId === '3' && template3Data),
-          ...(templateId === '4' && template4Data),
-          ...(templateId === '5' && template5Data),
-          ...(templateId === '6' && template6Data),
-          ...(templateId === '7' && template7Data),
-          ...(templateId === '8' && template8Data),
-          ...(templateId === '9' && template9Data),
-          tanggal: tanggalIndo,
-          kode_kabko: office?.kode_kabko || baseData.kode_kabko || '', // pastikan selalu ikut
-          // Always merge these fields for all templates
-          unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
-          ukerpegawai: selectedPegawai?.unit_kerja || (templateId === '6' ? template6Data.ukerpegawai : ''),
-          unitkerjapejabat: selectedPejabat?.unit_kerja || '',
-          ukerpejabat: selectedPejabat?.unit_kerja || (templateId === '5' ? template5Data.ukerpejabat : '') || (templateId === '6' ? template6Data.ukerpejabat : ''),
-          // Only include relevant fields based on template
-          ...(templateId === '1' && {
-            blnno: template1Data.blnno,
-            thnno: template1Data.thnno,
-            nosrt: template1Data.nosrt,
-            ukerpejabat: template1Data.ukerpejabat,
-            ukerpegawai: template1Data.ukerpegawai
-          }),
-          ...(templateId === '2' && {
-            blnnomor: template2Data.blnnomor,
-            tahunskrg: template2Data.tahunskrg,
-            nosurat: template2Data.nosurat,
-            unitkerja: template2Data.unitkerja,
-            namajabatan: template2Data.namajabatan,
-            bbnkerja: template2Data.bbnkerja,
-            eksisting: template2Data.eksisting,
-            kelebihan: template2Data.kelebihan,
-            kekurangan: template2Data.kekurangan
-          }),
-          ...(templateId === '3' && {
-            nosrt: template3Data.nosrt,
-            blnno: template3Data.blnno,
-            thnno: template3Data.thnno,
-            tempattugas: template3Data.tempattugas,
-            sekolah: template3Data.sekolah,
-            kabkota2: template3Data.kabkota2,
-            tglmulai: template3Data.tglmulai
-          }),
-          ...(templateId === '4' && {
-            nosrt: template4Data.nosrt,
-            blnsrt: template4Data.blnsrt,
-            thnskrg: template4Data.thnskrg,
-            unitkerja: template4Data.unitkerja,
-            keperluan: template4Data.keperluan
-          }),
-          ...(templateId === '5' && {
-            nosrt: template5Data.nosrt,
-            blnno: template5Data.blnno,
-            thnno: template5Data.thnno,
-            ukerpejabat: template5Data.ukerpejabat,
-            tempattugas: template5Data.tempattugas
-          }),
-          ...(templateId === '6' && {
-            nosrt: template6Data.nosrt,
-            blnno: template6Data.blnno,
-            thnno: template6Data.thnno,
-            ukerpejabat: template6Data.ukerpejabat,
-            ukerpegawai: template6Data.ukerpegawai
-          }),
-          ...(templateId === '7' && {
-            nosurat: template7Data.nosurat,
-            blnnomor: template7Data.blnnomor,
-            tahunskrg: template7Data.tahunskrg,
-            tempattugas: template7Data.tempattugas,
-            kabkota2: template7Data.kabkota2,
-            jabatnpegawai2: template7Data.jabatnpegawai2,
-            tempattugas2: template7Data.tempattugas2,
-            kabataukotatujuan: template7Data.kabataukotatujuan
-          }),
-          ...(templateId === '8' && {
-            nosrt: template8Data.nosrt,
-            blnno: template8Data.blnno,
-            thnno: template8Data.thnno,
-            tempattugas: template8Data.tempattugas,
-            jabatanbaru: template8Data.jabatanbaru,
-            tempattugasbaru: template8Data.tempattugasbaru
-          }),
-          ...(templateId === '9' && {
-            nosrt: template9Data.nosrt,
-            blnno: template9Data.blnno,
-            thnno: template9Data.thnno,
-            ukerpejabat: template9Data.ukerpejabat
-          })
-        },
-        status: 'draft',
-      };
       console.log('PAYLOAD', payload);
-      console.log('TEMPLATE 5 DATA:', template5Data);
-      console.log('TEMPLATE 5 TEMPATTUGAS:', template5Data.tempattugas);
-      console.log('PAYLOAD TEMPATTUGAS:', template7Data.tempattugas || template5Data.tempattugas || '');
-      console.log('FORM DATA TEMPLATE 7:', {
-        nosurat: template7Data.nosurat,
-        blnnomor: template7Data.blnnomor,
-        tahunskrg: template7Data.tahunskrg,
-        tempattugas: template7Data.tempattugas,
-        kabkota2: template7Data.kabkota2,
-        jabatnpegawai2: template7Data.jabatnpegawai2,
-        tempattugas2: template7Data.tempattugas2,
-        kabataukotatujuan: template7Data.kabataukotatujuan,
-      });
+      // Only log template-specific data for current template
+      if (templateId === '2') {
+        console.log('TEMPLATE 2 DATA:', template2Data);
+        console.log('FORM_DATA SENT:', payload.form_data);
+        console.log('TEMPLATE ID:', templateId);
+        console.log('LETTER NUMBER:', letter_number);
+      }
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
       setShowSuccessModal(true);
       toast({ title: 'Surat berhasil disimpan', description: 'Surat siap digenerate PDF.' });
     } catch (err: any) {
       console.error('ERROR SUBMIT', err);
+      console.error('ERROR DETAILS:', {
+        message: err.message,
+        status: err.status,
+        response: err.response,
+        data: err.data
+      });
+      console.error('PAYLOAD THAT FAILED:', payload);
       setSubmitError(err.message || 'Gagal menyimpan surat');
     } finally {
       setSaving(false);
