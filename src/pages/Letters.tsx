@@ -59,6 +59,12 @@ const Letters: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [letterToDelete, setLetterToDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  
+  // Bulk selection state
+  const [selectedLetters, setSelectedLetters] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Filter letters berdasarkan search
   const filteredLetters = letters.filter(l =>
@@ -331,6 +337,84 @@ const Letters: React.FC = () => {
     setShowDeleteModal(true);
   };
 
+  // Bulk selection functions
+  const handleSelectLetter = (letterId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedLetters(prev => [...prev, letterId]);
+    } else {
+      setSelectedLetters(prev => prev.filter(id => id !== letterId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAll(checked);
+    if (checked) {
+      // Only select letters that user can delete
+      const deletableLetters = tabFilteredLetters.filter(letter => 
+        user?.role === 'admin' || letter.created_by === user?.id
+      );
+      setSelectedLetters(deletableLetters.map(letter => letter.id));
+    } else {
+      setSelectedLetters([]);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedLetters.length === 0) {
+      toast({ 
+        title: 'Tidak ada surat dipilih', 
+        description: 'Pilih surat yang akan dihapus terlebih dahulu.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    setShowBulkDeleteModal(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      // Delete letters one by one
+      for (const letterId of selectedLetters) {
+        await apiDelete(`/api/letters/${letterId}`, token);
+      }
+      
+      toast({ 
+        title: 'Surat berhasil dihapus', 
+        description: `${selectedLetters.length} surat telah dihapus dari sistem.`,
+        duration: 3000
+      });
+      
+      // Reset selection
+      setSelectedLetters([]);
+      setSelectAll(false);
+      setShowBulkDeleteModal(false);
+      
+      // Refresh data
+      await refreshData();
+      
+      // Reset pagination state
+      setOfficePaging({});
+      
+      // Reset search jika ada
+      if (search) {
+        setSearch('');
+      }
+      if (searchTerm) {
+        setSearchTerm('');
+      }
+    } catch (err: any) {
+      toast({ 
+        title: 'Gagal menghapus surat', 
+        description: err.message || 'Terjadi kesalahan', 
+        variant: 'destructive',
+        duration: 5000
+      });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const refreshData = async () => {
     setLoading(true);
     try {
@@ -494,6 +578,15 @@ const Letters: React.FC = () => {
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Loading...' : 'Refresh'}
             </Button>
+            {tabFilteredLetters.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => handleSelectAll(!selectAll)}
+                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                {selectAll ? 'Batal Pilih Semua' : 'Pilih Semua'}
+              </Button>
+            )}
             <Button asChild className="bg-green-600 hover:bg-green-700">
               <Link to="/generator">
                 <FileText className="w-4 h-4 mr-2" />
@@ -535,6 +628,47 @@ const Letters: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Bulk Selection UI */}
+      {selectedLetters.length > 0 && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-blue-900">
+                  {selectedLetters.length} surat dipilih
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedLetters([]);
+                  setSelectAll(false);
+                }}
+              >
+                Batal Pilih
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Hapus {selectedLetters.length} Surat
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className="mb-8">
@@ -724,6 +858,14 @@ const Letters: React.FC = () => {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead className="w-12">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectAll}
+                                    onChange={(e) => handleSelectAll(e.target.checked)}
+                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                  />
+                                </TableHead>
                                 <TableHead>No.</TableHead>
                                 <TableHead>Nomor Surat</TableHead>
                                 <TableHead>Template</TableHead>
@@ -743,8 +885,22 @@ const Letters: React.FC = () => {
                                     parsedFormData = {};
                                   }
                                 }
+                                
+                                // Check if user can delete this letter
+                                const canDelete = user?.role === 'admin' || letter.created_by === user?.id;
+                                const isSelected = selectedLetters.includes(letter.id);
+                                
                                 return (
                                   <TableRow key={letter.id}>
+                                    <TableCell>
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={(e) => handleSelectLetter(letter.id, e.target.checked)}
+                                        disabled={!canDelete}
+                                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+                                      />
+                                    </TableCell>
                                     <TableCell>{(paging.currentPage - 1) * paging.pageSize + idx + 1}</TableCell>
                                     <TableCell className="font-mono text-sm">{letter.letter_number}</TableCell>
                                     <TableCell>{letter.template_name}</TableCell>
@@ -889,6 +1045,43 @@ const Letters: React.FC = () => {
                 className="flex-1 bg-red-600 hover:bg-red-700"
               >
                 {deleting ? 'Menghapus...' : 'Hapus'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center animate-fade-in">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <Trash2 className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2 text-gray-900">Hapus Surat</h2>
+            <p className="text-gray-600 mb-6 text-center">
+              Apakah Anda yakin ingin menghapus {selectedLetters.length} surat yang dipilih? 
+              Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowBulkDeleteModal(false);
+                  setSelectedLetters([]);
+                  setSelectAll(false);
+                }}
+                disabled={bulkDeleting}
+                className="flex-1"
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={confirmBulkDelete}
+                disabled={bulkDeleting}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {bulkDeleting ? 'Menghapus...' : 'Hapus'}
               </Button>
             </div>
           </div>
