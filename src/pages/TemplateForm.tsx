@@ -605,6 +605,15 @@ const TemplateForm: React.FC = () => {
         data: err.data
       });
       console.error('PAYLOAD THAT FAILED:', payload);
+      
+      // Log backend error response details
+      if (err.response) {
+        console.error('BACKEND ERROR RESPONSE:', err.response);
+        console.error('BACKEND ERROR DATA:', err.response.data);
+        console.error('BACKEND ERROR STATUS:', err.response.status);
+        console.error('BACKEND ERROR HEADERS:', err.response.headers);
+      }
+      
       setSubmitError(err.message || 'Gagal menyimpan surat');
     } finally {
       setSaving(false);
