@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiGet, apiDelete } from '@/lib/api';
+import { apiGet, apiDelete, apiPut } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw, Users, ClipboardList, Info } from 'lucide-react';
@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PegawaiSearchInput } from '@/components/PegawaiSearchInput';
 
 const Letters: React.FC = () => {
   const { token, user } = useAuth();
@@ -53,6 +54,12 @@ const Letters: React.FC = () => {
   const [officePaging, setOfficePaging] = useState<Record<string, { currentPage: number; pageSize: number }>>({});
   // State untuk mapping officeId -> nama kantor/kabkota
   const [officeMap, setOfficeMap] = useState<Record<string, { namakantor?: string; kabkota?: string }>>({});
+
+  // Tambahkan state untuk modal edit pejabat & pegawai
+  const [editLetter, setEditLetter] = useState<any>(null);
+  const [editPejabat, setEditPejabat] = useState<any>(null);
+  const [editPegawai, setEditPegawai] = useState<any>(null);
+  const [editSaving, setEditSaving] = useState(false);
 
   const navigate = useNavigate();
   const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
@@ -335,6 +342,68 @@ const Letters: React.FC = () => {
     
     setLetterToDelete(letter);
     setShowDeleteModal(true);
+  };
+
+  // Fungsi untuk handle edit
+  const handleEditPejabatPegawai = (letter: any) => {
+    setEditLetter(letter);
+    setEditPejabat(null);
+    setEditPegawai(null);
+  };
+
+  // Fungsi untuk simpan perubahan
+  const handleSaveEditPejabatPegawai = async () => {
+    if (!editLetter || !editPejabat || !editPegawai) return;
+    setEditSaving(true);
+    try {
+      // Ambil data surat yang ada
+      const currentFormData = editLetter.form_data;
+      
+      // Update data pejabat & pegawai
+      const updatedFormData = {
+        ...currentFormData,
+        // Update data pejabat
+        namapejabat: editPejabat.nama || '',
+        nippejabat: editPejabat.nip || '',
+        pangkatgolpejabat: editPejabat.pangkat_gol || '',
+        jabatanpejabat: editPejabat.jabatan || '',
+        ukerpejabat: editPejabat.unit_kerja || '',
+        // Update data pegawai
+        namapegawai: editPegawai.nama || '',
+        nippegawai: editPegawai.nip || '',
+        pangkatgolpegawai: editPegawai.pangkat_gol || '',
+        jabatanpegawai: editPegawai.jabatan || '',
+        ukerpegawai: editPegawai.unit_kerja || '',
+      };
+
+      // Kirim update ke backend
+      await apiPut(`/api/letters/${editLetter.id}`, {
+        form_data: updatedFormData
+      }, token);
+
+      // Refresh data
+      await refreshData();
+      
+      // Reset state
+      setEditLetter(null);
+      setEditPejabat(null);
+      setEditPegawai(null);
+      
+      // Show success message
+      toast({
+        title: "Berhasil",
+        description: "Data pejabat dan pegawai berhasil diperbarui",
+      });
+    } catch (error) {
+      console.error('Error updating letter:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui data surat",
+        variant: "destructive",
+      });
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   // Bulk selection functions
@@ -985,6 +1054,16 @@ const Letters: React.FC = () => {
                                         >
                                           <Eye className="w-4 h-4" />
                                         </Button>
+                                        {(user?.role === 'admin' || letter.created_by === user?.id) && (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleEditPejabatPegawai(letter)}
+                                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                          >
+                                            Edit Pejabat & Pegawai
+                                          </Button>
+                                        )}
                                         <Button
                                           variant="outline"
                                           size="sm"
@@ -1143,6 +1222,37 @@ const Letters: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Pejabat & Pegawai Modal */}
+      {editLetter && (
+        <Dialog open={!!editLetter} onOpenChange={v => { if (!v) setEditLetter(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogTitle>Edit Pejabat & Pegawai</DialogTitle>
+            <div className="mb-4">
+              <PegawaiSearchInput
+                label="Cari Pejabat"
+                placeholder="Masukkan nama atau NIP pejabat..."
+                onSelect={setEditPejabat}
+                selectedPegawai={editPejabat}
+              />
+            </div>
+            <div className="mb-4">
+              <PegawaiSearchInput
+                label="Cari Pegawai"
+                placeholder="Masukkan nama atau NIP pegawai..."
+                onSelect={setEditPegawai}
+                selectedPegawai={editPegawai}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setEditLetter(null)} disabled={editSaving}>Batal</Button>
+              <Button onClick={handleSaveEditPejabatPegawai} disabled={editSaving || !editPejabat || !editPegawai} className="bg-blue-600 hover:bg-blue-700 text-white">
+                {editSaving ? 'Menyimpan...' : 'Simpan'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

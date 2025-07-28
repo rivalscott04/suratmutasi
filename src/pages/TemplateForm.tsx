@@ -512,11 +512,7 @@ const TemplateForm: React.FC = () => {
             ukerpegawai: selectedPegawai?.unit_kerja || ''
           }),
           // Template specific data (for other templates)
-          ...(templateId === '1' && {
-            ...template1Data,
-            pangkatgolpejabat: selectedPejabat?.pangkat_gol || '',
-            pangkatgolpegawai: selectedPegawai?.pangkat_gol || '',
-          }),
+          ...(templateId === '1' && template1Data),
           ...(templateId === '3' && template3Data),
           ...(templateId === '4' && template4Data),
           ...(templateId === '5' && template5Data),
@@ -529,11 +525,15 @@ const TemplateForm: React.FC = () => {
           unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
           namapejabat: selectedPejabat.nama,
           nippejabat: selectedPejabat.nip,
-          pangkatgolpejabat: selectedPejabat.pangkat_gol,
           jabatanpejabat: selectedPejabat.jabatan,
           unitkerjapejabat: selectedPejabat.unit_kerja,
           ukerpejabat: selectedPejabat.unit_kerja,
-          ibukota: baseData.ibukota
+          ibukota: baseData.ibukota,
+          // PASTIKAN pangkat golongan SELALU ADA untuk semua template kecuali 2 dan 9
+          ...(templateId !== '2' && templateId !== '9' && {
+            pangkatgolpejabat: selectedPejabat?.pangkat_gol || '',
+            pangkatgolpegawai: selectedPegawai?.pangkat_gol || '',
+          })
         })
       }
     };
@@ -541,6 +541,19 @@ const TemplateForm: React.FC = () => {
     // Debug untuk Template 2 - tampilkan payload final
     if (templateId === '2') {
       console.log('Template 2 Submit Debug - Final payload form_data:', payload.form_data);
+    }
+    
+    // Debug untuk template selain 2 - cek pangkat/golongan
+    if (templateId !== '2' && templateId !== '9') {
+      console.log(`Template ${templateId} Debug - Pangkat/Golongan Check:`);
+      console.log(`pangkatgolpejabat: ${payload.form_data.pangkatgolpejabat}`);
+      console.log(`pangkatgolpegawai: ${payload.form_data.pangkatgolpegawai}`);
+      console.log(`selectedPejabat.pangkat_gol: ${selectedPejabat?.pangkat_gol}`);
+      console.log(`selectedPegawai.pangkat_gol: ${selectedPegawai?.pangkat_gol}`);
+      console.log(`selectedPejabat object:`, selectedPejabat);
+      console.log(`selectedPegawai object:`, selectedPegawai);
+      console.log(`baseData.pangkatgolpejabat: ${baseData.pangkatgolpejabat}`);
+      console.log(`baseData.pangkatgolpegawai: ${baseData.pangkatgolpegawai}`);
     }
     
     try {
