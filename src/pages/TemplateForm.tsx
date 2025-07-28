@@ -561,6 +561,22 @@ const TemplateForm: React.FC = () => {
         console.log('FORM_DATA SENT:', payload.form_data);
         console.log('TEMPLATE ID:', templateId);
         console.log('LETTER NUMBER:', letter_number);
+        
+        // Check for empty fields in form_data
+        console.log('CHECKING EMPTY FIELDS:');
+        Object.entries(payload.form_data).forEach(([key, value]) => {
+          if (value === '' || value === null || value === undefined) {
+            console.log(`EMPTY FIELD: ${key} = ${value}`);
+          }
+        });
+        
+        // Check required Template 2 fields specifically
+        console.log('TEMPLATE 2 REQUIRED FIELDS CHECK:');
+        const template2Fields = ['blnnomor', 'tahunskrg', 'nosurat', 'unitkerja', 'namajabatan', 'bbnkerja', 'eksisting', 'kelebihan', 'kekurangan'];
+        template2Fields.forEach(field => {
+          const value = payload.form_data[field];
+          console.log(`${field}: ${value} ${value === '' ? '(EMPTY!)' : ''}`);
+        });
       }
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
