@@ -609,26 +609,21 @@ const TemplateForm: React.FC = () => {
       setShowSuccessModal(true);
       toast({ title: 'Surat berhasil disimpan', description: 'Surat siap digenerate PDF.' });
     } catch (err: any) {
-      console.error('ERROR SUBMIT', err);
-      console.error('ERROR DETAILS:', {
-        message: err.message,
-        status: err.status,
-        response: err.response,
-        data: err.data
-      });
-      console.error('PAYLOAD THAT FAILED:', payload);
+      console.log('ERROR SUBMIT Error:', err);
+      console.log('ERROR DETAILS:', err);
+      console.log('PAYLOAD THAT FAILED:', payload);
       
-      // Log backend error response details
-      if (err.response) {
-        console.error('BACKEND ERROR RESPONSE:', err.response);
-        console.error('BACKEND ERROR DATA:', err.response.data);
-        console.error('BACKEND ERROR STATUS:', err.response.status);
-        console.error('BACKEND ERROR HEADERS:', err.response.headers);
+      // Handle specific error messages
+      if (err.message && err.message.includes('Nomor surat sudah ada')) {
+        setSubmitError('Nomor surat sudah ada. Silakan gunakan nomor surat yang berbeda.');
+      } else if (err.message && err.message.includes('Internal server error')) {
+        setSubmitError('Terjadi kesalahan server. Silakan coba lagi.');
+      } else {
+        setSubmitError(err.message || 'Terjadi kesalahan saat menyimpan surat');
       }
       
-      setSubmitError(err.message || 'Gagal menyimpan surat');
-    } finally {
       setSaving(false);
+      setPdfUrl(null);
     }
   };
 
