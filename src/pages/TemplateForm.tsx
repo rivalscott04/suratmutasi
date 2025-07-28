@@ -477,28 +477,26 @@ const TemplateForm: React.FC = () => {
         kode_kabko: office?.kode_kabko || baseData.kode_kabko || '', // pastikan selalu ikut
         // Always merge these fields for all templates
         unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
-        ukerpegawai: selectedPegawai?.unit_kerja || (templateId === '6' ? template6Data.ukerpegawai : ''),
-        unitkerjapejabat: selectedPejabat?.unit_kerja || '',
-        ukerpejabat: selectedPejabat?.unit_kerja || (templateId === '5' ? template5Data.ukerpejabat : '') || (templateId === '6' ? template6Data.ukerpejabat : ''),
-        // Only include relevant fields based on template
-        ...(templateId === '1' && {
-          blnno: template1Data.blnno,
-          thnno: template1Data.thnno,
-          nosrt: template1Data.nosrt,
-          ukerpejabat: template1Data.ukerpejabat,
-          ukerpegawai: template1Data.ukerpegawai
+        // Only include pegawai fields for templates that need them (not Template 2)
+        ...(templateId !== '2' && {
+          namapegawai: selectedPegawai?.nama || '',
+          nippegawai: selectedPegawai?.nip || '',
+          pangkatgolpegawai: selectedPegawai?.pangkat_gol || '',
+          jabatanpegawai: selectedPegawai?.jabatan || '',
+          ukerpegawai: selectedPegawai?.unit_kerja || ''
         }),
+        // Template 2 specific fields
         ...(templateId === '2' && {
           blnnomor: template2Data.blnnomor,
           tahunskrg: template2Data.tahunskrg,
           nosurat: template2Data.nosurat,
-          unitkerja: template2Data.unitkerja,
           namajabatan: template2Data.namajabatan,
           bbnkerja: template2Data.bbnkerja,
           eksisting: template2Data.eksisting,
           kelebihan: template2Data.kelebihan,
           kekurangan: template2Data.kekurangan
         }),
+        // Template 3 specific fields
         ...(templateId === '3' && {
           nosrt: template3Data.nosrt,
           blnno: template3Data.blnno,
@@ -508,6 +506,7 @@ const TemplateForm: React.FC = () => {
           kabkota2: template3Data.kabkota2,
           tglmulai: template3Data.tglmulai
         }),
+        // Template 4 specific fields
         ...(templateId === '4' && {
           nosrt: template4Data.nosrt,
           blnsrt: template4Data.blnsrt,
@@ -515,6 +514,7 @@ const TemplateForm: React.FC = () => {
           unitkerja: template4Data.unitkerja,
           keperluan: template4Data.keperluan
         }),
+        // Template 5 specific fields
         ...(templateId === '5' && {
           nosrt: template5Data.nosrt,
           blnno: template5Data.blnno,
@@ -522,6 +522,7 @@ const TemplateForm: React.FC = () => {
           ukerpejabat: template5Data.ukerpejabat,
           tempattugas: template5Data.tempattugas
         }),
+        // Template 6 specific fields
         ...(templateId === '6' && {
           nosrt: template6Data.nosrt,
           blnno: template6Data.blnno,
@@ -529,6 +530,7 @@ const TemplateForm: React.FC = () => {
           ukerpejabat: template6Data.ukerpejabat,
           ukerpegawai: template6Data.ukerpegawai
         }),
+        // Template 7 specific fields
         ...(templateId === '7' && {
           nosurat: template7Data.nosurat,
           blnnomor: template7Data.blnnomor,
@@ -539,6 +541,7 @@ const TemplateForm: React.FC = () => {
           tempattugas2: template7Data.tempattugas2,
           kabataukotatujuan: template7Data.kabataukotatujuan
         }),
+        // Template 8 specific fields
         ...(templateId === '8' && {
           nosrt: template8Data.nosrt,
           blnno: template8Data.blnno,
@@ -547,21 +550,22 @@ const TemplateForm: React.FC = () => {
           jabatanbaru: template8Data.jabatanbaru,
           tempattugasbaru: template8Data.tempattugasbaru
         }),
+        // Template 9 specific fields
         ...(templateId === '9' && {
           nosrt: template9Data.nosrt,
           blnno: template9Data.blnno,
           thnno: template9Data.thnno,
           ukerpejabat: template9Data.ukerpejabat
         }),
-        // Exclude pegawai fields for Template 2
-        ...(templateId !== '2' && {
-          namapegawai: baseData.namapegawai,
-          nippegawai: baseData.nippegawai,
-          pangkatgolpegawai: baseData.pangkatgolpegawai,
-          jabatanpegawai: baseData.jabatanpegawai
-        })
-      },
-      status: 'draft',
+        // Always include these fields for all templates
+        namapejabat: selectedPejabat.nama,
+        nippejabat: selectedPejabat.nip,
+        pangkatgolpejabat: selectedPejabat.pangkat_gol,
+        jabatanpejabat: selectedPejabat.jabatan,
+        unitkerjapejabat: selectedPejabat.unit_kerja,
+        ukerpejabat: selectedPejabat.unit_kerja,
+        ibukota: baseData.ibukota
+      }
     };
     
     try {
