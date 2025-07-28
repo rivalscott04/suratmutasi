@@ -458,6 +458,7 @@ const TemplateForm: React.FC = () => {
       office_id: office.id,
       created_by: user.id,
       template_id: Number(templateId),
+      template_name: selectedTemplate?.title || '',
       letter_number,
       subject: selectedTemplate?.title,
       recipient_employee_nip: selectedPegawai?.nip || null, // Handle null for template 9
