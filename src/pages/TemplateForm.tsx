@@ -463,108 +463,65 @@ const TemplateForm: React.FC = () => {
       recipient_employee_nip: selectedPegawai?.nip || null, // Handle null for template 9
       signing_official_nip: selectedPejabat.nip,
       form_data: {
-        ...baseData,
-        // Only include template-specific data based on current template
-        ...(templateId === '1' && template1Data),
-        ...(templateId === '3' && template3Data),
-        ...(templateId === '4' && template4Data),
-        ...(templateId === '5' && template5Data),
-        ...(templateId === '6' && template6Data),
-        ...(templateId === '7' && template7Data),
-        ...(templateId === '8' && template8Data),
-        ...(templateId === '9' && template9Data),
-        tanggal: tanggalIndo,
-        kode_kabko: office?.kode_kabko || baseData.kode_kabko || '', // pastikan selalu ikut
-        // Always merge these fields for all templates
-        unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
-        // Only include pegawai fields for templates that need them (not Template 2)
-        ...(templateId !== '2' && {
-          namapegawai: selectedPegawai?.nama || '',
-          nippegawai: selectedPegawai?.nip || '',
-          pangkatgolpegawai: selectedPegawai?.pangkat_gol || '',
-          jabatanpegawai: selectedPegawai?.jabatan || '',
-          ukerpegawai: selectedPegawai?.unit_kerja || ''
-        }),
-        // Template 2 specific fields
-        ...(templateId === '2' && {
+        // For Template 2, only include the fields that Template 2 actually uses
+        ...(templateId === '2' ? {
+          // Office data
+          kabkota: baseData.kabkota,
+          jln: baseData.jln,
+          telfon: baseData.telfon,
+          fax: baseData.fax,
+          email: baseData.email,
+          website: baseData.website,
+          // Pejabat data
+          namapejabat: selectedPejabat.nama,
+          nippejabat: selectedPejabat.nip,
+          pangkatgolpejabat: selectedPejabat.pangkat_gol,
+          jabatanpejabat: selectedPejabat.jabatan,
+          // Template 2 specific data
+          unitkerja: template2Data.unitkerja || '',
+          nosurat: template2Data.nosurat,
           blnnomor: template2Data.blnnomor,
           tahunskrg: template2Data.tahunskrg,
-          nosurat: template2Data.nosurat,
           namajabatan: template2Data.namajabatan,
           bbnkerja: template2Data.bbnkerja,
           eksisting: template2Data.eksisting,
           kelebihan: template2Data.kelebihan,
-          kekurangan: template2Data.kekurangan
-        }),
-        // Template 3 specific fields
-        ...(templateId === '3' && {
-          nosrt: template3Data.nosrt,
-          blnno: template3Data.blnno,
-          thnno: template3Data.thnno,
-          tempattugas: template3Data.tempattugas,
-          sekolah: template3Data.sekolah,
-          kabkota2: template3Data.kabkota2,
-          tglmulai: template3Data.tglmulai
-        }),
-        // Template 4 specific fields
-        ...(templateId === '4' && {
-          nosrt: template4Data.nosrt,
-          blnsrt: template4Data.blnsrt,
-          thnskrg: template4Data.thnskrg,
-          unitkerja: template4Data.unitkerja,
-          keperluan: template4Data.keperluan
-        }),
-        // Template 5 specific fields
-        ...(templateId === '5' && {
-          nosrt: template5Data.nosrt,
-          blnno: template5Data.blnno,
-          thnno: template5Data.thnno,
-          ukerpejabat: template5Data.ukerpejabat,
-          tempattugas: template5Data.tempattugas
-        }),
-        // Template 6 specific fields
-        ...(templateId === '6' && {
-          nosrt: template6Data.nosrt,
-          blnno: template6Data.blnno,
-          thnno: template6Data.thnno,
-          ukerpejabat: template6Data.ukerpejabat,
-          ukerpegawai: template6Data.ukerpegawai
-        }),
-        // Template 7 specific fields
-        ...(templateId === '7' && {
-          nosurat: template7Data.nosurat,
-          blnnomor: template7Data.blnnomor,
-          tahunskrg: template7Data.tahunskrg,
-          tempattugas: template7Data.tempattugas,
-          kabkota2: template7Data.kabkota2,
-          jabatnpegawai2: template7Data.jabatnpegawai2,
-          tempattugas2: template7Data.tempattugas2,
-          kabataukotatujuan: template7Data.kabataukotatujuan
-        }),
-        // Template 8 specific fields
-        ...(templateId === '8' && {
-          nosrt: template8Data.nosrt,
-          blnno: template8Data.blnno,
-          thnno: template8Data.thnno,
-          tempattugas: template8Data.tempattugas,
-          jabatanbaru: template8Data.jabatanbaru,
-          tempattugasbaru: template8Data.tempattugasbaru
-        }),
-        // Template 9 specific fields
-        ...(templateId === '9' && {
-          nosrt: template9Data.nosrt,
-          blnno: template9Data.blnno,
-          thnno: template9Data.thnno,
-          ukerpejabat: template9Data.ukerpejabat
-        }),
-        // Always include these fields for all templates
-        namapejabat: selectedPejabat.nama,
-        nippejabat: selectedPejabat.nip,
-        pangkatgolpejabat: selectedPejabat.pangkat_gol,
-        jabatanpejabat: selectedPejabat.jabatan,
-        unitkerjapejabat: selectedPejabat.unit_kerja,
-        ukerpejabat: selectedPejabat.unit_kerja,
-        ibukota: baseData.ibukota
+          kekurangan: template2Data.kekurangan,
+          // Signature data
+          ibukota: baseData.ibukota,
+          tanggal: tanggalIndo,
+          kode_kabko: office?.kode_kabko || baseData.kode_kabko || ''
+        } : {
+          // For other templates, include all baseData
+          ...baseData,
+          // Only include pegawai fields for templates that need them
+          ...(templateId !== '2' && {
+            namapegawai: selectedPegawai?.nama || '',
+            nippegawai: selectedPegawai?.nip || '',
+            pangkatgolpegawai: selectedPegawai?.pangkat_gol || '',
+            jabatanpegawai: selectedPegawai?.jabatan || '',
+            ukerpegawai: selectedPegawai?.unit_kerja || ''
+          }),
+          // Template specific data
+          ...(templateId === '1' && template1Data),
+          ...(templateId === '3' && template3Data),
+          ...(templateId === '4' && template4Data),
+          ...(templateId === '5' && template5Data),
+          ...(templateId === '6' && template6Data),
+          ...(templateId === '7' && template7Data),
+          ...(templateId === '8' && template8Data),
+          ...(templateId === '9' && template9Data),
+          tanggal: tanggalIndo,
+          kode_kabko: office?.kode_kabko || baseData.kode_kabko || '',
+          unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
+          namapejabat: selectedPejabat.nama,
+          nippejabat: selectedPejabat.nip,
+          pangkatgolpejabat: selectedPejabat.pangkat_gol,
+          jabatanpejabat: selectedPejabat.jabatan,
+          unitkerjapejabat: selectedPejabat.unit_kerja,
+          ukerpejabat: selectedPejabat.unit_kerja,
+          ibukota: baseData.ibukota
+        })
       }
     };
     
