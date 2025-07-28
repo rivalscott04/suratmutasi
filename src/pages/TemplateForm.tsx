@@ -453,22 +453,22 @@ const TemplateForm: React.FC = () => {
         office_id: office.id,
         created_by: user.id,
         template_id: Number(templateId),
-        template_name: selectedTemplate?.title,
         letter_number,
         subject: selectedTemplate?.title,
         recipient_employee_nip: selectedPegawai?.nip || null, // Handle null for template 9
         signing_official_nip: selectedPejabat.nip,
         form_data: {
           ...baseData,
-          ...template1Data,
-          ...template2Data,
-          ...template3Data,
-          ...template4Data,
-          ...template5Data,
-          ...template6Data,
-          ...template7Data,
-          ...template8Data,
-          ...template9Data,
+          // Only include template-specific data based on current template
+          ...(templateId === '1' && template1Data),
+          ...(templateId === '2' && template2Data),
+          ...(templateId === '3' && template3Data),
+          ...(templateId === '4' && template4Data),
+          ...(templateId === '5' && template5Data),
+          ...(templateId === '6' && template6Data),
+          ...(templateId === '7' && template7Data),
+          ...(templateId === '8' && template8Data),
+          ...(templateId === '9' && template9Data),
           tanggal: tanggalIndo,
           kode_kabko: office?.kode_kabko || baseData.kode_kabko || '', // pastikan selalu ikut
           // Always merge these fields for all templates
@@ -476,22 +476,34 @@ const TemplateForm: React.FC = () => {
           ukerpegawai: selectedPegawai?.unit_kerja || template6Data.ukerpegawai || '',
           unitkerjapejabat: selectedPejabat?.unit_kerja || '',
           ukerpejabat: selectedPejabat?.unit_kerja || template5Data.ukerpejabat || template6Data.ukerpejabat || '',
-          // Pastikan field bulan/tahun nomor surat ikut di-merge
-          blnno: template1Data.blnno || template5Data.blnno || template6Data.blnno || template8Data.blnno || template9Data.blnno || '',
-          thnno: template1Data.thnno || template5Data.thnno || template6Data.thnno || template8Data.thnno || template9Data.thnno || '',
-          blnnomor: template2Data.blnnomor || template7Data.blnnomor || template8Data.blnno || '',
-          tahunskrg: template2Data.tahunskrg || template7Data.tahunskrg || template8Data.thnno || '',
-          blnsrt: template4Data.blnsrt || '',
-          thnskrg: template4Data.thnskrg || '',
+          // Pastikan field bulan/tahun nomor surat ikut di-merge berdasarkan template
+          blnno: templateId === '1' ? template1Data.blnno : 
+                 templateId === '5' ? template5Data.blnno : 
+                 templateId === '6' ? template6Data.blnno : 
+                 templateId === '8' ? template8Data.blnno : 
+                 templateId === '9' ? template9Data.blnno : '',
+          thnno: templateId === '1' ? template1Data.thnno : 
+                 templateId === '5' ? template5Data.thnno : 
+                 templateId === '6' ? template6Data.thnno : 
+                 templateId === '8' ? template8Data.thnno : 
+                 templateId === '9' ? template9Data.thnno : '',
+          blnnomor: templateId === '2' ? template2Data.blnnomor : 
+                    templateId === '7' ? template7Data.blnnomor : '',
+          tahunskrg: templateId === '2' ? template2Data.tahunskrg : 
+                     templateId === '7' ? template7Data.tahunskrg : '',
+          blnsrt: templateId === '4' ? template4Data.blnsrt : '',
+          thnskrg: templateId === '4' ? template4Data.thnskrg : '',
           // Pastikan field Template 7 ter-include dengan eksplisit
-          nosurat: template7Data.nosurat || '',
-          tempattugas: template7Data.tempattugas || template5Data.tempattugas || '',
-          kabkota2: template7Data.kabkota2 || '',
-          jabatnpegawai2: template7Data.jabatnpegawai2 || '',
-          tempattugas2: template7Data.tempattugas2 || '',
-          kabataukotatujuan: template7Data.kabataukotatujuan || '',
+          nosurat: templateId === '7' ? template7Data.nosurat : '',
+          tempattugas: templateId === '7' ? template7Data.tempattugas : 
+                      templateId === '5' ? template5Data.tempattugas : '',
+          kabkota2: templateId === '7' ? template7Data.kabkota2 : '',
+          jabatnpegawai2: templateId === '7' ? template7Data.jabatnpegawai2 : '',
+          tempattugas2: templateId === '7' ? template7Data.tempattugas2 : '',
+          kabataukotatujuan: templateId === '7' ? template7Data.kabataukotatujuan : '',
           // Pastikan field Template 5 dan 6 ter-include dengan eksplisit
-          nosrt: template6Data.nosrt || template5Data.nosrt || '',
+          nosrt: templateId === '6' ? template6Data.nosrt : 
+                 templateId === '5' ? template5Data.nosrt : '',
         },
         status: 'draft',
       };
