@@ -166,7 +166,39 @@ const Letters: React.FC = () => {
   const mostRecentLetter = getMostRecentLetter();
   const getMostRecentOffice = () => {
     if (!mostRecentLetter) return 'Tidak ada data';
-    const officeName = mostRecentLetter.office?.namakantor || mostRecentLetter.office?.kabkota || 'Kantor Tidak Diketahui';
+    
+    // Get office name from kode_kabko
+    const getOfficeNameFromKode = (kode: string) => {
+      const officeMap: Record<string, string> = {
+        '01': 'KOTA MATARAM',
+        '02': 'KABUPATEN LOMBOK BARAT',
+        '03': 'KABUPATEN LOMBOK TENGAH',
+        '04': 'KABUPATEN LOMBOK TIMUR',
+        '05': 'KABUPATEN SUMBAWA',
+        '06': 'KABUPATEN DOMPU',
+        '07': 'KOTA MATARAM',
+        '08': 'KABUPATEN BIMA',
+        '09': 'KOTA BIMA',
+        '10': 'KABUPATEN SUMBAWA BARAT',
+        '11': 'KABUPATEN LOMBOK UTARA',
+        '12': 'KABUPATEN LOMBOK TENGAH',
+        '13': 'KABUPATEN LOMBOK TIMUR',
+        '14': 'KABUPATEN SUMBAWA',
+        '15': 'KABUPATEN DOMPU',
+        '16': 'KABUPATEN BIMA',
+        '17': 'KOTA BIMA',
+        '18': 'KABUPATEN SUMBAWA BARAT',
+        '19': 'KABUPATEN LOMBOK UTARA',
+        '20': 'KABUPATEN LOMBOK TENGAH'
+      };
+      return officeMap[kode] || 'Kantor Tidak Diketahui';
+    };
+    
+    const officeName = mostRecentLetter.office?.namakantor || 
+                      mostRecentLetter.office?.kabkota || 
+                      getOfficeNameFromKode(mostRecentLetter.form_data?.kode_kabko || mostRecentLetter.office?.kode_kabko || '') ||
+                      'Kantor Tidak Diketahui';
+    
     const timeAgo = mostRecentLetter.created_at ? 
       new Date(mostRecentLetter.created_at).toLocaleDateString('id-ID', { 
         day: 'numeric', 
@@ -529,7 +561,7 @@ const Letters: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -552,19 +584,6 @@ const Letters: React.FC = () => {
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <Printer className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Template Terpopuler</p>
-                <p className="text-lg font-bold text-gray-900">{mostTemplateName}</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Filter className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
