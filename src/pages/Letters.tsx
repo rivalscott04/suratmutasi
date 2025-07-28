@@ -240,6 +240,15 @@ const Letters: React.FC = () => {
       try { data = JSON.parse(data); } catch { data = {}; }
     }
     if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
+    
+    // Debug untuk Template 2
+    if (letter.template_id === 2) {
+      console.log('Template 2 Debug - Letter ID:', letter.id);
+      console.log('Template 2 Debug - Original form_data:', letter.form_data);
+      console.log('Template 2 Debug - Parsed data:', data);
+      console.log('Template 2 Debug - unitkerja value:', data.unitkerja);
+    }
+    
     const id = String(letter.template_id);
     // Fallback nomor surat universal (pakai regex agar tidak kosong setelah B-)
     const nomorParts = (letter.letter_number || '').split('/');
@@ -253,6 +262,19 @@ const Letters: React.FC = () => {
       tahunskrg: data.tahunskrg || nomorParts[6] || '',
     };
     const mergedData = { ...data, ...fallback };
+    
+    // Debug untuk Template 2
+    if (letter.template_id === 2) {
+      console.log('Template 2 Debug - Merged data:', mergedData);
+      console.log('Template 2 Debug - Final unitkerja:', mergedData.unitkerja);
+      
+      // Ensure unitkerja is preserved for Template 2
+      if (data.unitkerja) {
+        mergedData.unitkerja = data.unitkerja;
+        console.log('Template 2 Debug - Preserved unitkerja:', mergedData.unitkerja);
+      }
+    }
+    
     if (id === '1') return <Template1 data={mergedData} />;
     if (id === '2') return <Template2 data={mergedData} />;
     if (id === '3') return <Template3 data={mergedData} />;

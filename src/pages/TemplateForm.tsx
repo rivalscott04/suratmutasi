@@ -453,6 +453,12 @@ const TemplateForm: React.FC = () => {
     let tanggalIndo = '';
     if (baseData.tanggal) tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
     
+    // Debug untuk Template 2
+    if (templateId === '2') {
+      console.log('Template 2 Submit Debug - template2Data:', template2Data);
+      console.log('Template 2 Submit Debug - unitkerja value:', template2Data.unitkerja);
+    }
+    
     // Compose payload sesuai backend
     const payload: any = {
       office_id: office.id,
@@ -505,7 +511,7 @@ const TemplateForm: React.FC = () => {
             jabatanpegawai: selectedPegawai?.jabatan || '',
             ukerpegawai: selectedPegawai?.unit_kerja || ''
           }),
-          // Template specific data
+          // Template specific data (for other templates)
           ...(templateId === '1' && template1Data),
           ...(templateId === '3' && template3Data),
           ...(templateId === '4' && template4Data),
@@ -527,6 +533,11 @@ const TemplateForm: React.FC = () => {
         })
       }
     };
+    
+    // Debug untuk Template 2 - tampilkan payload final
+    if (templateId === '2') {
+      console.log('Template 2 Submit Debug - Final payload form_data:', payload.form_data);
+    }
     
     try {
       console.log('PAYLOAD', payload);
