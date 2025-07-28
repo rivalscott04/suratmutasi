@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiDelete, apiPut } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw, Users, ClipboardList, Info } from 'lucide-react';
+import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw, Users, ClipboardList, Info, Edit3, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -1116,6 +1116,7 @@ const Letters: React.FC = () => {
                                             onClick={() => handleEditPejabatPegawai(letter)}
                                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                           >
+                                            <Edit3 className="w-4 h-4 mr-2" />
                                             Edit Pejabat & Pegawai
                                           </Button>
                                         )}
@@ -1126,6 +1127,7 @@ const Letters: React.FC = () => {
                                             onClick={() => handleEditPejabatPegawai(letter)}
                                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                           >
+                                            <Edit3 className="w-4 h-4 mr-2" />
                                             Edit Pejabat
                                           </Button>
                                         )}
@@ -1292,33 +1294,118 @@ const Letters: React.FC = () => {
              {/* Edit Pejabat & Pegawai Modal */}
        {editLetter && (
          <Dialog open={!!editLetter} onOpenChange={v => { if (!v) setEditLetter(null); }}>
-           <DialogContent className="max-w-lg">
+           <DialogContent className="max-w-2xl">
              <DialogTitle>
                {editLetter.template_id === 2 || editLetter.template_id === 9 
                  ? 'Edit Pejabat' 
                  : 'Edit Pejabat & Pegawai'
                }
              </DialogTitle>
-             <div className="mb-4">
-               <PegawaiSearchInput
-                 label="Cari Pejabat"
-                 placeholder="Masukkan nama atau NIP pejabat..."
-                 onSelect={setEditPejabat}
-                 selectedPegawai={editPejabat}
-               />
-             </div>
-             {(editLetter.template_id !== 2 && editLetter.template_id !== 9) && (
-               <div className="mb-4">
-                 <PegawaiSearchInput
-                   label="Cari Pegawai"
-                   placeholder="Masukkan nama atau NIP pegawai..."
-                   onSelect={setEditPegawai}
-                   selectedPegawai={editPegawai}
-                 />
+             
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               {/* Search Section */}
+               <div className="space-y-4">
+                 <div>
+                   <PegawaiSearchInput
+                     label="Cari Pejabat"
+                     placeholder="Masukkan nama atau NIP pejabat..."
+                     onSelect={setEditPejabat}
+                     selectedPegawai={editPejabat}
+                   />
+                 </div>
+                 
+                 {(editLetter.template_id !== 2 && editLetter.template_id !== 9) && (
+                   <div>
+                     <PegawaiSearchInput
+                       label="Cari Pegawai"
+                       placeholder="Masukkan nama atau NIP pegawai..."
+                       onSelect={setEditPegawai}
+                       selectedPegawai={editPegawai}
+                     />
+                   </div>
+                 )}
                </div>
-             )}
-             <div className="flex gap-2 justify-end">
-               <Button variant="outline" onClick={() => setEditLetter(null)} disabled={editSaving}>Batal</Button>
+               
+               {/* Preview Section */}
+               <div className="space-y-4">
+                 {/* Preview Pejabat */}
+                 {editPejabat && (
+                   <div className="border rounded-lg p-4 bg-blue-50">
+                     <div className="flex justify-between items-start mb-2">
+                       <h4 className="font-semibold text-blue-900 flex items-center">
+                         <Users className="w-4 h-4 mr-2" />
+                         Preview Pejabat
+                       </h4>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => setEditPejabat(null)}
+                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                       >
+                         <X className="w-3 h-3" />
+                       </Button>
+                     </div>
+                     <div className="space-y-1 text-sm">
+                       <div><span className="font-medium">Nama:</span> {editPejabat.nama}</div>
+                       <div><span className="font-medium">NIP:</span> {editPejabat.nip}</div>
+                       <div><span className="font-medium">Pangkat/Gol:</span> {editPejabat.pangkat_gol}</div>
+                       <div><span className="font-medium">Jabatan:</span> {editPejabat.jabatan}</div>
+                       <div><span className="font-medium">Unit Kerja:</span> {editPejabat.unit_kerja}</div>
+                     </div>
+                   </div>
+                 )}
+                 
+                 {/* Preview Pegawai */}
+                 {editPegawai && (editLetter.template_id !== 2 && editLetter.template_id !== 9) && (
+                   <div className="border rounded-lg p-4 bg-green-50">
+                     <div className="flex justify-between items-start mb-2">
+                       <h4 className="font-semibold text-green-900 flex items-center">
+                         <Users className="w-4 h-4 mr-2" />
+                         Preview Pegawai
+                       </h4>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => setEditPegawai(null)}
+                         className="text-green-600 hover:text-green-700 hover:bg-green-100"
+                       >
+                         <X className="w-3 h-3" />
+                       </Button>
+                     </div>
+                     <div className="space-y-1 text-sm">
+                       <div><span className="font-medium">Nama:</span> {editPegawai.nama}</div>
+                       <div><span className="font-medium">NIP:</span> {editPegawai.nip}</div>
+                       <div><span className="font-medium">Pangkat/Gol:</span> {editPegawai.pangkat_gol}</div>
+                       <div><span className="font-medium">Jabatan:</span> {editPegawai.jabatan}</div>
+                       <div><span className="font-medium">Unit Kerja:</span> {editPegawai.unit_kerja}</div>
+                       {editPegawai.tempat_tugas && (
+                         <div><span className="font-medium">Tempat Tugas:</span> {editPegawai.tempat_tugas}</div>
+                       )}
+                     </div>
+                   </div>
+                 )}
+                 
+                 {/* Empty State */}
+                 {!editPejabat && (editLetter.template_id === 2 || editLetter.template_id === 9) && (
+                   <div className="border rounded-lg p-4 bg-gray-50 text-center text-gray-500">
+                     <Users className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                     <p>Pilih pejabat untuk melihat preview</p>
+                   </div>
+                 )}
+                 
+                 {!editPejabat && !editPegawai && (editLetter.template_id !== 2 && editLetter.template_id !== 9) && (
+                   <div className="border rounded-lg p-4 bg-gray-50 text-center text-gray-500">
+                     <Users className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                     <p>Pilih pejabat dan pegawai untuk melihat preview</p>
+                   </div>
+                 )}
+               </div>
+             </div>
+             
+             <div className="flex gap-2 justify-end mt-4">
+               <Button variant="outline" onClick={() => setEditLetter(null)} disabled={editSaving}>
+                 Batal
+               </Button>
                <Button 
                  onClick={handleSaveEditPejabatPegawai} 
                  disabled={editSaving || !editPejabat || ((editLetter.template_id !== 2 && editLetter.template_id !== 9) && !editPegawai)} 
