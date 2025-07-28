@@ -475,7 +475,7 @@ const TemplateForm: React.FC = () => {
           // Pejabat data
           namapejabat: selectedPejabat.nama,
           nippejabat: selectedPejabat.nip,
-          pangkatgolpejabat: selectedPejabat.pangkat_gol,
+          pangkatgolpejabat: baseData.pangkatgolpejabat || selectedPejabat.pangkat_gol || '',
           jabatanpejabat: selectedPejabat.jabatan,
           // Template 2 specific data
           unitkerja: template2Data.unitkerja || '',
