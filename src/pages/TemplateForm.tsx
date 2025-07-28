@@ -267,7 +267,7 @@ const TemplateForm: React.FC = () => {
             kabkota: officeData.kabkota || '',
             jln: officeData.address || '',
             telfon: officeData.phone || '',
-            fax: officeData.fax || '',
+            fax: officeData.fax || '', // Allow empty fax
             email: officeData.email || '',
             website: officeData.website || '',
             kode_kabko: officeData.kode_kabko || ''
@@ -577,6 +577,23 @@ const TemplateForm: React.FC = () => {
           const value = payload.form_data[field];
           console.log(`${field}: ${value} ${value === '' ? '(EMPTY!)' : ''}`);
         });
+        
+        // Check office fields
+        console.log('OFFICE FIELDS CHECK:');
+        console.log(`fax: ${payload.form_data.fax}`);
+        console.log(`telfon: ${payload.form_data.telfon}`);
+        console.log(`email: ${payload.form_data.email}`);
+        
+        // Check signature fields
+        console.log('SIGNATURE FIELDS CHECK:');
+        console.log(`ibukota: ${payload.form_data.ibukota}`);
+        console.log(`tanggal: ${payload.form_data.tanggal}`);
+        console.log(`namapejabat: ${payload.form_data.namapejabat}`);
+        console.log(`nippejabat: ${payload.form_data.nippejabat}`);
+        console.log(`jabatanpejabat: ${payload.form_data.jabatanpejabat}`);
+        
+        // Check all form_data keys
+        console.log('ALL FORM_DATA KEYS:', Object.keys(payload.form_data));
       }
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
