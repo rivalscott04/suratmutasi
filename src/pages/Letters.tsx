@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiDelete } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw } from 'lucide-react';
+import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw, Users, ClipboardList, Info } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -143,13 +143,39 @@ const Letters: React.FC = () => {
   }, [token]);
 
   // Ringkasan
-  const total = letters.length;
   const byStatus = (status: string) => letters.filter(l => l.status === status).length;
-  const templateCount: Record<string, number> = {};
-  letters.forEach(l => {
-    if (l.template_name) templateCount[l.template_name] = (templateCount[l.template_name] || 0) + 1;
-  });
-  const mostTemplate = Object.entries(templateCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+  const total = letters.length;
+  const mostTemplate = letters.length > 0 ? 
+    letters.reduce((acc, l) => {
+      acc[l.template_name] = (acc[l.template_name] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) : {};
+  const mostTemplateName = Object.keys(mostTemplate).length > 0 ? 
+    Object.entries(mostTemplate).sort(([,a], [,b]) => (b as number) - (a as number))[0][0] : 'Tidak ada data';
+  
+  // Find most recent letter
+  const getMostRecentLetter = () => {
+    if (letters.length === 0) return null;
+    return letters.reduce((latest, current) => {
+      const latestDate = new Date(latest.created_at || 0);
+      const currentDate = new Date(current.created_at || 0);
+      return currentDate > latestDate ? current : latest;
+    });
+  };
+  
+  const mostRecentLetter = getMostRecentLetter();
+  const getMostRecentOffice = () => {
+    if (!mostRecentLetter) return 'Tidak ada data';
+    const officeName = mostRecentLetter.office?.namakantor || mostRecentLetter.office?.kabkota || 'Kantor Tidak Diketahui';
+    const timeAgo = mostRecentLetter.created_at ? 
+      new Date(mostRecentLetter.created_at).toLocaleDateString('id-ID', { 
+        day: 'numeric', 
+        month: 'short', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : 'Tidak diketahui';
+    return `${officeName} (${timeAgo})`;
+  };
 
   // Helper badge status
   const getStatusBadge = (status: string) => {
@@ -431,40 +457,74 @@ const Letters: React.FC = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+      <div className="mb-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-1">
+          <nav className="flex space-x-1">
             <button
               onClick={() => setActiveTab('all')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`flex-1 flex items-center justify-center py-3 px-4 rounded-md font-medium text-sm transition-all duration-200 ${
                 activeTab === 'all'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Semua Surat ({filteredLetters.length})
+              <FileText className="w-4 h-4 mr-2" />
+              Semua Surat
+              <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                {filteredLetters.length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('with-employee')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`flex-1 flex items-center justify-center py-3 px-4 rounded-md font-medium text-sm transition-all duration-200 ${
                 activeTab === 'with-employee'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-green-50 text-green-700 border border-green-200 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Surat dengan Pegawai ({filteredLetters.filter(l => ![2, 9].includes(l.template_id)).length})
+              <Users className="w-4 h-4 mr-2" />
+              Surat dengan Pegawai
+              <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                {filteredLetters.filter(l => ![2, 9].includes(l.template_id)).length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('without-employee')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`flex-1 flex items-center justify-center py-3 px-4 rounded-md font-medium text-sm transition-all duration-200 ${
                 activeTab === 'without-employee'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-orange-50 text-orange-700 border border-orange-200 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Surat Analisis & Pernyataan ({filteredLetters.filter(l => [2, 9].includes(l.template_id)).length})
+              <ClipboardList className="w-4 h-4 mr-2" />
+              Analisis & Pernyataan
+              <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                {filteredLetters.filter(l => [2, 9].includes(l.template_id)).length}
+              </span>
             </button>
           </nav>
+        </div>
+        
+        {/* Tab Description */}
+        <div className="mt-3 text-sm text-gray-600">
+          {activeTab === 'all' && (
+            <div className="flex items-center">
+              <Info className="w-4 h-4 mr-2 text-blue-500" />
+              Menampilkan semua surat yang telah dibuat dalam sistem
+            </div>
+          )}
+          {activeTab === 'with-employee' && (
+            <div className="flex items-center">
+              <Info className="w-4 h-4 mr-2 text-green-500" />
+              Surat yang memerlukan data pegawai tertentu (Template 1, 3-8)
+            </div>
+          )}
+          {activeTab === 'without-employee' && (
+            <div className="flex items-center">
+              <Info className="w-4 h-4 mr-2 text-orange-500" />
+              Surat analisis jabatan dan pernyataan (Template 2 & 9)
+            </div>
+          )}
         </div>
       </div>
 
@@ -501,10 +561,23 @@ const Letters: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Template Terpopuler</p>
-                <p className="text-lg font-bold text-gray-900">{mostTemplate}</p>
+                <p className="text-lg font-bold text-gray-900">{mostTemplateName}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Filter className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Surat Terbaru</p>
+                <p className="text-lg font-bold text-gray-900">{mostRecentLetter ? `${mostRecentLetter.letter_number} - ${getMostRecentOffice()}` : 'Tidak ada data'}</p>
+              </div>
+              <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                <Eye className="w-6 h-6 text-teal-600" />
               </div>
             </div>
           </CardContent>
