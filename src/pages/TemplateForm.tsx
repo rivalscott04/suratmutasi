@@ -512,7 +512,11 @@ const TemplateForm: React.FC = () => {
             ukerpegawai: selectedPegawai?.unit_kerja || ''
           }),
           // Template specific data (for other templates)
-          ...(templateId === '1' && template1Data),
+          ...(templateId === '1' && {
+            ...template1Data,
+            pangkatgolpejabat: selectedPejabat?.pangkat_gol || '',
+            pangkatgolpegawai: selectedPegawai?.pangkat_gol || '',
+          }),
           ...(templateId === '3' && template3Data),
           ...(templateId === '4' && template4Data),
           ...(templateId === '5' && template5Data),
