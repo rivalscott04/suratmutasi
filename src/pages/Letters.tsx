@@ -353,28 +353,83 @@ const Letters: React.FC = () => {
 
   // Fungsi untuk simpan perubahan
   const handleSaveEditPejabatPegawai = async () => {
-    if (!editLetter || !editPejabat || !editPegawai) return;
+    if (!editLetter || !editPejabat) return;
+    // Untuk template 2 dan 9, tidak perlu pegawai
+    if (editLetter.template_id !== 2 && editLetter.template_id !== 9 && !editPegawai) return;
     setEditSaving(true);
     try {
       // Ambil data surat yang ada
       const currentFormData = editLetter.form_data;
+      const templateId = editLetter.template_id;
       
-      // Update data pejabat & pegawai
+      // Update data sesuai kebutuhan template
       const updatedFormData = {
         ...currentFormData,
-        // Update data pejabat
+        // Update data pejabat (selalu ada untuk semua template)
         namapejabat: editPejabat.nama || '',
         nippejabat: editPejabat.nip || '',
         pangkatgolpejabat: editPejabat.pangkat_gol || '',
         jabatanpejabat: editPejabat.jabatan || '',
-        ukerpejabat: editPejabat.unit_kerja || '',
-        // Update data pegawai
-        namapegawai: editPegawai.nama || '',
-        nippegawai: editPegawai.nip || '',
-        pangkatgolpegawai: editPegawai.pangkat_gol || '',
-        jabatanpegawai: editPegawai.jabatan || '',
-        ukerpegawai: editPegawai.unit_kerja || '',
       };
+
+      // Update data pegawai sesuai template (kecuali template 2 & 9)
+      if (templateId !== 2 && templateId !== 9 && editPegawai) {
+        updatedFormData.namapegawai = editPegawai.nama || '';
+        updatedFormData.nippegawai = editPegawai.nip || '';
+        updatedFormData.pangkatgolpegawai = editPegawai.pangkat_gol || '';
+        updatedFormData.jabatanpegawai = editPegawai.jabatan || '';
+      }
+      
+      // Untuk template 2 dan 9, hapus field pegawai jika ada
+      if (templateId === 2 || templateId === 9) {
+        delete updatedFormData.namapegawai;
+        delete updatedFormData.nippegawai;
+        delete updatedFormData.pangkatgolpegawai;
+        delete updatedFormData.jabatanpegawai;
+        delete updatedFormData.ukerpegawai;
+      }
+
+             // Update field spesifik sesuai template
+       switch (templateId) {
+         case 1: // Template 1: Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar
+           updatedFormData.ukerpejabat = editPejabat.unit_kerja || '';
+           if (editPegawai) updatedFormData.ukerpegawai = editPegawai.unit_kerja || '';
+           break;
+         
+         case 2: // Template 2: Surat Keterangan Analisis Jabatan (tanpa pegawai)
+           // Template 2 tidak memerlukan update field pegawai
+           break;
+         
+         case 3: // Template 3: Surat Keterangan Pengalaman Mengajar
+           if (editPegawai) updatedFormData.tempattugas = editPegawai.tempat_tugas || '';
+           break;
+         
+         case 4: // Template 4: Surat Permohonan SKBT
+           if (editPegawai) updatedFormData.unitkerja = editPegawai.unit_kerja || '';
+           break;
+         
+         case 5: // Template 5: Surat Pernyataan Tidak Sedang Dalam Proses Hukuman Disiplin
+           updatedFormData.ukerpejabat = editPejabat.unit_kerja || '';
+           if (editPegawai) updatedFormData.tempattugas = editPegawai.tempat_tugas || '';
+           break;
+         
+         case 6: // Template 6: Surat Pernyataan Tidak Sedang Menjalani Proses Pidana
+           updatedFormData.ukerpejabat = editPejabat.unit_kerja || '';
+           if (editPegawai) updatedFormData.ukerpegawai = editPegawai.unit_kerja || '';
+           break;
+         
+         case 7: // Template 7: Surat Persetujuan Pelepasan
+           if (editPegawai) updatedFormData.tempattugas = editPegawai.tempat_tugas || '';
+           break;
+         
+         case 8: // Template 8: Surat Keterangan Jabatan Baru
+           if (editPegawai) updatedFormData.tempattugas = editPegawai.tempat_tugas || '';
+           break;
+         
+         case 9: // Template 9: Surat Pernyataan (tanpa pegawai)
+           updatedFormData.ukerpejabat = editPejabat.unit_kerja || '';
+           break;
+       }
 
       // Kirim update ke backend
       await apiPut(`/api/letters/${editLetter.id}`, {
@@ -1054,7 +1109,7 @@ const Letters: React.FC = () => {
                                         >
                                           <Eye className="w-4 h-4" />
                                         </Button>
-                                        {(user?.role === 'admin' || letter.created_by === user?.id) && (
+                                        {(user?.role === 'admin' || letter.created_by === user?.id) && letter.template_id !== 2 && letter.template_id !== 9 && (
                                           <Button
                                             variant="outline"
                                             size="sm"
@@ -1062,6 +1117,16 @@ const Letters: React.FC = () => {
                                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                           >
                                             Edit Pejabat & Pegawai
+                                          </Button>
+                                        )}
+                                        {(user?.role === 'admin' || letter.created_by === user?.id) && (letter.template_id === 2 || letter.template_id === 9) && (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleEditPejabatPegawai(letter)}
+                                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                          >
+                                            Edit Pejabat
                                           </Button>
                                         )}
                                         <Button
@@ -1224,36 +1289,47 @@ const Letters: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Pejabat & Pegawai Modal */}
-      {editLetter && (
-        <Dialog open={!!editLetter} onOpenChange={v => { if (!v) setEditLetter(null); }}>
-          <DialogContent className="max-w-lg">
-            <DialogTitle>Edit Pejabat & Pegawai</DialogTitle>
-            <div className="mb-4">
-              <PegawaiSearchInput
-                label="Cari Pejabat"
-                placeholder="Masukkan nama atau NIP pejabat..."
-                onSelect={setEditPejabat}
-                selectedPegawai={editPejabat}
-              />
-            </div>
-            <div className="mb-4">
-              <PegawaiSearchInput
-                label="Cari Pegawai"
-                placeholder="Masukkan nama atau NIP pegawai..."
-                onSelect={setEditPegawai}
-                selectedPegawai={editPegawai}
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setEditLetter(null)} disabled={editSaving}>Batal</Button>
-              <Button onClick={handleSaveEditPejabatPegawai} disabled={editSaving || !editPejabat || !editPegawai} className="bg-blue-600 hover:bg-blue-700 text-white">
-                {editSaving ? 'Menyimpan...' : 'Simpan'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+             {/* Edit Pejabat & Pegawai Modal */}
+       {editLetter && (
+         <Dialog open={!!editLetter} onOpenChange={v => { if (!v) setEditLetter(null); }}>
+           <DialogContent className="max-w-lg">
+             <DialogTitle>
+               {editLetter.template_id === 2 || editLetter.template_id === 9 
+                 ? 'Edit Pejabat' 
+                 : 'Edit Pejabat & Pegawai'
+               }
+             </DialogTitle>
+             <div className="mb-4">
+               <PegawaiSearchInput
+                 label="Cari Pejabat"
+                 placeholder="Masukkan nama atau NIP pejabat..."
+                 onSelect={setEditPejabat}
+                 selectedPegawai={editPejabat}
+               />
+             </div>
+             {(editLetter.template_id !== 2 && editLetter.template_id !== 9) && (
+               <div className="mb-4">
+                 <PegawaiSearchInput
+                   label="Cari Pegawai"
+                   placeholder="Masukkan nama atau NIP pegawai..."
+                   onSelect={setEditPegawai}
+                   selectedPegawai={editPegawai}
+                 />
+               </div>
+             )}
+             <div className="flex gap-2 justify-end">
+               <Button variant="outline" onClick={() => setEditLetter(null)} disabled={editSaving}>Batal</Button>
+               <Button 
+                 onClick={handleSaveEditPejabatPegawai} 
+                 disabled={editSaving || !editPejabat || ((editLetter.template_id !== 2 && editLetter.template_id !== 9) && !editPegawai)} 
+                 className="bg-blue-600 hover:bg-blue-700 text-white"
+               >
+                 {editSaving ? 'Menyimpan...' : 'Simpan'}
+               </Button>
+             </div>
+           </DialogContent>
+         </Dialog>
+       )}
     </div>
   );
 };
