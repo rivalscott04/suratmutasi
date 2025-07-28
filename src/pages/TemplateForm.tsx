@@ -473,37 +473,82 @@ const TemplateForm: React.FC = () => {
           kode_kabko: office?.kode_kabko || baseData.kode_kabko || '', // pastikan selalu ikut
           // Always merge these fields for all templates
           unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
-          ukerpegawai: selectedPegawai?.unit_kerja || template6Data.ukerpegawai || '',
+          ukerpegawai: selectedPegawai?.unit_kerja || (templateId === '6' ? template6Data.ukerpegawai : ''),
           unitkerjapejabat: selectedPejabat?.unit_kerja || '',
-          ukerpejabat: selectedPejabat?.unit_kerja || template5Data.ukerpejabat || template6Data.ukerpejabat || '',
-          // Pastikan field bulan/tahun nomor surat ikut di-merge berdasarkan template
-          blnno: templateId === '1' ? template1Data.blnno : 
-                 templateId === '5' ? template5Data.blnno : 
-                 templateId === '6' ? template6Data.blnno : 
-                 templateId === '8' ? template8Data.blnno : 
-                 templateId === '9' ? template9Data.blnno : '',
-          thnno: templateId === '1' ? template1Data.thnno : 
-                 templateId === '5' ? template5Data.thnno : 
-                 templateId === '6' ? template6Data.thnno : 
-                 templateId === '8' ? template8Data.thnno : 
-                 templateId === '9' ? template9Data.thnno : '',
-          blnnomor: templateId === '2' ? template2Data.blnnomor : 
-                    templateId === '7' ? template7Data.blnnomor : '',
-          tahunskrg: templateId === '2' ? template2Data.tahunskrg : 
-                     templateId === '7' ? template7Data.tahunskrg : '',
-          blnsrt: templateId === '4' ? template4Data.blnsrt : '',
-          thnskrg: templateId === '4' ? template4Data.thnskrg : '',
-          // Pastikan field Template 7 ter-include dengan eksplisit
-          nosurat: templateId === '7' ? template7Data.nosurat : '',
-          tempattugas: templateId === '7' ? template7Data.tempattugas : 
-                      templateId === '5' ? template5Data.tempattugas : '',
-          kabkota2: templateId === '7' ? template7Data.kabkota2 : '',
-          jabatnpegawai2: templateId === '7' ? template7Data.jabatnpegawai2 : '',
-          tempattugas2: templateId === '7' ? template7Data.tempattugas2 : '',
-          kabataukotatujuan: templateId === '7' ? template7Data.kabataukotatujuan : '',
-          // Pastikan field Template 5 dan 6 ter-include dengan eksplisit
-          nosrt: templateId === '6' ? template6Data.nosrt : 
-                 templateId === '5' ? template5Data.nosrt : '',
+          ukerpejabat: selectedPejabat?.unit_kerja || (templateId === '5' ? template5Data.ukerpejabat : '') || (templateId === '6' ? template6Data.ukerpejabat : ''),
+          // Only include relevant fields based on template
+          ...(templateId === '1' && {
+            blnno: template1Data.blnno,
+            thnno: template1Data.thnno,
+            nosrt: template1Data.nosrt,
+            ukerpejabat: template1Data.ukerpejabat,
+            ukerpegawai: template1Data.ukerpegawai
+          }),
+          ...(templateId === '2' && {
+            blnnomor: template2Data.blnnomor,
+            tahunskrg: template2Data.tahunskrg,
+            nosurat: template2Data.nosurat,
+            unitkerja: template2Data.unitkerja,
+            namajabatan: template2Data.namajabatan,
+            bbnkerja: template2Data.bbnkerja,
+            eksisting: template2Data.eksisting,
+            kelebihan: template2Data.kelebihan,
+            kekurangan: template2Data.kekurangan
+          }),
+          ...(templateId === '3' && {
+            nosrt: template3Data.nosrt,
+            blnno: template3Data.blnno,
+            thnno: template3Data.thnno,
+            tempattugas: template3Data.tempattugas,
+            sekolah: template3Data.sekolah,
+            kabkota2: template3Data.kabkota2,
+            tglmulai: template3Data.tglmulai
+          }),
+          ...(templateId === '4' && {
+            nosrt: template4Data.nosrt,
+            blnsrt: template4Data.blnsrt,
+            thnskrg: template4Data.thnskrg,
+            unitkerja: template4Data.unitkerja,
+            keperluan: template4Data.keperluan
+          }),
+          ...(templateId === '5' && {
+            nosrt: template5Data.nosrt,
+            blnno: template5Data.blnno,
+            thnno: template5Data.thnno,
+            ukerpejabat: template5Data.ukerpejabat,
+            tempattugas: template5Data.tempattugas
+          }),
+          ...(templateId === '6' && {
+            nosrt: template6Data.nosrt,
+            blnno: template6Data.blnno,
+            thnno: template6Data.thnno,
+            ukerpejabat: template6Data.ukerpejabat,
+            ukerpegawai: template6Data.ukerpegawai
+          }),
+          ...(templateId === '7' && {
+            nosurat: template7Data.nosurat,
+            blnnomor: template7Data.blnnomor,
+            tahunskrg: template7Data.tahunskrg,
+            tempattugas: template7Data.tempattugas,
+            kabkota2: template7Data.kabkota2,
+            jabatnpegawai2: template7Data.jabatnpegawai2,
+            tempattugas2: template7Data.tempattugas2,
+            kabataukotatujuan: template7Data.kabataukotatujuan
+          }),
+          ...(templateId === '8' && {
+            nosrt: template8Data.nosrt,
+            blnno: template8Data.blnno,
+            thnno: template8Data.thnno,
+            tempattugas: template8Data.tempattugas,
+            jabatanbaru: template8Data.jabatanbaru,
+            tempattugasbaru: template8Data.tempattugasbaru
+          }),
+          ...(templateId === '9' && {
+            nosrt: template9Data.nosrt,
+            blnno: template9Data.blnno,
+            thnno: template9Data.thnno,
+            ukerpejabat: template9Data.ukerpejabat
+          })
         },
         status: 'draft',
       };
