@@ -603,22 +603,17 @@ const TemplateForm: React.FC = () => {
         console.log(`nippejabat: ${payload.form_data.nippejabat}`);
         console.log(`jabatanpejabat: ${payload.form_data.jabatanpejabat}`);
         
-        // Check all form_data keys
-        console.log('ALL FORM_DATA KEYS:', Object.keys(payload.form_data));
-        
-        // Show exact Template 2 data that was sent
+        // Show exact Template 2 data being sent
         console.log('EXACT TEMPLATE 2 DATA SENT:');
         console.log('template2Data state:', template2Data);
         console.log('Template 2 fields in payload:');
-        console.log('- blnnomor:', payload.form_data.blnnomor);
-        console.log('- tahunskrg:', payload.form_data.tahunskrg);
-        console.log('- nosurat:', payload.form_data.nosurat);
-        console.log('- unitkerja:', payload.form_data.unitkerja);
-        console.log('- namajabatan:', payload.form_data.namajabatan);
-        console.log('- bbnkerja:', payload.form_data.bbnkerja);
-        console.log('- eksisting:', payload.form_data.eksisting);
-        console.log('- kelebihan:', payload.form_data.kelebihan);
-        console.log('- kekurangan:', payload.form_data.kekurangan);
+        template2Fields.forEach(field => {
+          console.log(`${field}: ${payload.form_data[field]}`);
+        });
+        
+        // Show complete payload structure
+        console.log('COMPLETE PAYLOAD STRUCTURE:');
+        console.log(JSON.stringify(payload, null, 2));
       }
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
