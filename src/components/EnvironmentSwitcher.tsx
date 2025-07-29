@@ -4,10 +4,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Settings, Globe, Server, Monitor } from 'lucide-react';
 import { getEnvironmentConfig, setEnvironment } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const EnvironmentSwitcher: React.FC = () => {
-  const { current, environments } = getEnvironmentConfig();
+  const { current, environments, isProductionServer } = getEnvironmentConfig();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Hanya tampilkan environment switcher untuk admin yang sudah login
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
+  
+  // Sembunyikan environment switcher di production server
+  if (isProductionServer) {
+    return null;
+  }
 
   const handleEnvironmentChange = (newEnv: string) => {
     if (newEnv !== current) {

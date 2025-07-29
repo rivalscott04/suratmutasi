@@ -17,6 +17,11 @@ const ENVIRONMENTS = {
 
 // Get current environment from localStorage or default to production
 const getCurrentEnvironment = () => {
+  // Jika di production server, force ke production
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'production';
+  }
+  
   const saved = localStorage.getItem('api_environment');
   return saved || 'production';
 };
@@ -30,14 +35,25 @@ const getBaseUrl = () => {
 // Export environment utilities
 export const getEnvironmentConfig = () => {
   const current = getCurrentEnvironment();
+  
+  // Jika di production server, sembunyikan environment switcher
+  const isProductionServer = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  
   return {
     current,
-    environments: ENVIRONMENTS,
-    baseUrl: getBaseUrl()
+    environments: isProductionServer ? { production: ENVIRONMENTS.production } : ENVIRONMENTS,
+    baseUrl: getBaseUrl(),
+    isProductionServer
   };
 };
 
 export const setEnvironment = (env: string) => {
+  // Jangan izinkan switch environment di production server
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    console.warn('Environment switching tidak diizinkan di production server');
+    return;
+  }
+  
   if (ENVIRONMENTS[env as keyof typeof ENVIRONMENTS]) {
     localStorage.setItem('api_environment', env);
     // Reload page to apply new environment
