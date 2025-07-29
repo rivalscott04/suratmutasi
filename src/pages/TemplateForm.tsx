@@ -482,7 +482,7 @@ const TemplateForm: React.FC = () => {
           // Pejabat data
           namapejabat: selectedPejabat.nama,
           nippejabat: selectedPejabat.nip,
-          pangkatgolpejabat: baseData.pangkatgolpejabat || selectedPejabat.pangkat_gol || '',
+          pangkatgolpejabat: baseData.pangkatgolpejabat || selectedPejabat.pangkat_gol || (selectedPejabat as any)?.golongan || '',
           jabatanpejabat: selectedPejabat.jabatan,
           // Template 2 specific data
           unitkerja: template2Data.unitkerja || '',
@@ -507,7 +507,7 @@ const TemplateForm: React.FC = () => {
           ...(templateId !== '2' && {
             namapegawai: selectedPegawai?.nama || '',
             nippegawai: selectedPegawai?.nip || '',
-            pangkatgolpegawai: selectedPegawai?.pangkat_gol || '',
+            pangkatgolpegawai: baseData.pangkatgolpegawai || selectedPegawai?.pangkat_gol || (selectedPegawai as any)?.golongan || '',
             jabatanpegawai: selectedPegawai?.jabatan || '',
             ukerpegawai: selectedPegawai?.unit_kerja || ''
           }),
@@ -531,8 +531,8 @@ const TemplateForm: React.FC = () => {
           ibukota: baseData.ibukota,
           // PASTIKAN pangkat golongan SELALU ADA untuk semua template kecuali 2 dan 9
           ...(templateId !== '2' && templateId !== '9' && {
-            pangkatgolpejabat: selectedPejabat?.pangkat_gol || '',
-            pangkatgolpegawai: selectedPegawai?.pangkat_gol || '',
+            pangkatgolpejabat: baseData.pangkatgolpejabat || selectedPejabat?.pangkat_gol || (selectedPejabat as any)?.golongan || '',
+            pangkatgolpegawai: baseData.pangkatgolpegawai || selectedPegawai?.pangkat_gol || (selectedPegawai as any)?.golongan || '',
           })
         })
       }
