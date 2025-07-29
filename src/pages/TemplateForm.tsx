@@ -213,7 +213,7 @@ const TemplateForm: React.FC = () => {
     tahunskrg: currentYear,
     tempattugas: '',
     kabkota2: '',
-    jabatnpegawai2: '',
+    jabatanpegawai2: '',
     tempattugas2: '',
     kabataukotatujuan: ''
   });
@@ -328,10 +328,12 @@ const TemplateForm: React.FC = () => {
       setTemplate6Data(prev => ({ ...prev, ukerpegawai: pegawai?.unit_kerja || '' }));
     }
     if (templateId === '7') {
-      setTemplate7Data(prev => ({ ...prev, tempattugas: pegawai?.tempat_tugas || '' }));
+      // Template 7: tempattugas diisi manual, tidak otomatis dari data pegawai
     }
     if (templateId === '8') {
-      setTemplate8Data(prev => ({ ...prev, tempattugas: pegawai?.tempat_tugas || '' }));
+      // Template 8: tempattugas diisi manual, tidak otomatis dari data pegawai
+      console.log('Template 8: Pegawai dipilih, tempattugas akan diisi manual');
+      console.log('Selected pegawai:', pegawai);
     }
   };
 
@@ -344,12 +346,7 @@ const TemplateForm: React.FC = () => {
   };
 
   const handleTemplate2DataChange = (field: keyof Template2Data, value: string) => {
-    console.log(`Template 2 Change: ${field} = ${value}`);
-    setTemplate2Data(prev => {
-      const newData = { ...prev, [field]: value };
-      console.log('Template 2 New State:', newData);
-      return newData;
-    });
+    setTemplate2Data(prev => ({ ...prev, [field]: value }));
   };
 
   const handleTemplate3DataChange = (field: keyof Template3Data, value: string) => {
@@ -361,12 +358,7 @@ const TemplateForm: React.FC = () => {
   };
 
   const handleTemplate5DataChange = (field: keyof Template5Data, value: string) => {
-    console.log('Template 5 Change:', field, value);
-    setTemplate5Data(prev => {
-      const newData = { ...prev, [field]: value };
-      console.log('Template 5 New State:', newData);
-      return newData;
-    });
+    setTemplate5Data(prev => ({ ...prev, [field]: value }));
   };
 
   const handleTemplate6DataChange = (field: keyof Template6Data, value: string) => {
@@ -378,7 +370,12 @@ const TemplateForm: React.FC = () => {
   };
 
   const handleTemplate8DataChange = (field: keyof Template8Data, value: string) => {
-    setTemplate8Data(prev => ({ ...prev, [field]: value }));
+    console.log(`Template 8 Change: ${field} = ${value}`);
+    setTemplate8Data(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('Template 8 New State:', newData);
+      return newData;
+    });
   };
 
   const handleTemplate9DataChange = (field: keyof Template9Data, value: string) => {
@@ -391,20 +388,17 @@ const TemplateForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('office yang dipakai:', office);
-    console.log('SUBMIT', { selectedPegawai, selectedPejabat, office, user, templateId });
+
     setSaving(true);
     setSubmitError(null);
     setPdfUrl(null);
     // Validasi field wajib
     if (!office?.id) {
-      console.log('VALIDASI GAGAL: office', office);
       setSubmitError('Data kantor tidak ditemukan. Silakan atur kantor di Settings.');
       setSaving(false);
       return;
     }
     if (!user?.id) {
-      console.log('VALIDASI GAGAL: user', user);
       setSubmitError('User tidak valid. Silakan login ulang.');
       setSaving(false);
       return;
@@ -415,7 +409,6 @@ const TemplateForm: React.FC = () => {
       return;
     }
     if (!selectedPejabat?.nip) {
-      console.log('VALIDASI GAGAL: selectedPejabat', selectedPejabat);
       setSubmitError('Pilih pejabat penandatangan surat.');
       setSaving(false);
       return;
@@ -443,21 +436,16 @@ const TemplateForm: React.FC = () => {
       letter_number = `B-${template9Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.01.2/${template9Data.blnno}/${template9Data.thnno}`;
     }
     if (!letter_number) {
-      console.log('VALIDASI GAGAL: letter_number', letter_number);
       setSubmitError('Nomor surat wajib diisi.');
       setSaving(false);
       return;
     }
-    console.log('SUBMIT LANJUT: letter_number', letter_number);
+
     // Format tanggal Indonesia untuk tanda tangan
     let tanggalIndo = '';
     if (baseData.tanggal) tanggalIndo = formatTanggalIndonesia(baseData.tanggal);
     
-    // Debug untuk Template 2
-    if (templateId === '2') {
-      console.log('Template 2 Submit Debug - template2Data:', template2Data);
-      console.log('Template 2 Submit Debug - unitkerja value:', template2Data.unitkerja);
-    }
+
     
     // Compose payload sesuai backend
     const payload: any = {
@@ -538,97 +526,38 @@ const TemplateForm: React.FC = () => {
       }
     };
     
-    // Debug untuk Template 2 - tampilkan payload final
-    if (templateId === '2') {
-      console.log('Template 2 Submit Debug - Final payload form_data:', payload.form_data);
-    }
-    
-    // Debug untuk template selain 2 - cek pangkat/golongan
-    if (templateId !== '2' && templateId !== '9') {
-      console.log(`Template ${templateId} Debug - Pangkat/Golongan Check:`);
-      console.log(`pangkatgolpejabat: ${payload.form_data.pangkatgolpejabat}`);
-      console.log(`pangkatgolpegawai: ${payload.form_data.pangkatgolpegawai}`);
-      console.log(`selectedPejabat.pangkat_gol: ${selectedPejabat?.pangkat_gol}`);
-      console.log(`selectedPegawai.pangkat_gol: ${selectedPegawai?.pangkat_gol}`);
-      console.log(`selectedPejabat object:`, selectedPejabat);
-      console.log(`selectedPegawai object:`, selectedPegawai);
-      console.log(`baseData.pangkatgolpejabat: ${baseData.pangkatgolpejabat}`);
-      console.log(`baseData.pangkatgolpegawai: ${baseData.pangkatgolpegawai}`);
+    // Debug khusus untuk Template 8
+    if (templateId === '8') {
+      console.log('=== TEMPLATE 8 DEBUG ===');
+      console.log('template8Data:', template8Data);
+      console.log('payload.form_data for Template 8:', payload.form_data);
+      console.log('nosrt:', payload.form_data.nosrt);
+      console.log('blnno:', payload.form_data.blnno);
+      console.log('thnno:', payload.form_data.thnno);
+      console.log('tempattugas:', payload.form_data.tempattugas);
+      console.log('jabatanbaru:', payload.form_data.jabatanbaru);
+      console.log('tempattugasbaru:', payload.form_data.tempattugasbaru);
+      console.log('=== END TEMPLATE 8 DEBUG ===');
     }
     
     try {
-      console.log('PAYLOAD', payload);
-      // Only log template-specific data for current template
-      if (templateId === '2') {
-        console.log('TEMPLATE 2 DATA:', template2Data);
-        console.log('FORM_DATA SENT:', payload.form_data);
-        console.log('TEMPLATE ID:', templateId);
-        console.log('LETTER NUMBER:', letter_number);
-        
-        // Check for empty fields in form_data
-        console.log('CHECKING EMPTY FIELDS:');
-        Object.entries(payload.form_data).forEach(([key, value]) => {
-          if (value === '' || value === null || value === undefined) {
-            console.log(`EMPTY FIELD: ${key} = ${value}`);
-          }
-        });
-        
-        // Check required Template 2 fields specifically
-        console.log('TEMPLATE 2 REQUIRED FIELDS CHECK:');
-        const template2Fields = ['blnnomor', 'tahunskrg', 'nosurat', 'unitkerja', 'namajabatan', 'bbnkerja', 'eksisting', 'kelebihan', 'kekurangan'];
-        template2Fields.forEach(field => {
-          const value = payload.form_data[field];
-          console.log(`${field}: ${value} ${value === '' ? '(EMPTY!)' : ''}`);
-        });
-        
-        // Check office fields
-        console.log('OFFICE FIELDS CHECK:');
-        console.log(`fax: ${payload.form_data.fax}`);
-        console.log(`telfon: ${payload.form_data.telfon}`);
-        console.log(`email: ${payload.form_data.email}`);
-        
-        // Check signature fields
-        console.log('SIGNATURE FIELDS CHECK:');
-        console.log(`ibukota: ${payload.form_data.ibukota}`);
-        console.log(`tanggal: ${payload.form_data.tanggal}`);
-        console.log(`namapejabat: ${payload.form_data.namapejabat}`);
-        console.log(`nippejabat: ${payload.form_data.nippejabat}`);
-        console.log(`jabatanpejabat: ${payload.form_data.jabatanpejabat}`);
-        
-        // Show exact Template 2 data being sent
-        console.log('EXACT TEMPLATE 2 DATA SENT:');
-        console.log('template2Data state:', template2Data);
-        console.log('Template 2 fields in payload:');
-        template2Fields.forEach(field => {
-          console.log(`${field}: ${payload.form_data[field]}`);
-        });
-        
-        // Show complete payload structure
-        console.log('COMPLETE PAYLOAD STRUCTURE:');
-        console.log(JSON.stringify(payload, null, 2));
-        
-        // Check all fields that Template 2 needs
-        console.log('TEMPLATE 2 ALL REQUIRED FIELDS CHECK:');
-        const allTemplate2Fields = [
-          'kabkota', 'jln', 'telfon', 'fax', 'email', 'website',
-          'namapejabat', 'nippejabat', 'pangkatgolpejabat', 'jabatanpejabat',
-          'unitkerja', 'nosurat', 'blnnomor', 'tahunskrg', 'namajabatan',
-          'bbnkerja', 'eksisting', 'kelebihan', 'kekurangan',
-          'ibukota', 'tanggal', 'kode_kabko', 'office'
-        ];
-        allTemplate2Fields.forEach(field => {
-          const value = payload.form_data[field];
-          console.log(`${field}: ${value} ${value === '' || value === null || value === undefined ? '(MISSING!)' : ''}`);
-        });
-      }
+  
+
       const res = await apiPost('/api/letters', payload, token);
       setSuratId(res.letter?.id || res.id);
       setShowSuccessModal(true);
       toast({ title: 'Surat berhasil disimpan', description: 'Surat siap digenerate PDF.' });
+      
+      // Debug khusus untuk Template 8 setelah berhasil submit
+      if (templateId === '8') {
+        console.log('=== TEMPLATE 8 SUCCESS DEBUG ===');
+        console.log('Response:', res);
+        console.log('Letter ID:', res.letter?.id || res.id);
+        console.log('=== END TEMPLATE 8 SUCCESS DEBUG ===');
+      }
+      
+
     } catch (err: any) {
-      console.log('ERROR SUBMIT Error:', err);
-      console.log('ERROR DETAILS:', err);
-      console.log('PAYLOAD THAT FAILED:', payload);
       
       // Handle specific error messages
       if (err.message && err.message.includes('Nomor surat sudah ada')) {
@@ -937,10 +866,7 @@ const TemplateForm: React.FC = () => {
               <Input
                 id="tempattugas5"
                 value={template5Data.tempattugas || ''}
-                onChange={(e) => {
-                  console.log('Input change - tempattugas5:', e.target.value);
-                  handleTemplate5DataChange('tempattugas', e.target.value);
-                }}
+                onChange={(e) => handleTemplate5DataChange('tempattugas', e.target.value)}
                 placeholder="Akan terisi otomatis dari data pegawai (atau isi manual)"
                 className={template5Data.tempattugas ? "bg-gray-50" : ""}
               />
@@ -1020,8 +946,7 @@ const TemplateForm: React.FC = () => {
                   id="tempattugas7"
                   value={template7Data.tempattugas || ''}
                   onChange={(e) => handleTemplate7DataChange('tempattugas', e.target.value)}
-                  placeholder="Akan terisi otomatis dari data pegawai (atau isi manual)"
-                  className={template7Data.tempattugas ? "bg-gray-50" : ""}
+                  placeholder="Masukkan tempat tugas asal (contoh: Bagian Tata Usaha)"
                 />
               </div>
               <div>
@@ -1040,11 +965,11 @@ const TemplateForm: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="jabatnpegawai2">Jabatan Baru</Label>
+                <Label htmlFor="jabatanpegawai2">Jabatan Baru</Label>
                 <Input
-                  id="jabatnpegawai2"
-                  value={template7Data.jabatnpegawai2 || ''}
-                  onChange={(e) => handleTemplate7DataChange('jabatnpegawai2', e.target.value)}
+                  id="jabatanpegawai2"
+                  value={template7Data.jabatanpegawai2 || ''}
+                  onChange={(e) => handleTemplate7DataChange('jabatanpegawai2', e.target.value)}
                   placeholder="Jabatan yang akan dituju"
                 />
               </div>
@@ -1112,8 +1037,7 @@ const TemplateForm: React.FC = () => {
                   id="tempattugas8"
                   value={template8Data.tempattugas || ''}
                   onChange={(e) => handleTemplate8DataChange('tempattugas', e.target.value)}
-                  placeholder="Akan terisi otomatis dari data pegawai (atau isi manual)"
-                  className={template8Data.tempattugas ? "bg-gray-50" : ""}
+                  placeholder="Masukkan tempat tugas asal (contoh: Bagian Tata Usaha)"
                 />
               </div>
               <div>
@@ -1220,13 +1144,9 @@ const TemplateForm: React.FC = () => {
           />
         );
       case '5':
-        const template5CombinedData = { ...baseData, ...template5Data };
-        console.log('Template 5 Preview Data:', template5CombinedData);
-        console.log('Template 5 tempattugas:', template5Data.tempattugas);
-        console.log('Template 5 Combined tempattugas:', template5CombinedData.tempattugas);
         return (
           <Template5 
-            data={template5CombinedData as Template5Data}
+            data={{ ...baseData, ...template5Data } as Template5Data}
           />
         );
       case '6':
@@ -1419,7 +1339,7 @@ const TemplateForm: React.FC = () => {
                       value={selectedPegawai?.unit_kerja ?? ''}
                       placeholder="Akan terisi otomatis"
                     />
-                    {(templateId === '3' || templateId === '7' || templateId === '8') && (
+                    {(templateId === '3') && (
                       <AutoFilledInput
                         label="Tempat Tugas"
                         value={selectedPegawai?.tempat_tugas ?? ''}

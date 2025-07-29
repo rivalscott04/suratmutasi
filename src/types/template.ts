@@ -98,7 +98,7 @@ export interface Template7Data extends BaseTemplateData {
   tahunskrg: string;
   tempattugas: string;
   kabkota2: string;
-  jabatnpegawai2: string;
+  jabatanpegawai2: string;
   tempattugas2: string;
   kabataukotatujuan: string;
 }

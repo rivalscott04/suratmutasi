@@ -187,10 +187,8 @@ const MultiTemplateGenerator: React.FC = () => {
     blnnomor: '',
     tahunskrg: '',
     tempattugas: '',
-    tempattugaslama: '',
-    tempattugasbaru: '',
     kabkota2: '',
-    jabatnpegawai2: '',
+    jabatanpegawai2: '',
     tempattugas2: '',
     kabataukotatujuan: ''
   });
@@ -744,36 +742,16 @@ const MultiTemplateGenerator: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="tempattugas7">Tempat Tugas</Label>
+                <Label htmlFor="tempattugas7">Tempat Tugas Asal</Label>
                 <Input
                   id="tempattugas7"
                   value={template7Data.tempattugas}
                   onChange={(e) => handleTemplate7DataChange('tempattugas', e.target.value)}
-                  placeholder="Tempat tugas pegawai"
+                  placeholder="Masukkan tempat tugas asal (contoh: Bagian Tata Usaha)"
                 />
               </div>
-              <div>
-                <Label htmlFor="tempattugaslama7">Tempat Tugas Lama</Label>
-                <Input
-                  id="tempattugaslama7"
-                  value={template7Data.tempattugaslama}
-                  onChange={(e) => handleTemplate7DataChange('tempattugaslama', e.target.value)}
-                  placeholder="Tempat tugas lama"
-                />
-              </div>
-              <div>
-                <Label htmlFor="tempattugasbaru7">Tempat Tugas Baru</Label>
-                <Input
-                  id="tempattugasbaru7"
-                  value={template7Data.tempattugasbaru}
-                  onChange={(e) => handleTemplate7DataChange('tempattugasbaru', e.target.value)}
-                  placeholder="Tempat tugas baru"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="kabkota27">Kabupaten/Kota Asal</Label>
                 <Select onValueChange={(value) => handleTemplate7DataChange('kabkota2', value)} value={template7Data.kabkota2}>
@@ -787,17 +765,17 @@ const MultiTemplateGenerator: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="jabatnpegawai2">Jabatan Baru</Label>
+                <Label htmlFor="jabatanpegawai2">Jabatan Baru</Label>
                 <Input
-                  id="jabatnpegawai2"
-                  value={template7Data.jabatnpegawai2}
-                  onChange={(e) => handleTemplate7DataChange('jabatnpegawai2', e.target.value)}
+                  id="jabatanpegawai2"
+                  value={template7Data.jabatanpegawai2}
+                  onChange={(e) => handleTemplate7DataChange('jabatanpegawai2', e.target.value)}
                   placeholder="Jabatan yang akan dituju"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="tempattugas2">Tempat Tugas Baru</Label>
                 <Input
