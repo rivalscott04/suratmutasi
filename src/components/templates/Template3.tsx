@@ -119,8 +119,13 @@ export const Template3: React.FC<Template3Props> = ({ data }) => {
           <div className="mb-1">
             {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>
-          <div>
-            Kepala,
+          <div className="relative">
+            {data.isPltPlh && (
+              <span className="absolute -left-6">
+                {data.pltPlhType === 'plt' ? 'Plt. ' : 'Plh. '}
+              </span>
+            )}
+            <span>Kepala,</span>
           </div>
           <div className="h-16"></div>
           <div className="font-bold underline">

@@ -7,8 +7,6 @@ interface Template5Props {
 }
 
 export const Template5: React.FC<Template5Props> = ({ data }) => {
-  console.log('Template5 Component - data:', data);
-  console.log('Template5 Component - tempattugas:', data.tempattugas);
   return (
     <div className="template-preview bg-white text-black" style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', margin: 0, padding: 0 }}>
       {/* Header */}
@@ -130,8 +128,13 @@ export const Template5: React.FC<Template5Props> = ({ data }) => {
           <div className="mb-1">
             {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>
-          <div>
-            Kepala,
+          <div className="relative">
+            {data.isPltPlh && (
+              <span className="absolute -left-6">
+                {data.pltPlhType === 'plt' ? 'Plt. ' : 'Plh. '}
+              </span>
+            )}
+            <span>Kepala,</span>
           </div>
           <div className="h-16"></div>
           <div className="font-bold underline">

@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormSection } from './FormSection';
 import { TemplateCard } from './TemplateCard';
 import { PegawaiSearchInput } from './PegawaiSearchInput';
@@ -124,7 +126,10 @@ const MultiTemplateGenerator: React.FC = () => {
     
     // Signature data
     ibukota: '',
-    tanggal: ''
+    tanggal: '',
+    pejabatStatus: 'tetap',
+    isPltPlh: false,
+    pltPlhType: 'plt'
   });
 
   // Template-specific data states
@@ -290,7 +295,7 @@ const MultiTemplateGenerator: React.FC = () => {
     }
   };
 
-  const handleBaseDataChange = (field: keyof typeof baseData, value: string) => {
+  const handleBaseDataChange = (field: keyof typeof baseData, value: string | boolean) => {
     setBaseData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -961,7 +966,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template1 
             data={{
               ...baseData,
-              ...template1Data
+              ...template1Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template1Data}
           />
         );
@@ -970,7 +977,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template2 
             data={{
               ...baseData,
-              ...template2Data
+              ...template2Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template2Data}
           />
         );
@@ -979,7 +988,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template3 
             data={{
               ...baseData,
-              ...template3Data
+              ...template3Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template3Data}
           />
         );
@@ -988,7 +999,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template4 
             data={{
               ...baseData,
-              ...template4Data
+              ...template4Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template4Data}
           />
         );
@@ -997,7 +1010,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template5 
             data={{
               ...baseData,
-              ...template5Data
+              ...template5Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template5Data}
           />
         );
@@ -1006,7 +1021,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template6 
             data={{
               ...baseData,
-              ...template6Data
+              ...template6Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template6Data}
           />
         );
@@ -1015,7 +1032,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template7 
             data={{
               ...baseData,
-              ...template7Data
+              ...template7Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template7Data}
           />
         );
@@ -1024,7 +1043,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template8 
             data={{
               ...baseData,
-              ...template8Data
+              ...template8Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template8Data}
           />
         );
@@ -1033,7 +1054,9 @@ const MultiTemplateGenerator: React.FC = () => {
           <Template9 
             data={{
               ...baseData,
-              ...template9Data
+              ...template9Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template9Data}
           />
         );
@@ -1204,6 +1227,39 @@ const MultiTemplateGenerator: React.FC = () => {
                     onChange={(e) => handleBaseDataChange('tanggal', e.target.value)}
                   />
                 </div>
+              </div>
+              
+              {/* PLT/PLH Section */}
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isPltPlh"
+                    checked={baseData.isPltPlh}
+                    onCheckedChange={(checked) => 
+                      handleBaseDataChange('isPltPlh', checked === true)
+                    }
+                  />
+                  <Label htmlFor="isPltPlh">Pejabat PLT atau PLH?</Label>
+                </div>
+                
+                {baseData.isPltPlh && (
+                  <div className="ml-6 space-y-2">
+                    <Label>Pilih Status:</Label>
+                    <RadioGroup
+                      value={baseData.pltPlhType}
+                      onValueChange={(value) => handleBaseDataChange('pltPlhType', value)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="plt" id="plt" />
+                        <Label htmlFor="plt">PLT (Pelaksana Tugas)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="plh" id="plh" />
+                        <Label htmlFor="plh">PLH (Pelaksana Harian)</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                )}
               </div>
             </FormSection>
 

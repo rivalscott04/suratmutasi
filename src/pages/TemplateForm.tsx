@@ -149,7 +149,10 @@ const TemplateForm: React.FC = () => {
     jabatanpegawai: '',
     ibukota: '', // default kosong
     tanggal: '',
-    kode_kabko: ''
+    kode_kabko: '',
+    pejabatStatus: 'tetap', // 'tetap', 'plt', 'plh'
+    isPltPlh: false,
+    pltPlhType: 'plt'
   });
 
   // Inisialisasi state tahun di semua templateXData
@@ -332,12 +335,10 @@ const TemplateForm: React.FC = () => {
     }
     if (templateId === '8') {
       // Template 8: tempattugas diisi manual, tidak otomatis dari data pegawai
-      console.log('Template 8: Pegawai dipilih, tempattugas akan diisi manual');
-      console.log('Selected pegawai:', pegawai);
     }
   };
 
-  const handleBaseDataChange = (field: keyof BaseTemplateData, value: string) => {
+  const handleBaseDataChange = (field: keyof BaseTemplateData, value: string | boolean) => {
     setBaseData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -370,12 +371,7 @@ const TemplateForm: React.FC = () => {
   };
 
   const handleTemplate8DataChange = (field: keyof Template8Data, value: string) => {
-    console.log(`Template 8 Change: ${field} = ${value}`);
-    setTemplate8Data(prev => {
-      const newData = { ...prev, [field]: value };
-      console.log('Template 8 New State:', newData);
-      return newData;
-    });
+    setTemplate8Data(prev => ({ ...prev, [field]: value }));
   };
 
   const handleTemplate9DataChange = (field: keyof Template9Data, value: string) => {
@@ -526,19 +522,7 @@ const TemplateForm: React.FC = () => {
       }
     };
     
-    // Debug khusus untuk Template 8
-    if (templateId === '8') {
-      console.log('=== TEMPLATE 8 DEBUG ===');
-      console.log('template8Data:', template8Data);
-      console.log('payload.form_data for Template 8:', payload.form_data);
-      console.log('nosrt:', payload.form_data.nosrt);
-      console.log('blnno:', payload.form_data.blnno);
-      console.log('thnno:', payload.form_data.thnno);
-      console.log('tempattugas:', payload.form_data.tempattugas);
-      console.log('jabatanbaru:', payload.form_data.jabatanbaru);
-      console.log('tempattugasbaru:', payload.form_data.tempattugasbaru);
-      console.log('=== END TEMPLATE 8 DEBUG ===');
-    }
+
     
     try {
   
@@ -548,13 +532,7 @@ const TemplateForm: React.FC = () => {
       setShowSuccessModal(true);
       toast({ title: 'Surat berhasil disimpan', description: 'Surat siap digenerate PDF.' });
       
-      // Debug khusus untuk Template 8 setelah berhasil submit
-      if (templateId === '8') {
-        console.log('=== TEMPLATE 8 SUCCESS DEBUG ===');
-        console.log('Response:', res);
-        console.log('Letter ID:', res.letter?.id || res.id);
-        console.log('=== END TEMPLATE 8 SUCCESS DEBUG ===');
-      }
+
       
 
     } catch (err: any) {
@@ -1130,7 +1108,9 @@ const TemplateForm: React.FC = () => {
           <Template3 
             data={{
               ...baseData,
-              ...template3Data
+              ...template3Data,
+              isPltPlh: baseData.isPltPlh,
+              pltPlhType: baseData.pltPlhType
             } as Template3Data}
           />
         );
@@ -1381,6 +1361,50 @@ const TemplateForm: React.FC = () => {
                         value={baseData.tanggal || ''}
                         onChange={(e) => handleBaseDataChange('tanggal', e.target.value)}
                       />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Label htmlFor="pejabatStatus">Status Pejabat</Label>
+                    <div className="space-y-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={baseData.isPltPlh}
+                          onChange={(e) => {
+                            handleBaseDataChange('isPltPlh', e.target.checked);
+                            if (e.target.checked) {
+                              handleBaseDataChange('pltPlhType', 'plt');
+                            }
+                          }}
+                          className="mr-2"
+                        />
+                        PLT/PLH (Pelaksana Tugas/Pelaksana Harian)
+                      </label>
+                      
+                      {baseData.isPltPlh && (
+                        <div className="ml-6 space-y-2">
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              value="plt"
+                              checked={baseData.pltPlhType === 'plt'}
+                              onChange={(e) => handleBaseDataChange('pltPlhType', e.target.value)}
+                              className="mr-2"
+                            />
+                            PLT (Pelaksana Tugas)
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              value="plh"
+                              checked={baseData.pltPlhType === 'plh'}
+                              onChange={(e) => handleBaseDataChange('pltPlhType', e.target.value)}
+                              className="mr-2"
+                            />
+                            PLH (Pelaksana Harian)
+                          </label>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </FormSection>

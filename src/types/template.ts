@@ -25,6 +25,9 @@ export interface BasePegawaiData {
 export interface BaseSignatureData {
   ibukota: string;
   tanggal: string;
+  pejabatStatus: string; // 'tetap', 'plt', 'plh'
+  isPltPlh: boolean; // checkbox untuk menampilkan opsi PLT/PLH
+  pltPlhType: string; // 'plt' atau 'plh' untuk radio button
 }
 
 export interface BaseTemplateData extends BaseOfficeData, BasePejabatData, BasePegawaiData, BaseSignatureData {

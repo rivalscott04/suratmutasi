@@ -131,8 +131,13 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
             <div className="signature-place">
               {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
             </div>
-            <div>
-              Kepala,
+            <div className="relative">
+              {data.isPltPlh && (
+                <span className="absolute -left-6">
+                  {data.pltPlhType === 'plt' ? 'Plt. ' : 'Plh. '}
+                </span>
+              )}
+              <span>Kepala,</span>
             </div>
             <div style={{ height: '60px' }}></div>
             <div className="signature-name">

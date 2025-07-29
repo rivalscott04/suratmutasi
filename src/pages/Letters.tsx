@@ -48,7 +48,6 @@ const Letters: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [expandedPegawai, setExpandedPegawai] = useState<string | null>(null);
   const [expandedSurat, setExpandedSurat] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
   // State untuk pagination per kantor
   const [officePaging, setOfficePaging] = useState<Record<string, { currentPage: number; pageSize: number }>>({});
@@ -121,9 +120,9 @@ const Letters: React.FC = () => {
 
   // Filter grouped by search
   const filteredGrouped: [string, any[]][] = Object.entries(groupedByOffice).filter(([officeName, suratList]) => {
-    if (!searchTerm) return true;
-    return officeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      suratList.some(surat => surat.letter_number.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (!search) return true;
+    return officeName.toLowerCase().includes(search.toLowerCase()) ||
+      suratList.some(surat => surat.letter_number.toLowerCase().includes(search.toLowerCase()));
   });
 
   useEffect(() => {
@@ -254,13 +253,7 @@ const Letters: React.FC = () => {
     }
     if (!data) return <div className="text-error">Data surat tidak ditemukan</div>;
     
-    // Debug untuk Template 2
-    if (letter.template_id === 2) {
-      console.log('Template 2 Debug - Letter ID:', letter.id);
-      console.log('Template 2 Debug - Original form_data:', letter.form_data);
-      console.log('Template 2 Debug - Parsed data:', data);
-      console.log('Template 2 Debug - unitkerja value:', data.unitkerja);
-    }
+
     
     const id = String(letter.template_id);
     // Fallback nomor surat universal (pakai regex agar tidak kosong setelah B-)
@@ -276,16 +269,9 @@ const Letters: React.FC = () => {
     };
     const mergedData = { ...data, ...fallback };
     
-    // Debug untuk Template 2
-    if (letter.template_id === 2) {
-      console.log('Template 2 Debug - Merged data:', mergedData);
-      console.log('Template 2 Debug - Final unitkerja:', mergedData.unitkerja);
-      
-      // Ensure unitkerja is preserved for Template 2
-      if (data.unitkerja) {
-        mergedData.unitkerja = data.unitkerja;
-        console.log('Template 2 Debug - Preserved unitkerja:', mergedData.unitkerja);
-      }
+    // Ensure unitkerja is preserved for Template 2
+    if (letter.template_id === 2 && data.unitkerja) {
+      mergedData.unitkerja = data.unitkerja;
     }
     
     if (id === '1') return <Template1 data={mergedData} />;
@@ -314,22 +300,8 @@ const Letters: React.FC = () => {
   };
 
   const handleDeleteLetter = async (letter: any) => {
-    // Debug logging
-    console.log('Delete Letter Debug:', {
-      letterId: letter.id,
-      letterCreatedBy: letter.created_by,
-      userId: user?.id,
-      userRole: user?.role
-    });
-    
     // Check if user can delete this letter
     const canDelete = user?.role === 'admin' || letter.created_by === user?.id;
-    
-    console.log('Delete Permission Check:', {
-      canDelete,
-      isAdmin: user?.role === 'admin',
-      isCreator: letter.created_by === user?.id
-    });
     
     if (!canDelete) {
       toast({ 
@@ -473,8 +445,9 @@ const Letters: React.FC = () => {
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
     if (checked) {
-      // Only select letters that user can delete
-      const deletableLetters = tabFilteredLetters.filter(letter => 
+      // Get all letters from all visible offices that user can delete
+      const allVisibleLetters = filteredGrouped.flatMap(([officeName, officeLetters]) => officeLetters);
+      const deletableLetters = allVisibleLetters.filter(letter => 
         user?.role === 'admin' || letter.created_by === user?.id
       );
       setSelectedLetters(deletableLetters.map(letter => letter.id));
@@ -524,9 +497,6 @@ const Letters: React.FC = () => {
       if (search) {
         setSearch('');
       }
-      if (searchTerm) {
-        setSearchTerm('');
-      }
     } catch (err: any) {
       toast({ 
         title: 'Gagal menghapus surat', 
@@ -573,9 +543,6 @@ const Letters: React.FC = () => {
       // Reset search jika ada
       if (search) {
         setSearch('');
-      }
-      if (searchTerm) {
-        setSearchTerm('');
       }
       
       setShowDeleteModal(false);
@@ -1022,7 +989,8 @@ const Letters: React.FC = () => {
                                 <TableHead className="w-12">
                                   <div className="flex items-center gap-2">
                                     {(() => {
-                                      const deletableLettersCount = tabFilteredLetters.filter(letter => 
+                                      const allVisibleLetters = filteredGrouped.flatMap(([officeName, officeLetters]) => officeLetters);
+                                      const deletableLettersCount = allVisibleLetters.filter(letter => 
                                         user?.role === 'admin' || letter.created_by === user?.id
                                       ).length;
                                       return (
