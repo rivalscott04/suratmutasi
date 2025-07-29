@@ -1,10 +1,57 @@
 // Helper API untuk request ke backend dengan JWT
 import { useAuth } from '@/contexts/AuthContext';
 
+// Environment configuration
+const ENVIRONMENTS = {
+  development: {
+    name: 'Development (Local)',
+    url: 'http://localhost:3001',
+    color: 'text-green-600'
+  },
+  production: {
+    name: 'Production (Server)',
+    url: 'https://bemutasi.rivaldev.site',
+    color: 'text-blue-600'
+  }
+};
+
+// Get current environment from localStorage or default to production
+const getCurrentEnvironment = () => {
+  const saved = localStorage.getItem('api_environment');
+  return saved || 'production';
+};
+
+// Get base URL for current environment
+const getBaseUrl = () => {
+  const env = getCurrentEnvironment();
+  return ENVIRONMENTS[env as keyof typeof ENVIRONMENTS]?.url || ENVIRONMENTS.production.url;
+};
+
+// Export environment utilities
+export const getEnvironmentConfig = () => {
+  const current = getCurrentEnvironment();
+  return {
+    current,
+    environments: ENVIRONMENTS,
+    baseUrl: getBaseUrl()
+  };
+};
+
+export const setEnvironment = (env: string) => {
+  if (ENVIRONMENTS[env as keyof typeof ENVIRONMENTS]) {
+    localStorage.setItem('api_environment', env);
+    // Reload page to apply new environment
+    window.location.reload();
+  }
+};
+
 export async function apiFetch(method: string, url: string, options: { data?: any; token?: string; headers?: any } = {}) {
   const { data, token, headers = {} } = options;
-  const BASE_URL = 'https://bemutasi.rivaldev.site';
+  const BASE_URL = getBaseUrl();
   const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
+  
+  console.log(`🌐 API Request to: ${fullUrl} (${getCurrentEnvironment()})`);
+  
   const fetchOptions: RequestInit = {
     method,
     headers: {
@@ -28,7 +75,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   // Jika token expired/401, coba refresh token
   if (res.status === 401 && url !== '/api/auth/refresh') {
     try {
-      const refreshRes = await fetch(BASE_URL + '/api/auth/refresh', {
+      const refreshRes = await fetch(getBaseUrl() + '/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

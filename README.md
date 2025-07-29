@@ -10,6 +10,7 @@ Aplikasi web untuk membuat surat-surat resmi Kementerian Agama dengan template y
 - **Export PDF**: Generate surat dalam format PDF
 - **Multi-role User**: Support untuk admin, operator, dan user biasa
 - **Responsive Design**: Interface yang responsif untuk semua perangkat
+- **Environment Switcher**: Switch antara development dan production tanpa deploy ulang
 
 ## 📋 Template Surat yang Tersedia
 
@@ -307,9 +308,41 @@ npm run db:seed
 ```
 
 5. **Start development server**
+
+**Opsi 1: Frontend saja**
 ```bash
 npm run dev
 ```
+
+**Opsi 2: Frontend + Backend sekaligus**
+```bash
+npm run dev:full
+```
+
+**Opsi 3: Backend saja**
+```bash
+npm run backend:dev
+```
+
+## 🌐 Environment Switcher
+
+Fitur untuk switching environment antara development (localhost) dan production (server) tanpa perlu deploy ulang.
+
+### Cara Menggunakan
+1. Buka aplikasi di browser
+2. Di navigation bar, ada dropdown "Environment"
+3. Pilih:
+   - **Development (Local)** - untuk testing di localhost
+   - **Production (Server)** - untuk testing di server
+
+### Keuntungan
+- ✅ Tidak perlu deploy ulang untuk testing di environment berbeda
+- ✅ Switch cepat antara local dan server
+- ✅ Visual indicator dengan warna dan icon
+- ✅ Mobile responsive
+- ✅ Persistent setting di browser
+
+Dokumentasi lengkap: [ENVIRONMENT_SWITCHER.md](ENVIRONMENT_SWITCHER.md)
 
 ## 🔧 Build & Deployment
 

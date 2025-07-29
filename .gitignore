@@ -21,3 +21,33 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
+
+# Environment switching files
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+.env.*.local
+.env.*.backup
+.env.*
+environment.json
+env-config.json
+config/environment.json
+config/env-config.json
+backend/.env
+backend/.env.*
+backend/config/
+backend/storage/
+
+# Additional environment and config files
+*.local
+local.*
+config.local.*
+settings.local.*
+
+# Environment switching and local storage
+.env.example
+.env.template
+.env.sample
