@@ -15,6 +15,9 @@ import LetterDetail from "./pages/LetterDetail";
 import Letters from "./pages/Letters";
 import LetterPrintPreview from "./pages/LetterPrintPreview";
 import Users from "./pages/Users";
+import PengajuanSelect from "./pages/PengajuanSelect";
+import PengajuanFileUpload from "./components/PengajuanFileUpload";
+import JobTypeConfiguration from "./pages/JobTypeConfiguration";
 import { Lock } from 'lucide-react';
 
 const queryClient = new QueryClient();
@@ -91,6 +94,21 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       <Route path="/letters/:id/preview" element={<LetterPrintPreview />} />
+      <Route path="/pengajuan/select" element={
+        <ProtectedRoute>
+          <PengajuanSelect />
+        </ProtectedRoute>
+      } />
+      <Route path="/pengajuan/:pengajuanId/upload" element={
+        <ProtectedRoute>
+          <PengajuanFileUpload />
+        </ProtectedRoute>
+      } />
+      <Route path="/job-type-configuration" element={
+        <AdminRoute>
+          <JobTypeConfiguration />
+        </AdminRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

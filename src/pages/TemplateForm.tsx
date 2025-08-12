@@ -21,6 +21,7 @@ import { Template8 } from '@/components/templates/Template8';
 import { Template9 } from '@/components/templates/Template9';
 import { BaseTemplateData, Template1Data, Template2Data, Template3Data, Template4Data, Template5Data, Template6Data, Template7Data, Template8Data, Template9Data, Pegawai } from '@/types/template';
 import { Printer, ArrowLeft, FileText, CheckCircle, ExternalLink } from 'lucide-react';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { apiPost, apiGet } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -237,6 +238,8 @@ const TemplateForm: React.FC = () => {
     ukerpejabat: ''
   });
 
+
+
   const { token, user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -377,6 +380,8 @@ const TemplateForm: React.FC = () => {
   const handleTemplate9DataChange = (field: keyof Template9Data, value: string) => {
     setTemplate9Data(prev => ({ ...prev, [field]: value }));
   };
+
+
 
   const handlePrint = () => {
     window.print();
@@ -1073,6 +1078,7 @@ const TemplateForm: React.FC = () => {
             </div>
           </div>
         );
+
       default:
         return (
           <div className="text-center py-8 text-muted-foreground">
@@ -1165,6 +1171,7 @@ const TemplateForm: React.FC = () => {
             } as Template9Data}
           />
         );
+
       default:
         return (
           <div className="text-center py-8 text-muted-foreground">
@@ -1176,6 +1183,22 @@ const TemplateForm: React.FC = () => {
   };
 
   const selectedTemplate = TEMPLATES.find(t => t.id === templateId);
+
+  // Check admin-only access
+  if (selectedTemplate?.adminOnly && user?.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Akses Ditolak</h1>
+          <p className="text-muted-foreground mb-4">Template ini hanya dapat diakses oleh admin.</p>
+          <Button onClick={() => navigate('/generator')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Kembali ke Pilihan Template
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!selectedTemplate) {
     return (
@@ -1336,6 +1359,7 @@ const TemplateForm: React.FC = () => {
               title="Detail Template" 
               description="Lengkapi informasi khusus untuk template yang dipilih"
             >
+
               <form onSubmit={handleSubmit} className="space-y-8">
                 {renderTemplateForm()}
                 {/* Signature Section sekarang di dalam form */}
@@ -1504,6 +1528,7 @@ const TemplateForm: React.FC = () => {
                   if (id === '7') return <Template7 data={mergedData} />;
                   if (id === '8') return <Template8 data={mergedData} />;
                   if (id === '9') return <Template9 data={mergedData} />;
+
                   return <div className="text-error">Template tidak dikenali</div>;
                 })()
               ) : (

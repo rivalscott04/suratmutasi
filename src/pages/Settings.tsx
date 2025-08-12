@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check } from 'lucide-react';
+import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '../lib/api';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
@@ -99,152 +99,220 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
   if (error) return <div className="py-8 text-center text-error">{error}</div>;
 
   return (
-    <div className="mb-6">
-      <div className="mb-4 flex justify-end">
-        <Input
-          placeholder="Cari nama/NIP/unit kerja..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-64"
-        />
+    <div className="space-y-6">
+      {/* Search */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Cari pegawai..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setEditModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah Pegawai
+          </Button>
+        </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th>No.</th>
-              <th>Nama</th>
-              <th>NIP</th>
-              <th className="text-center">Pangkat/Golongan</th>
-              <th>Jabatan</th>
-              <th>Unit Kerja</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedEmployees.length === 0 ? (
+
+      {/* Table */}
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan={7} className="text-center">Tidak ada data pegawai</td>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Nama</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">NIP</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Unit Kerja</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Jabatan</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Pangkat/Gol</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Aksi</th>
               </tr>
-            ) : (
-              paginatedEmployees.map((emp, i) => (
-                <tr key={emp.id}>
-                  <td>{(currentPage - 1) * pageSize + i + 1}</td>
-                  <td className="font-medium leading-tight"><CopyableText text={emp.nama} /></td>
-                  <td className="text-base text-gray-700 font-semibold"><CopyableText text={emp.nip} /></td>
-                  <td className="text-center">{emp.golongan || emp.pangkat_gol}</td>
-                  <td>{emp.jabatan}</td>
-                  <td>{emp.unit_kerja}</td>
-                  <td>
-                    <Button size="sm" variant="outline" onClick={() => { setEditData(emp); setEditModalOpen(true); }}>Edit</Button>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {paginatedEmployees.map((employee) => (
+                <tr key={employee.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm text-gray-900">{employee.nama}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">
+                    <CopyableText text={employee.nip} className="font-mono" />
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{employee.unit_kerja}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{employee.jabatan}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{employee.pangkat_gol}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditData(employee);
+                        setEditModalOpen(true);
+                      }}
+                      className="flex items-center gap-1"
+                    >
+                      <Edit className="h-3 w-3" />
+                      Edit
+                    </Button>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-1 mt-4 flex-wrap">
-          <Button size="sm" variant="outline" onClick={() => handlePageChange(1)} disabled={currentPage === 1}>&laquo;</Button>
-          <Button size="sm" variant="outline" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>&lt;</Button>
-          {pageNumbers[0] > 1 && <span className="px-1">...</span>}
-          {pageNumbers.map(page => (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Menampilkan {((currentPage - 1) * pageSize) + 1} sampai {Math.min(currentPage * pageSize, filteredEmployees.length)} dari {filteredEmployees.length} pegawai
+          </div>
+          <div className="flex items-center space-x-2">
             <Button
-              key={page}
+              variant="outline"
               size="sm"
-              variant={currentPage === page ? 'default' : 'outline'}
-              onClick={() => handlePageChange(page)}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
             >
-              {page}
+              Sebelumnya
             </Button>
-          ))}
-          {pageNumbers[pageNumbers.length - 1] < totalPages && <span className="px-1">...</span>}
-          <Button size="sm" variant="outline" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>&gt;</Button>
-          <Button size="sm" variant="outline" onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages}>&raquo;</Button>
+            {pageNumbers.map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Selanjutnya
+            </Button>
+          </div>
         </div>
       )}
-      {/* Modal Edit Pegawai */}
+
+      {/* Edit Modal */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Data Pegawai</DialogTitle>
-            <DialogDescription>Edit data pegawai lalu klik simpan untuk memperbarui.</DialogDescription>
+            <DialogTitle>{editData ? 'Edit Pegawai' : 'Tambah Pegawai Baru'}</DialogTitle>
+            <DialogDescription>
+              {editData ? 'Edit informasi pegawai' : 'Masukkan informasi pegawai baru'}
+            </DialogDescription>
           </DialogHeader>
-          {editData && (
-            <form className="space-y-3" onSubmit={async e => {
-              e.preventDefault();
-              setSaving(true);
-              try {
-                await apiPut(`/api/employees/${editData.nip}`, editData, token);
-                toast({ title: 'Update data pegawai berhasil', variant: 'default' });
-                setEditModalOpen(false);
-                // Refresh data
-                setLoading(true);
-                apiGet('/api/employees', token)
-                  .then(res => setEmployees(res.pegawai || []))
-                  .catch(err => setError(err.message || 'Gagal mengambil data pegawai'))
-                  .finally(() => setLoading(false));
-              } catch (err: any) {
-                toast({ title: 'Update data pegawai gagal', description: err.message, variant: 'destructive' });
-              } finally {
-                setSaving(false);
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setSaving(true);
+            try {
+              const formData = new FormData(e.currentTarget);
+              const data = {
+                nama: formData.get('nama') as string,
+                nip: formData.get('nip') as string,
+                unit_kerja: formData.get('unit_kerja') as string,
+                jabatan: formData.get('jabatan') as string,
+                pangkat_gol: formData.get('pangkat_gol') as string,
+              };
+
+              if (editData) {
+                await apiPut(`/api/employees/${editData.id}`, data, token);
+                toast({
+                  title: 'Berhasil',
+                  description: 'Data pegawai berhasil diperbarui',
+                });
+              } else {
+                await apiPost('/api/employees', data, token);
+                toast({
+                  title: 'Berhasil',
+                  description: 'Pegawai baru berhasil ditambahkan',
+                });
               }
-            }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label>NIP</Label>
-                  <Input value={editData.nip || ''} disabled readOnly className="bg-gray-100" />
-                </div>
-                <div>
-                  <Label>Nama</Label>
-                  <Input value={editData.nama || ''} onChange={e => setEditData({ ...editData, nama: e.target.value })} disabled={user?.role !== 'admin'} className={user?.role !== 'admin' ? 'bg-gray-100' : ''} />
-                </div>
-                <div>
-                  <Label>Pangkat/Golongan</Label>
-                  <Input value={editData.golongan || ''} onChange={e => setEditData({ ...editData, golongan: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Jabatan</Label>
-                  <Input value={editData.jabatan || ''} onChange={e => setEditData({ ...editData, jabatan: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Unit Kerja</Label>
-                  <Input value={editData.unit_kerja || ''} onChange={e => setEditData({ ...editData, unit_kerja: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Induk Unit</Label>
-                  <Input value={editData.induk_unit || ''} onChange={e => setEditData({ ...editData, induk_unit: e.target.value })} />
-                </div>
-                <div>
-                  <Label>TMT Pensiun</Label>
-                  <Input type="date" value={editData.tmt_pensiun ? String(editData.tmt_pensiun).slice(0,10) : ''} onChange={e => setEditData({ ...editData, tmt_pensiun: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Kantor ID</Label>
-                  <Input value={editData.kantor_id || ''} onChange={e => setEditData({ ...editData, kantor_id: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Jenis Pegawai</Label>
-                  <Input value={editData.jenis_pegawai || ''} onChange={e => setEditData({ ...editData, jenis_pegawai: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Aktif</Label>
-                  <select className="w-full border rounded h-10 px-2" value={editData.aktif ? 'true' : 'false'} onChange={e => setEditData({ ...editData, aktif: e.target.value === 'true' })}>
-                    <option value="true">Aktif</option>
-                    <option value="false">Tidak Aktif</option>
-                  </select>
-                </div>
+
+              // Refresh data
+              const res = await apiGet('/api/employees', token);
+              setEmployees(res.pegawai || []);
+              setEditModalOpen(false);
+              setEditData(null);
+            } catch (err: any) {
+              toast({
+                title: 'Gagal',
+                description: err.message || 'Terjadi kesalahan',
+                variant: 'destructive',
+              });
+            } finally {
+              setSaving(false);
+            }
+          }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="nama">Nama Lengkap</Label>
+                <Input
+                  id="nama"
+                  name="nama"
+                  defaultValue={editData?.nama || ''}
+                  required
+                />
               </div>
-              <DialogFooter className="mt-4">
-                <Button type="submit" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan'}</Button>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Batal</Button>
-                </DialogClose>
-              </DialogFooter>
-            </form>
-          )}
+              <div>
+                <Label htmlFor="nip">NIP</Label>
+                <Input
+                  id="nip"
+                  name="nip"
+                  defaultValue={editData?.nip || ''}
+                  required
+                  pattern="[0-9]{18}"
+                  title="NIP harus 18 digit angka"
+                />
+              </div>
+              <div>
+                <Label htmlFor="unit_kerja">Unit Kerja</Label>
+                <Input
+                  id="unit_kerja"
+                  name="unit_kerja"
+                  defaultValue={editData?.unit_kerja || ''}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="jabatan">Jabatan</Label>
+                <Input
+                  id="jabatan"
+                  name="jabatan"
+                  defaultValue={editData?.jabatan || ''}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="pangkat_gol">Pangkat/Golongan</Label>
+                <Input
+                  id="pangkat_gol"
+                  name="pangkat_gol"
+                  defaultValue={editData?.pangkat_gol || ''}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-6">
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Batal</Button>
+              </DialogClose>
+              <Button type="submit" disabled={saving}>
+                {saving ? 'Menyimpan...' : (editData ? 'Update' : 'Simpan')}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
@@ -257,6 +325,16 @@ const Settings = () => {
   const [officeSettings, setOfficeSettings] = useState({
     namakantor: '',
     kabkota: '',
+    alamat: '',
+    telepon: '',
+    fax: '',
+    email: '',
+    website: ''
+  });
+  const [kanwilSettings, setKanwilSettings] = useState({
+    tingkat1: 'KEMENTERIAN AGAMA REPUBLIK INDONESIA',
+    tingkat2: 'KANTOR WILAYAH KEMENTERIAN AGAMA',
+    tingkat3: 'PROVINSI NUSA TENGGARA BARAT',
     alamat: '',
     telepon: '',
     fax: '',
@@ -276,9 +354,22 @@ const Settings = () => {
     website: React.useRef<HTMLInputElement>(null),
     fax: React.useRef<HTMLInputElement>(null),
   };
+  const kanwilInputRefs = {
+    tingkat1: React.useRef<HTMLInputElement>(null),
+    tingkat2: React.useRef<HTMLInputElement>(null),
+    tingkat3: React.useRef<HTMLInputElement>(null),
+    alamat: React.useRef<HTMLTextAreaElement>(null),
+    telepon: React.useRef<HTMLInputElement>(null),
+    email: React.useRef<HTMLInputElement>(null),
+    website: React.useRef<HTMLInputElement>(null),
+    fax: React.useRef<HTMLInputElement>(null),
+  };
   const [showOfficeModal, setShowOfficeModal] = useState(false);
   const [officeModalSuccess, setOfficeModalSuccess] = useState<boolean | null>(null);
   const [officeModalMessage, setOfficeModalMessage] = useState('');
+  const [showKanwilModal, setShowKanwilModal] = useState(false);
+  const [kanwilModalSuccess, setKanwilModalSuccess] = useState<boolean | null>(null);
+  const [kanwilModalMessage, setKanwilModalMessage] = useState('');
 
   useEffect(() => {
     if (token) {
@@ -322,34 +413,37 @@ const Settings = () => {
     }
   }, [token, user]);
 
+  // Load Kanwil settings from localStorage
+  useEffect(() => {
+    const savedKanwilSettings = localStorage.getItem('kanwilSettings');
+    if (savedKanwilSettings) {
+      try {
+        const parsed = JSON.parse(savedKanwilSettings);
+        setKanwilSettings(prev => ({
+          ...prev,
+          tingkat1: parsed.tingkat1 || 'KEMENTERIAN AGAMA REPUBLIK INDONESIA',
+          tingkat2: parsed.tingkat2 || 'KANTOR WILAYAH KEMENTERIAN AGAMA',
+          tingkat3: parsed.tingkat3 || 'PROVINSI NUSA TENGGARA BARAT',
+          alamat: parsed.alamat || '',
+          telepon: parsed.telepon || '',
+          fax: parsed.fax || '',
+          email: parsed.email || '',
+          website: parsed.website || ''
+        }));
+      } catch (err) {
+        console.error('Error parsing kanwil settings:', err);
+      }
+    }
+  }, []);
+
   const handleSaveOfficeSettings = async () => {
     setFieldError(null);
     // Validasi field wajib
-    if (!officeSettings.namakantor.trim()) {
-      setFieldError('namakantor');
-      inputRefs.namakantor.current?.focus();
-      toast({
-        title: 'Nama kantor wajib diisi.',
-        description: 'Silakan isi nama kantor terlebih dahulu.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    if (!officeSettings.kabkota.trim()) {
-      setFieldError('kabkota');
-      inputRefs.kabkota.current?.focus();
-      toast({
-        title: 'Kabupaten/Kota wajib diisi.',
-        description: 'Silakan isi kabupaten/kota kantor.',
-        variant: 'destructive',
-      });
-      return;
-    }
     if (!officeSettings.alamat.trim()) {
       setFieldError('alamat');
       inputRefs.alamat.current?.focus();
       toast({
-        title: 'Alamat kantor wajib diisi.',
+        title: 'Alamat wajib diisi.',
         description: 'Silakan isi alamat kantor.',
         variant: 'destructive',
       });
@@ -361,23 +455,21 @@ const Settings = () => {
       inputRefs.email.current?.focus();
       toast({
         title: 'Format email tidak valid.',
-        description: 'Silakan isi email kantor dengan format yang benar.',
+        description: 'Silakan isi email dengan format yang benar.',
         variant: 'destructive',
       });
       return;
     }
     try {
-      // Kirim hanya field yang boleh diupdate
-      const payload = {
-        address: officeSettings.alamat,
-        phone: officeSettings.telepon,
+      const response = await apiPut(`/api/offices/${officeId}`, {
+        alamat: officeSettings.alamat,
+        telepon: officeSettings.telepon,
         fax: officeSettings.fax,
         email: officeSettings.email,
         website: officeSettings.website
-      };
-      await apiPut(`/api/offices/${officeId}`, payload, token);
+      }, token);
       setOfficeModalSuccess(true);
-      setOfficeModalMessage('Pengaturan kantor berhasil disimpan! Data kantor telah diperbarui.');
+      setOfficeModalMessage('Pengaturan kantor berhasil disimpan!');
       setShowOfficeModal(true);
     } catch (err: any) {
       setOfficeModalSuccess(false);
@@ -386,40 +478,96 @@ const Settings = () => {
     }
   };
 
+  const handleSaveKanwilSettings = async () => {
+    setFieldError(null);
+    // Validasi field wajib untuk Kanwil
+    if (!kanwilSettings.alamat.trim()) {
+      setFieldError('alamat');
+      kanwilInputRefs.alamat.current?.focus();
+      toast({
+        title: 'Alamat Kanwil wajib diisi.',
+        description: 'Silakan isi alamat Kantor Wilayah.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    // Email opsional, tapi jika diisi harus valid
+    if (kanwilSettings.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(kanwilSettings.email)) {
+      setFieldError('email');
+      kanwilInputRefs.email.current?.focus();
+      toast({
+        title: 'Format email tidak valid.',
+        description: 'Silakan isi email Kanwil dengan format yang benar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      // Simpan pengaturan Kanwil ke localStorage (karena ini pengaturan khusus)
+      const kanwilData = {
+        tingkat1: kanwilSettings.tingkat1,
+        tingkat2: kanwilSettings.tingkat2,
+        tingkat3: kanwilSettings.tingkat3,
+        alamat: kanwilSettings.alamat,
+        telepon: kanwilSettings.telepon,
+        fax: kanwilSettings.fax,
+        email: kanwilSettings.email,
+        website: kanwilSettings.website
+      };
+      localStorage.setItem('kanwilSettings', JSON.stringify(kanwilData));
+      setKanwilModalSuccess(true);
+      setKanwilModalMessage('Pengaturan Kanwil berhasil disimpan! Data akan digunakan untuk template Kanwil.');
+      setShowKanwilModal(true);
+    } catch (err: any) {
+      setKanwilModalSuccess(false);
+      setKanwilModalMessage('Gagal menyimpan pengaturan Kanwil. Silakan coba lagi.');
+      setShowKanwilModal(true);
+    }
+  };
+
   const handleExportData = () => {
+    // Implementasi export data
     toast({
-      title: "Export Data",
-      description: "Data pegawai sedang diexport...",
+      title: 'Fitur Export',
+      description: 'Fitur export data akan segera tersedia.',
     });
   };
 
   const handleImportData = () => {
+    // Implementasi import data
     toast({
-      title: "Import Data",
-      description: "Fitur import akan segera tersedia.",
+      title: 'Fitur Import',
+      description: 'Fitur import data akan segera tersedia.',
     });
   };
 
+  if (!user) {
+    return <div className="py-8 text-center">Silakan login terlebih dahulu.</div>;
+  }
+
+  const isAdmin = user?.role === 'admin';
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Pengaturan
-          </h1>
-          <p className="text-gray-600">
-            Kelola pengaturan kantor dan data pegawai
-          </p>
-        </div>
+    <div className="container mx-auto py-8 px-4">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Pengaturan</h1>
+        <p className="text-gray-600">
+          Kelola pengaturan kantor, pegawai, dan sistem aplikasi
+        </p>
       </div>
 
       <Tabs defaultValue="office" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="office" className="flex items-center space-x-2">
             <Building className="h-4 w-4" />
             <span>Kantor</span>
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="kanwil" className="flex items-center space-x-2">
+              <Crown className="h-4 w-4" />
+              <span>Kanwil</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="employees" className="flex items-center space-x-2">
             <Users className="h-4 w-4" />
             <span>Pegawai</span>
@@ -515,6 +663,9 @@ const Settings = () => {
                         ref={inputRefs.fax}
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="email">Email</Label>
                       <Input
@@ -526,27 +677,28 @@ const Settings = () => {
                           ...officeSettings,
                           email: e.target.value
                         })}
+                        placeholder="Contoh: kantor@kemenag.go.id"
                         className={fieldError === 'email' ? 'border-red-500' : ''}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        ref={inputRefs.website}
+                        value={officeSettings.website}
+                        onChange={(e) => setOfficeSettings({
+                          ...officeSettings,
+                          website: e.target.value
+                        })}
+                        placeholder="Contoh: kemenag.go.id"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      ref={inputRefs.website}
-                      value={officeSettings.website}
-                      onChange={(e) => setOfficeSettings({
-                        ...officeSettings,
-                        website: e.target.value
-                      })}
-                    />
-                  </div>
-
-                  <Button onClick={handleSaveOfficeSettings} className="w-full bg-teal-900 hover:bg-teal-800 text-white">
+                  <Button onClick={handleSaveOfficeSettings} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                     <Save className="mr-2 h-4 w-4" />
-                    Simpan Pengaturan
+                    Simpan Pengaturan Kantor
                   </Button>
                 </>
               )}
@@ -554,12 +706,158 @@ const Settings = () => {
           </Card>
         </TabsContent>
 
+        {isAdmin && (
+          <TabsContent value="kanwil">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pengaturan Kantor Wilayah (Kanwil)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start">
+                    <Crown className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-medium text-blue-900 mb-1">Pengaturan Khusus Kanwil</h4>
+                      <p className="text-sm text-blue-700">
+                        Pengaturan ini khusus untuk template surat Kanwil. Data ini akan digunakan untuk header 3 tingkat surat Kanwil dan tidak mempengaruhi pengaturan kantor kabupaten/kota.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="kanwil-tingkat1">Tingkat 1 (Kementerian)</Label>
+                    <Input
+                      id="kanwil-tingkat1"
+                      ref={kanwilInputRefs.tingkat1}
+                      value={kanwilSettings.tingkat1}
+                      onChange={(e) => setKanwilSettings({
+                        ...kanwilSettings,
+                        tingkat1: e.target.value
+                      })}
+                      placeholder="KEMENTERIAN AGAMA REPUBLIK INDONESIA"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="kanwil-tingkat2">Tingkat 2 (Kantor Wilayah)</Label>
+                    <Input
+                      id="kanwil-tingkat2"
+                      ref={kanwilInputRefs.tingkat2}
+                      value={kanwilSettings.tingkat2}
+                      onChange={(e) => setKanwilSettings({
+                        ...kanwilSettings,
+                        tingkat2: e.target.value
+                      })}
+                      placeholder="KANTOR WILAYAH KEMENTERIAN AGAMA"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="kanwil-tingkat3">Tingkat 3 (Provinsi)</Label>
+                    <Input
+                      id="kanwil-tingkat3"
+                      ref={kanwilInputRefs.tingkat3}
+                      value={kanwilSettings.tingkat3}
+                      onChange={(e) => setKanwilSettings({
+                        ...kanwilSettings,
+                        tingkat3: e.target.value
+                      })}
+                      placeholder="PROVINSI NUSA TENGGARA BARAT"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="kanwil-alamat">Alamat Kanwil</Label>
+                  <Textarea
+                    id="kanwil-alamat"
+                    ref={kanwilInputRefs.alamat}
+                    value={kanwilSettings.alamat}
+                    onChange={(e) => setKanwilSettings({
+                      ...kanwilSettings,
+                      alamat: e.target.value
+                    })}
+                    rows={3}
+                    placeholder="Contoh: Jl. Pendidikan No. 1, Mataram, NTB"
+                    className={fieldError === 'alamat' ? 'border-red-500' : ''}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="kanwil-telepon">Telepon</Label>
+                    <Input
+                      id="kanwil-telepon"
+                      ref={kanwilInputRefs.telepon}
+                      value={kanwilSettings.telepon}
+                      onChange={(e) => setKanwilSettings({
+                        ...kanwilSettings,
+                        telepon: e.target.value
+                      })}
+                      placeholder="Contoh: (0370) 123456"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="kanwil-fax">Fax</Label>
+                    <Input
+                      id="kanwil-fax"
+                      value={kanwilSettings.fax}
+                      onChange={(e) => setKanwilSettings({
+                        ...kanwilSettings,
+                        fax: e.target.value
+                      })}
+                      ref={kanwilInputRefs.fax}
+                      placeholder="Contoh: (0370) 123457"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="kanwil-email">Email</Label>
+                    <Input
+                      id="kanwil-email"
+                      ref={kanwilInputRefs.email}
+                      type="email"
+                      value={kanwilSettings.email}
+                      onChange={(e) => setKanwilSettings({
+                        ...kanwilSettings,
+                        email: e.target.value
+                      })}
+                      placeholder="Contoh: kanwil.ntb@kemenag.go.id"
+                      className={fieldError === 'email' ? 'border-red-500' : ''}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="kanwil-website">Website</Label>
+                    <Input
+                      id="kanwil-website"
+                      ref={kanwilInputRefs.website}
+                      value={kanwilSettings.website}
+                      onChange={(e) => setKanwilSettings({
+                        ...kanwilSettings,
+                        website: e.target.value
+                      })}
+                      placeholder="Contoh: kanwil.ntb.kemenag.go.id"
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={handleSaveKanwilSettings} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  <Save className="mr-2 h-4 w-4" />
+                  Simpan Pengaturan Kanwil
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
         <TabsContent value="employees">
           <Card>
             <CardHeader>
-              <CardTitle>Manajemen Data Pegawai</CardTitle>
+              <CardTitle>Kelola Pegawai</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <EmployeesTable token={token} />
             </CardContent>
           </Card>
@@ -570,20 +868,23 @@ const Settings = () => {
             <CardHeader>
               <CardTitle>Pengaturan Sistem</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center py-8">
-                <SettingsIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Pengaturan Sistem
-                </h3>
-                <p className="text-gray-600">
-                  Pengaturan sistem dan preferensi akan tersedia segera
-                </p>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button onClick={handleExportData} variant="outline" className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Export Data
+                </Button>
+                <Button onClick={handleImportData} variant="outline" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Import Data
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Office Settings Modal */}
       <AlertDialog open={showOfficeModal} onOpenChange={setShowOfficeModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -592,6 +893,19 @@ const Settings = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setShowOfficeModal(false)}>Tutup</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Kanwil Settings Modal */}
+      <AlertDialog open={showKanwilModal} onOpenChange={setShowKanwilModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{kanwilModalSuccess ? 'Berhasil' : 'Gagal'}</AlertDialogTitle>
+            <AlertDialogDescription>{kanwilModalMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowKanwilModal(false)}>Tutup</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

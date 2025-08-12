@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { TemplateCard } from '@/components/TemplateCard';
 import { FileText } from 'lucide-react';
 
+
 const TEMPLATES = [
   {
     id: '1',
@@ -59,7 +60,8 @@ const TEMPLATES = [
     title: 'Surat Pernyataan Tanggung Jawab Mutlak',
     description: 'Surat pernyataan tanggung jawab mutlak atas dokumen dan data',
     category: 'Pernyataan'
-  }
+  },
+
 ];
 
 const TemplateSelection = () => {

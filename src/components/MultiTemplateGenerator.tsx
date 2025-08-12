@@ -26,6 +26,7 @@ import { Template9 } from './templates/Template9';
 import { BaseTemplateData, Template1Data, Template2Data, Template3Data, Template4Data, Template5Data, Template6Data, Template7Data, Template8Data, Template9Data, Pegawai } from '@/types/template';
 import { Printer, FileText } from 'lucide-react';
 
+
 // Konstanta untuk kabupaten/kota NTB
 const KABUPATEN_KOTA_NTB = [
   'Kota Mataram',
@@ -217,6 +218,8 @@ const MultiTemplateGenerator: React.FC = () => {
     ukerpejabat: ''
   });
 
+
+
   const handlePejabatSelect = (pejabat: Pegawai) => {
     setSelectedPejabat(pejabat);
     setBaseData(prev => ({
@@ -334,6 +337,8 @@ const MultiTemplateGenerator: React.FC = () => {
   const handleTemplate9DataChange = (field: keyof typeof template9Data, value: string) => {
     setTemplate9Data(prev => ({ ...prev, [field]: value }));
   };
+
+
 
   const handlePrint = () => {
     window.print();
@@ -949,6 +954,7 @@ const MultiTemplateGenerator: React.FC = () => {
             </div>
           </div>
         );
+
       default:
         return (
           <div className="text-center py-8 text-muted-foreground">
@@ -1060,6 +1066,7 @@ const MultiTemplateGenerator: React.FC = () => {
             } as Template9Data}
           />
         );
+
       default:
         return (
           <div className="text-center py-8 text-muted-foreground">
@@ -1199,6 +1206,7 @@ const MultiTemplateGenerator: React.FC = () => {
                 title="Detail Template" 
                 description="Lengkapi informasi khusus untuk template yang dipilih"
               >
+
                 {renderTemplateForm()}
               </FormSection>
             )}

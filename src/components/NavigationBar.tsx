@@ -39,7 +39,8 @@ import {
   Users,
   UserX,
   Loader2,
-  UserCog
+  UserCog,
+  Upload
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import EnvironmentSwitcher from './EnvironmentSwitcher';
@@ -53,7 +54,7 @@ interface User {
 }
 
 const NavigationBar = () => {
-  const { user, originalUser, isImpersonating, impersonateUser, stopImpersonating, logout, token, loading } = useAuth();
+  const { user, originalUser, isImpersonating, impersonateUser, stopImpersonating, logout, token, loading, isAdminKanwil } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -68,6 +69,7 @@ const NavigationBar = () => {
       { name: 'Dashboard', href: '/dashboard', icon: Home },
       { name: 'Template Generator', href: '/generator', icon: FileText },
       { name: 'Riwayat Surat', href: '/letters', icon: FileText },
+      { name: 'Pengajuan', href: '/pengajuan/select', icon: Upload },
     ];
 
     // Tambahkan Management User untuk admin
@@ -75,6 +77,7 @@ const NavigationBar = () => {
     const isAdmin = isImpersonating ? originalUser?.role === 'admin' : user?.role === 'admin';
     if (isAdmin) {
       baseItems.push({ name: 'Management User', href: '/users', icon: UserCog });
+      baseItems.push({ name: 'Konfigurasi Jabatan', href: '/job-type-configuration', icon: Settings });
     }
 
     baseItems.push({ name: 'Settings', href: '/settings', icon: Settings });
@@ -86,10 +89,10 @@ const NavigationBar = () => {
 
   // Fetch available users untuk impersonate
   useEffect(() => {
-    if (showImpersonateModal && originalUser?.role === 'admin') {
+    if (showImpersonateModal && isAdminKanwil) {
       fetchAvailableUsers();
     }
-  }, [showImpersonateModal, originalUser?.role]);
+  }, [showImpersonateModal, isAdminKanwil]);
 
   const fetchAvailableUsers = async () => {
     if (!token) return;
@@ -133,19 +136,26 @@ const NavigationBar = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const handleImpersonateConfirm = () => {
+  const handleImpersonateConfirm = async () => {
     if (selectedUser) {
-      const userToImpersonate = availableUsers.find(u => u.id === selectedUser);
-      if (userToImpersonate) {
-        impersonateUser(userToImpersonate);
+      try {
+        await impersonateUser(selectedUser);
         setShowImpersonateModal(false);
         setSelectedUser('');
+      } catch (error) {
+        console.error('Failed to impersonate user:', error);
+        alert('Failed to impersonate user. Please try again.');
       }
     }
   };
 
-  const handleStopImpersonating = () => {
-    stopImpersonating();
+  const handleStopImpersonating = async () => {
+    try {
+      await stopImpersonating();
+    } catch (error) {
+      console.error('Failed to stop impersonating:', error);
+      alert('Failed to stop impersonating. Please try again.');
+    }
   };
 
   return (
@@ -160,6 +170,10 @@ const NavigationBar = () => {
                   src="/logo-kemenag.png"
                   alt="Kementerian Agama" 
                   className="h-8 w-8"
+                  onError={(e) => {
+                    console.error('Logo Kemenag not found');
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
                 <div className="hidden sm:block">
                   <h1 className="text-lg font-semibold text-green-700">
@@ -238,8 +252,14 @@ const NavigationBar = () => {
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-semibold leading-none">{user?.full_name}</p>
                       <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                      <p className="text-xs leading-none text-gray-500">Role: {user?.role}</p>
-                      {user?.office_id && <p className="text-xs leading-none text-gray-500">Office ID: {user.office_id}</p>}
+                      {isAdminKanwil ? (
+                        <p className="text-xs leading-none text-blue-600 font-medium">
+                          👑 Admin Kanwil (All Access)
+                        </p>
+                      ) : (
+                        <p className="text-xs leading-none text-gray-500">Role: {user?.role}</p>
+                      )}
+                      {user?.office_id && !isAdminKanwil && <p className="text-xs leading-none text-gray-500">Office ID: {user.office_id}</p>}
                       {isImpersonating && (
                         <p className="text-xs leading-none text-blue-600">
                           Impersonating as {user?.full_name}
@@ -258,8 +278,8 @@ const NavigationBar = () => {
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  {/* Impersonate option hanya untuk admin */}
-                  {originalUser?.role === 'admin' && !isImpersonating && (
+                  {/* Impersonate option hanya untuk admin kanwil */}
+                  {isAdminKanwil && !isImpersonating && (
                     <>
                       <DropdownMenuItem onClick={handleImpersonateClick} className="text-blue-600">
                         <Users className="mr-2 h-4 w-4" />
@@ -330,7 +350,7 @@ const NavigationBar = () => {
                   </button>
                 )}
                 {/* Impersonate option untuk mobile */}
-                {originalUser?.role === 'admin' && !isImpersonating && (
+                {isAdminKanwil && !isImpersonating && (
                   <button
                     onClick={handleImpersonateClick}
                     className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full"

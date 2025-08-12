@@ -15,39 +15,49 @@ const ENVIRONMENTS = {
   }
 };
 
-// Get current environment from localStorage or default to production
+// Get current environment from localStorage or default to development
 const getCurrentEnvironment = () => {
-  // Jika di production server, force ke production
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return 'production';
+  // Jika di localhost, selalu gunakan development
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'development';
   }
   
-  const saved = localStorage.getItem('api_environment');
-  return saved || 'production';
+  // Jika di production server, force ke production
+  return 'production';
 };
 
 // Get base URL for current environment
 const getBaseUrl = () => {
   const env = getCurrentEnvironment();
-  return ENVIRONMENTS[env as keyof typeof ENVIRONMENTS]?.url || ENVIRONMENTS.production.url;
+  return ENVIRONMENTS[env as keyof typeof ENVIRONMENTS]?.url || ENVIRONMENTS.development.url;
 };
 
 // Export environment utilities
 export const getEnvironmentConfig = () => {
   const current = getCurrentEnvironment();
   
+  // Jika di localhost, sembunyikan environment switcher (selalu development)
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   // Jika di production server, sembunyikan environment switcher
   const isProductionServer = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
   
   return {
     current,
-    environments: isProductionServer ? { production: ENVIRONMENTS.production } : ENVIRONMENTS,
+    environments: isLocalhost ? { development: ENVIRONMENTS.development } : 
+                 isProductionServer ? { production: ENVIRONMENTS.production } : ENVIRONMENTS,
     baseUrl: getBaseUrl(),
-    isProductionServer
+    isProductionServer,
+    isLocalhost
   };
 };
 
 export const setEnvironment = (env: string) => {
+  // Jangan izinkan switch environment di localhost (selalu development)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.warn('Environment switching tidak diizinkan di localhost (selalu development)');
+    return;
+  }
+  
   // Jangan izinkan switch environment di production server
   if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
     console.warn('Environment switching tidak diizinkan di production server');
@@ -67,6 +77,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
   
   console.log(`🌐 API Request to: ${fullUrl} (${getCurrentEnvironment()})`);
+  console.log(`🔧 Base URL: ${BASE_URL}, Environment: ${getCurrentEnvironment()}, Hostname: ${window.location.hostname}`);
   
   const fetchOptions: RequestInit = {
     method,

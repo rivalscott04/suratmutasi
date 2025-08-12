@@ -24,6 +24,7 @@ const getTemplateIcon = (id: string) => {
     '7': ArrowRightLeft,
     '8': Handshake,
     '9': FileCheck,
+    '10': FileCheck,
   };
   return iconMap[id as keyof typeof iconMap] || FileText;
 };
