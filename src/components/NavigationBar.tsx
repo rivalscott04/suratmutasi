@@ -40,7 +40,8 @@ import {
   UserX,
   Loader2,
   UserCog,
-  Upload
+  Upload,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import EnvironmentSwitcher from './EnvironmentSwitcher';
@@ -59,6 +60,8 @@ const NavigationBar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showImpersonateModal, setShowImpersonateModal] = useState(false);
+  const [showStopImpersonateModal, setShowStopImpersonateModal] = useState(false);
+  const [showStopSuccessModal, setShowStopSuccessModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -77,7 +80,6 @@ const NavigationBar = () => {
     const isAdmin = isImpersonating ? originalUser?.role === 'admin' : user?.role === 'admin';
     if (isAdmin) {
       baseItems.push({ name: 'Management User', href: '/users', icon: UserCog });
-      baseItems.push({ name: 'Konfigurasi Jabatan', href: '/job-type-configuration', icon: Settings });
     }
 
     baseItems.push({ name: 'Settings', href: '/settings', icon: Settings });
@@ -149,9 +151,21 @@ const NavigationBar = () => {
     }
   };
 
-  const handleStopImpersonating = async () => {
+  const handleStopImpersonatingClick = () => {
+    setShowStopImpersonateModal(true);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleStopImpersonatingConfirm = async () => {
     try {
       await stopImpersonating();
+      setShowStopImpersonateModal(false);
+      setShowStopSuccessModal(true);
+      
+      // Auto close success modal after 3 seconds
+      setTimeout(() => {
+        setShowStopSuccessModal(false);
+      }, 3000);
     } catch (error) {
       console.error('Failed to stop impersonating:', error);
       alert('Failed to stop impersonating. Please try again.');
@@ -196,7 +210,7 @@ const NavigationBar = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleStopImpersonating}
+                  onClick={handleStopImpersonatingClick}
                   className="ml-2 h-6 px-2 text-blue-600 hover:text-blue-700"
                 >
                   <UserX className="w-3 h-3" />
@@ -271,7 +285,7 @@ const NavigationBar = () => {
                   {/* Stop Impersonating option */}
                   {isImpersonating && (
                     <>
-                      <DropdownMenuItem onClick={handleStopImpersonating} className="text-blue-600">
+                      <DropdownMenuItem onClick={handleStopImpersonatingClick} className="text-blue-600">
                         <UserX className="mr-2 h-4 w-4" />
                         <span>Stop Impersonating</span>
                       </DropdownMenuItem>
@@ -342,7 +356,7 @@ const NavigationBar = () => {
                 {/* Stop Impersonating option untuk mobile */}
                 {isImpersonating && (
                   <button
-                    onClick={handleStopImpersonating}
+                    onClick={handleStopImpersonatingClick}
                     className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full"
                   >
                     <UserX className="h-5 w-5" />
@@ -460,6 +474,75 @@ const NavigationBar = () => {
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Impersonate
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stop Impersonate Confirmation Modal */}
+      <Dialog open={showStopImpersonateModal} onOpenChange={setShowStopImpersonateModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserX className="w-5 h-5 text-blue-500" />
+              Stop Impersonating
+            </DialogTitle>
+            <DialogDescription>
+              Anda sedang mengakses sistem sebagai <strong>{user?.full_name}</strong>. 
+              Apakah Anda yakin ingin kembali ke akun admin Anda?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 my-4">
+            <div className="flex items-center">
+              <UserCheck className="w-4 h-4 text-blue-600 mr-2" />
+              <span className="text-sm text-blue-700">
+                Setelah stop impersonate, Anda akan kembali ke akun: <strong>{originalUser?.full_name}</strong>
+              </span>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button 
+              onClick={() => setShowStopImpersonateModal(false)}
+              variant="outline"
+            >
+              Batal
+            </Button>
+            <Button 
+              onClick={handleStopImpersonatingConfirm}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Ya, Stop Impersonating
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stop Impersonate Success Modal */}
+      <Dialog open={showStopSuccessModal} onOpenChange={setShowStopSuccessModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Stop Impersonating Berhasil
+            </DialogTitle>
+            <DialogDescription>
+              Anda telah berhasil kembali ke akun admin Anda.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 my-4">
+            <div className="flex items-center">
+              <UserCheck className="w-4 h-4 text-green-600 mr-2" />
+              <span className="text-sm text-green-700">
+                Sekarang Anda mengakses sistem sebagai: <strong>{originalUser?.full_name}</strong>
+              </span>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button 
+              onClick={() => setShowStopSuccessModal(false)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              OK
             </Button>
           </div>
         </DialogContent>

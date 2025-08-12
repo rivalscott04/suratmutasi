@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown } from 'lucide-react';
-import { apiGet, apiPost, apiPut } from '../lib/api';
+import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown, FileText, Trash2 } from 'lucide-react';
+import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -371,6 +374,42 @@ const Settings = () => {
   const [kanwilModalSuccess, setKanwilModalSuccess] = useState<boolean | null>(null);
   const [kanwilModalMessage, setKanwilModalMessage] = useState('');
 
+  // Job Type Configuration state
+  const [jobConfigs, setJobConfigs] = useState<any[]>([]);
+  const [jobConfigLoading, setJobConfigLoading] = useState(true);
+  const [showJobConfigDialog, setShowJobConfigDialog] = useState(false);
+  const [editingJobConfig, setEditingJobConfig] = useState<any | null>(null);
+  const [jobConfigSaving, setJobConfigSaving] = useState(false);
+
+  // Job config form state
+  const [jobConfigForm, setJobConfigForm] = useState({
+    jenis_jabatan: '',
+    total_dokumen: 0,
+    required_files: [] as string[],
+    is_active: true
+  });
+
+  // Available file types
+  const availableFileTypes = [
+    { id: 'surat_pengantar', name: 'Surat Pengantar', category: 'Dokumen Pengantar' },
+    { id: 'surat_permohonan_dari_yang_bersangkutan', name: 'Surat Permohonan Dari Yang Bersangkutan', category: 'Dokumen Pengantar' },
+    { id: 'surat_keputusan_cpns', name: 'Surat Keputusan CPNS', category: 'Dokumen Kepegawaian' },
+    { id: 'surat_keputusan_pns', name: 'Surat Keputusan PNS', category: 'Dokumen Kepegawaian' },
+    { id: 'surat_keputusan_kenaikan_pangkat_terakhir', name: 'Surat Keputusan Kenaikan Pangkat Terakhir', category: 'Dokumen Kepegawaian' },
+    { id: 'surat_keputusan_jabatan_terakhir', name: 'Surat Keputusan Jabatan Terakhir', category: 'Dokumen Kepegawaian' },
+    { id: 'skp_2_tahun_terakhir', name: 'SKP 2 Tahun Terakhir', category: 'Dokumen Kepegawaian' },
+    { id: 'surat_keterangan_bebas_temuan_inspektorat', name: 'Surat Keterangan Bebas Temuan Yang Diterbitkan Inspektorat Jenderal Kementerian Agama', category: 'Dokumen Keterangan' },
+    { id: 'surat_keterangan_anjab_abk_instansi_asal', name: 'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi asal', category: 'Dokumen Keterangan' },
+    { id: 'surat_keterangan_anjab_abk_instansi_penerima', name: 'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi penerima', category: 'Dokumen Keterangan' },
+    { id: 'surat_pernyataan_tidak_hukuman_disiplin', name: 'Surat Pernyataan Tidak Pernah Dijatuhi Hukuman Disiplin Tingkat Sedang atau Berat Dalam 1 (satu) Tahun Terakhir Dari PPK', category: 'Dokumen Pernyataan' },
+    { id: 'surat_persetujuan_mutasi_asal', name: 'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki', category: 'Dokumen Persetujuan' },
+    { id: 'surat_lolos_butuh_ppk', name: 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju', category: 'Dokumen Persetujuan' },
+    { id: 'peta_jabatan', name: 'Peta Jabatan', category: 'Dokumen Pendukung' },
+    { id: 'surat_keterangan_tidak_tugas_belajar', name: 'Surat Keterangan Tidak Sedang Tugas Belajar', category: 'Dokumen Keterangan' },
+    { id: 'sptjm_pimpinan_satker_asal', name: 'SPTJM Pimpinan Satker dari Asal', category: 'Dokumen Pernyataan' },
+    { id: 'sptjm_pimpinan_satker_penerima', name: 'SPTJM Pimpinan Satker dari Penerima', category: 'Dokumen Pernyataan' }
+  ];
+
   useEffect(() => {
     if (token) {
       setLoadingOffice(true);
@@ -435,6 +474,32 @@ const Settings = () => {
       }
     }
   }, []);
+
+  // Fetch job type configurations
+  useEffect(() => {
+    if (token && user?.role === 'admin') {
+      fetchJobConfigs();
+    }
+  }, [token, user?.role]);
+
+  const fetchJobConfigs = async () => {
+    try {
+      setJobConfigLoading(true);
+      const response = await apiGet('/api/job-type-configurations', token);
+      if (response.success) {
+        setJobConfigs(response.data);
+      }
+    } catch (error: any) {
+      console.error('Error fetching job configs:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengambil data konfigurasi jabatan",
+        variant: "destructive",
+      });
+    } finally {
+      setJobConfigLoading(false);
+    }
+  };
 
   const handleSaveOfficeSettings = async () => {
     setFieldError(null);
@@ -541,6 +606,118 @@ const Settings = () => {
     });
   };
 
+  // Job Configuration functions
+  const handleAddJobConfig = () => {
+    setJobConfigForm({
+      jenis_jabatan: '',
+      total_dokumen: 0,
+      required_files: [],
+      is_active: true
+    });
+    setEditingJobConfig(null);
+    setShowJobConfigDialog(true);
+  };
+
+  const handleEditJobConfig = (config: any) => {
+    setJobConfigForm({
+      jenis_jabatan: config.jenis_jabatan,
+      total_dokumen: config.required_files?.length || 0,
+      required_files: config.required_files || [],
+      is_active: config.is_active
+    });
+    setEditingJobConfig(config);
+    setShowJobConfigDialog(true);
+  };
+
+  const handleSaveJobConfig = async () => {
+    if (!jobConfigForm.jenis_jabatan.trim()) {
+      toast({
+        title: "Error",
+        description: "Jenis jabatan wajib diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (jobConfigForm.required_files.length === 0) {
+      toast({
+        title: "Error",
+        description: "Pilih minimal satu dokumen yang diperlukan",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setJobConfigSaving(true);
+      const payload = {
+        jenis_jabatan: jobConfigForm.jenis_jabatan,
+        min_dokumen: jobConfigForm.required_files.length,
+        max_dokumen: jobConfigForm.required_files.length,
+        required_files: jobConfigForm.required_files,
+        is_active: jobConfigForm.is_active
+      };
+
+      if (editingJobConfig) {
+        await apiPut(`/api/job-type-configurations/${editingJobConfig.id}`, payload, token);
+        toast({
+          title: "Sukses",
+          description: "Konfigurasi jabatan berhasil diperbarui",
+        });
+      } else {
+        await apiPost('/api/job-type-configurations', payload, token);
+        toast({
+          title: "Sukses",
+          description: "Konfigurasi jabatan berhasil ditambahkan",
+        });
+      }
+
+      setShowJobConfigDialog(false);
+      fetchJobConfigs();
+    } catch (error: any) {
+      console.error('Error saving job config:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan konfigurasi jabatan",
+        variant: "destructive",
+      });
+    } finally {
+      setJobConfigSaving(false);
+    }
+  };
+
+  const handleDeleteJobConfig = async (configId: number) => {
+    try {
+      await apiDelete(`/api/job-type-configurations/${configId}`, token);
+      toast({
+        title: "Sukses",
+        description: "Konfigurasi jabatan berhasil dihapus",
+      });
+      fetchJobConfigs();
+    } catch (error: any) {
+      console.error('Error deleting job config:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus konfigurasi jabatan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFileTypeToggle = (fileTypeId: string) => {
+    setJobConfigForm(prev => {
+      const newRequiredFiles = prev.required_files.includes(fileTypeId)
+        ? prev.required_files.filter(id => id !== fileTypeId)
+        : [...prev.required_files, fileTypeId];
+      
+      return {
+        ...prev,
+        required_files: newRequiredFiles,
+        total_dokumen: newRequiredFiles.length
+      };
+    });
+  };
+
   if (!user) {
     return <div className="py-8 text-center">Silakan login terlebih dahulu.</div>;
   }
@@ -563,9 +740,9 @@ const Settings = () => {
             <span>Kantor</span>
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="kanwil" className="flex items-center space-x-2">
-              <Crown className="h-4 w-4" />
-              <span>Kanwil</span>
+            <TabsTrigger value="job-config" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span>Konfigurasi Jabatan</span>
             </TabsTrigger>
           )}
           <TabsTrigger value="employees" className="flex items-center space-x-2">
@@ -707,146 +884,88 @@ const Settings = () => {
         </TabsContent>
 
         {isAdmin && (
-          <TabsContent value="kanwil">
+          <TabsContent value="job-config">
             <Card>
               <CardHeader>
-                <CardTitle>Pengaturan Kantor Wilayah (Kanwil)</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Konfigurasi Jabatan</CardTitle>
+                  <Button onClick={handleAddJobConfig} className="bg-green-600 hover:bg-green-700 text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Tambah Konfigurasi
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <div className="flex items-start">
-                    <Crown className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-medium text-blue-900 mb-1">Pengaturan Khusus Kanwil</h4>
-                      <p className="text-sm text-blue-700">
-                        Pengaturan ini khusus untuk template surat Kanwil. Data ini akan digunakan untuk header 3 tingkat surat Kanwil dan tidak mempengaruhi pengaturan kantor kabupaten/kota.
-                      </p>
-                    </div>
+                {jobConfigLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-1/3 mb-2" />
+                    <Skeleton className="h-10 w-full mb-2" />
+                    <Skeleton className="h-10 w-full mb-2" />
+                    <Skeleton className="h-10 w-full mb-2" />
                   </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="kanwil-tingkat1">Tingkat 1 (Kementerian)</Label>
-                    <Input
-                      id="kanwil-tingkat1"
-                      ref={kanwilInputRefs.tingkat1}
-                      value={kanwilSettings.tingkat1}
-                      onChange={(e) => setKanwilSettings({
-                        ...kanwilSettings,
-                        tingkat1: e.target.value
-                      })}
-                      placeholder="KEMENTERIAN AGAMA REPUBLIK INDONESIA"
-                    />
+                ) : jobConfigs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada konfigurasi jabatan</h3>
+                    <p className="text-gray-500 mb-4">Mulai dengan menambahkan konfigurasi jabatan pertama Anda.</p>
+                    <Button onClick={handleAddJobConfig} className="bg-green-600 hover:bg-green-700 text-white">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Tambah Konfigurasi Pertama
+                    </Button>
                   </div>
-                  <div>
-                    <Label htmlFor="kanwil-tingkat2">Tingkat 2 (Kantor Wilayah)</Label>
-                    <Input
-                      id="kanwil-tingkat2"
-                      ref={kanwilInputRefs.tingkat2}
-                      value={kanwilSettings.tingkat2}
-                      onChange={(e) => setKanwilSettings({
-                        ...kanwilSettings,
-                        tingkat2: e.target.value
-                      })}
-                      placeholder="KANTOR WILAYAH KEMENTERIAN AGAMA"
-                    />
+                ) : (
+                  <div className="space-y-4">
+                    {jobConfigs.map((config) => (
+                      <div key={config.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-medium text-gray-900">{config.jenis_jabatan}</h3>
+                            <p className="text-sm text-gray-500">
+                              {config.required_files?.length || 0} dokumen diperlukan
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge 
+                              className={config.is_active 
+                                ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100" 
+                                : "bg-red-100 text-red-800 border-red-200 hover:bg-red-100"
+                              }
+                            >
+                              {config.is_active ? "Aktif" : "Nonaktif"}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditJobConfig(config)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteJobConfig(config.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        {config.required_files && config.required_files.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {config.required_files.map((fileId: string) => {
+                              const fileType = availableFileTypes.find(ft => ft.id === fileId);
+                              return fileType ? (
+                                <Badge key={fileId} variant="outline" className="text-xs">
+                                  {fileType.name}
+                                </Badge>
+                              ) : null;
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <Label htmlFor="kanwil-tingkat3">Tingkat 3 (Provinsi)</Label>
-                    <Input
-                      id="kanwil-tingkat3"
-                      ref={kanwilInputRefs.tingkat3}
-                      value={kanwilSettings.tingkat3}
-                      onChange={(e) => setKanwilSettings({
-                        ...kanwilSettings,
-                        tingkat3: e.target.value
-                      })}
-                      placeholder="PROVINSI NUSA TENGGARA BARAT"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="kanwil-alamat">Alamat Kanwil</Label>
-                  <Textarea
-                    id="kanwil-alamat"
-                    ref={kanwilInputRefs.alamat}
-                    value={kanwilSettings.alamat}
-                    onChange={(e) => setKanwilSettings({
-                      ...kanwilSettings,
-                      alamat: e.target.value
-                    })}
-                    rows={3}
-                    placeholder="Contoh: Jl. Pendidikan No. 1, Mataram, NTB"
-                    className={fieldError === 'alamat' ? 'border-red-500' : ''}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="kanwil-telepon">Telepon</Label>
-                    <Input
-                      id="kanwil-telepon"
-                      ref={kanwilInputRefs.telepon}
-                      value={kanwilSettings.telepon}
-                      onChange={(e) => setKanwilSettings({
-                        ...kanwilSettings,
-                        telepon: e.target.value
-                      })}
-                      placeholder="Contoh: (0370) 123456"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="kanwil-fax">Fax</Label>
-                    <Input
-                      id="kanwil-fax"
-                      value={kanwilSettings.fax}
-                      onChange={(e) => setKanwilSettings({
-                        ...kanwilSettings,
-                        fax: e.target.value
-                      })}
-                      ref={kanwilInputRefs.fax}
-                      placeholder="Contoh: (0370) 123457"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="kanwil-email">Email</Label>
-                    <Input
-                      id="kanwil-email"
-                      ref={kanwilInputRefs.email}
-                      type="email"
-                      value={kanwilSettings.email}
-                      onChange={(e) => setKanwilSettings({
-                        ...kanwilSettings,
-                        email: e.target.value
-                      })}
-                      placeholder="Contoh: kanwil.ntb@kemenag.go.id"
-                      className={fieldError === 'email' ? 'border-red-500' : ''}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="kanwil-website">Website</Label>
-                    <Input
-                      id="kanwil-website"
-                      ref={kanwilInputRefs.website}
-                      value={kanwilSettings.website}
-                      onChange={(e) => setKanwilSettings({
-                        ...kanwilSettings,
-                        website: e.target.value
-                      })}
-                      placeholder="Contoh: kanwil.ntb.kemenag.go.id"
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={handleSaveKanwilSettings} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                  <Save className="mr-2 h-4 w-4" />
-                  Simpan Pengaturan Kanwil
-                </Button>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -909,6 +1028,104 @@ const Settings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Job Configuration Dialog */}
+      <Dialog open={showJobConfigDialog} onOpenChange={setShowJobConfigDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingJobConfig ? 'Edit Konfigurasi Jabatan' : 'Tambah Konfigurasi Jabatan Baru'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingJobConfig ? 'Edit konfigurasi jabatan yang sudah ada' : 'Buat konfigurasi jabatan baru dengan dokumen yang diperlukan'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="jenis_jabatan">Jenis Jabatan</Label>
+                <Input
+                  id="jenis_jabatan"
+                  value={jobConfigForm.jenis_jabatan}
+                  onChange={(e) => setJobConfigForm({
+                    ...jobConfigForm,
+                    jenis_jabatan: e.target.value
+                  })}
+                  placeholder="Contoh: Kepala Seksi, Kepala Subbagian, dll"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_active"
+                  checked={jobConfigForm.is_active}
+                  onCheckedChange={(checked) => setJobConfigForm({
+                    ...jobConfigForm,
+                    is_active: checked
+                  })}
+                  className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-gray-200"
+                />
+                <Label htmlFor="is_active">Aktif</Label>
+              </div>
+            </div>
+
+            {/* File Types Selection */}
+            <div>
+              <Label>Dokumen yang Diperlukan</Label>
+              <div className="mt-2 space-y-4">
+                {Object.entries(
+                  availableFileTypes.reduce((acc, fileType) => {
+                    if (!acc[fileType.category]) {
+                      acc[fileType.category] = [];
+                    }
+                    acc[fileType.category].push(fileType);
+                    return acc;
+                  }, {} as Record<string, typeof availableFileTypes>)
+                ).map(([category, fileTypes]) => (
+                  <div key={category} className="border rounded-lg p-4">
+                    <h4 className="font-medium text-gray-900 mb-3">{category}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {fileTypes.map((fileType) => (
+                        <div key={fileType.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={fileType.id}
+                            checked={jobConfigForm.required_files.includes(fileType.id)}
+                            onCheckedChange={() => handleFileTypeToggle(fileType.id)}
+                          />
+                          <Label htmlFor={fileType.id} className="text-sm cursor-pointer">
+                            {fileType.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 text-sm text-gray-500">
+                Total dokumen yang dipilih: {jobConfigForm.required_files.length}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowJobConfigDialog(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleSaveJobConfig}
+              disabled={jobConfigSaving}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {jobConfigSaving ? 'Menyimpan...' : (editingJobConfig ? 'Update' : 'Simpan')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

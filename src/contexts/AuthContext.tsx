@@ -64,8 +64,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (storedToken) {
       setToken(storedToken);
       apiGet('/api/auth/me', storedToken)
-        .then((res) => setUser(res.user))
-        .catch(() => logout())
+        .then((res) => {
+          setUser(res.user);
+          // Jika user sudah login, set originalUser juga
+          if (!originalUser) {
+            setOriginalUser(res.user);
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching user:', error);
+          logout();
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -135,12 +144,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Stop impersonate: call backend then restore token admin asli
   const stopImpersonating = async () => {
-    if (!token || !user?.impersonating) {
+    if (!token || (!user?.impersonating && !originalToken)) {
+      console.log('No impersonation to stop:', { 
+        hasToken: !!token, 
+        userImpersonating: user?.impersonating, 
+        hasOriginalToken: !!originalToken 
+      });
       return;
     }
     
     setLoading(true);
     try {
+      console.log('Stopping impersonation...');
       // Call backend to stop impersonation
       const res = await apiPost('/api/auth/stop-impersonate', {}, token);
       
@@ -150,10 +165,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setOriginalToken(null);
       localStorage.setItem('token', res.token);
       
-      console.log('Impersonation stopped');
+      console.log('Impersonation stopped successfully');
     } catch (error) {
+      console.error('Error stopping impersonation:', error);
       // Fallback: restore from stored token
       if (originalToken && originalUser) {
+        console.log('Using fallback restore');
         setToken(originalToken);
         setUser(originalUser);
         setOriginalToken(null);
