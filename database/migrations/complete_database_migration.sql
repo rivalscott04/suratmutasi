@@ -170,11 +170,13 @@ INSERT INTO offices (id, name, kabkota, address, phone, email) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name), kabkota = VALUES(kabkota), address = VALUES(address), phone = VALUES(phone), email = VALUES(email), updated_at = CURRENT_TIMESTAMP;
 
 -- Insert default admin kanwil (no office_id - bisa akses semua)
+-- Password: admin123 (akan di-hash oleh seeder saat running)
 INSERT INTO users (id, email, password_hash, full_name, role, office_id) VALUES 
-('admin-001', 'admin@kemenag.go.id', '$2b$10$rQZ8K9vX2mN3pL4qR5sT6uV7wX8yZ9aA0bB1cC2dE3fF4gG5hH6iI7jJ8kK9lL0mM1nN2oO3pP4qQ5rR6sS7tT8uU9vV0wW1xX2yY3zZ', 'Admin Kanwil', 'admin', NULL)
+('admin-001', 'admin@kemenag.go.id', 'admin123', 'Admin Kanwil', 'admin', NULL)
 ON DUPLICATE KEY UPDATE
     email = VALUES(email),
     full_name = VALUES(full_name),
     role = VALUES(role),
     office_id = VALUES(office_id),
+    password_hash = VALUES(password_hash),
     updated_at = CURRENT_TIMESTAMP;
