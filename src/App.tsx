@@ -173,7 +173,7 @@ const AppInner = () => {
 };
 
 const App = () => (
-  <BrowserRouter>
+  <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/FE' : '/'}>
     <AppInner />
   </BrowserRouter>
 );
