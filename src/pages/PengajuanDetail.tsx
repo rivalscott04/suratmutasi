@@ -201,10 +201,10 @@ const PengajuanDetail: React.FC = () => {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800', icon: Clock },
-      submitted: { label: 'Submitted', className: 'bg-blue-100 text-blue-800', icon: FileText },
-      approved: { label: 'Approved', className: 'bg-green-100 text-green-800', icon: CheckCircle },
-      rejected: { label: 'Rejected', className: 'bg-red-100 text-red-800', icon: XCircle },
-      resubmitted: { label: 'Resubmitted', className: 'bg-yellow-100 text-yellow-800', icon: RefreshCw }
+      submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800', icon: FileText },
+      approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800', icon: CheckCircle },
+      rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800', icon: XCircle },
+      resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800', icon: RefreshCw }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
@@ -514,26 +514,26 @@ const PengajuanDetail: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Nama</label>
-                  <p className="text-gray-900">{pengajuan.pegawai.nama}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">NIP</label>
-                  <p className="text-gray-900">{pengajuan.pegawai.nip}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Jabatan Saat Ini</label>
-                  <p className="text-gray-900">{pengajuan.pegawai.jabatan}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Jenis Jabatan Target</label>
-                  <Badge variant="outline">
-                    {getJabatanDisplayName(pengajuan.jenis_jabatan)}
-                  </Badge>
-                </div>
-              </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                   <label className="text-sm font-medium text-gray-700">Nama</label>
+                   <p className="text-gray-900 text-base">{pengajuan.pegawai.nama}</p>
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-sm font-medium text-gray-700">NIP</label>
+                   <p className="text-gray-900 text-base">{pengajuan.pegawai.nip}</p>
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-sm font-medium text-gray-700">Jabatan Saat Ini</label>
+                   <p className="text-gray-900 text-base">{pengajuan.pegawai.jabatan}</p>
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-sm font-medium text-gray-700">Jenis Jabatan Target</label>
+                   <Badge variant="outline" className="text-sm">
+                     {getJabatanDisplayName(pengajuan.jenis_jabatan)}
+                   </Badge>
+                 </div>
+               </div>
             </CardContent>
           </Card>
 
@@ -574,85 +574,89 @@ const PengajuanDetail: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {pengajuan.files.map((file) => (
-                    <div key={file.id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{getFileDisplayName(file.file_type)}</h4>
-                          <p className="text-sm text-gray-600">{file.file_name}</p>
-                          <p className="text-xs text-gray-500">{getFileSize(file.file_size)}</p>
+                                         <div key={file.id} className="p-6 border rounded-lg">
+                       <div className="flex items-center justify-between">
+                         <div className="flex-1 space-y-2">
+                           <h4 className="font-medium text-base">{getFileDisplayName(file.file_type)}</h4>
+                           <p className="text-sm text-gray-600">{file.file_name}</p>
+                           <p className="text-xs text-gray-500">{getFileSize(file.file_size)}</p>
                           
-                          {/* Status Verifikasi untuk User atau saat sudah ada status */}
-                          {(!isAdmin || file.verification_status !== 'pending') && file.verification_status !== 'pending' && (
-                            <div className="mt-2">
-                              <Badge 
-                                variant={file.verification_status === 'approved' ? 'default' : 'destructive'}
-                                className={file.verification_status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
-                              >
-                                {file.verification_status === 'approved' ? 'Sesuai' : 'Tidak Sesuai'}
-                                {file.verified_by && ` - ${file.verified_by}`}
-                              </Badge>
-                              {file.verification_notes && (
-                                <p className="text-xs text-gray-600 mt-1">{file.verification_notes}</p>
-                              )}
-                            </div>
-                          )}
+                                                     {/* Status Verifikasi untuk User atau saat sudah ada status */}
+                           {(!isAdmin || file.verification_status !== 'pending') && file.verification_status !== 'pending' && (
+                             <div className="mt-3 space-y-2">
+                                                               <Badge 
+                                  variant={file.verification_status === 'approved' ? 'default' : 'destructive'}
+                                  className={`transition-all duration-500 ease-in-out transform ${
+                                    file.verification_status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                  }`}
+                                >
+                                  {file.verification_status === 'approved' ? 'Sesuai' : 'Tidak Sesuai'}
+                                  {file.verified_by && ` - ${file.verified_by}`}
+                                </Badge>
+                               {file.verification_notes && (
+                                 <p className="text-xs text-gray-600">{file.verification_notes}</p>
+                               )}
+                             </div>
+                           )}
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                          {/* Switch Toggle Verifikasi - Hanya untuk Admin */}
-                          {isAdmin && pengajuan.status === 'submitted' && (
-                            <div className="flex items-center gap-2 mr-2">
+                                                 <div className="flex items-center gap-3">
+                           {/* Switch Toggle Verifikasi - Hanya untuk Admin */}
+                           {isAdmin && pengajuan.status === 'submitted' && (
+                             <div className="flex items-center gap-3 mr-3">
                               {verifyingFile === file.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
                               ) : (
-                                                                 <div className="flex items-center gap-2">
-                                   <div className="relative">
-                                     <Switch
-                                       id={`verify-${file.id}`}
-                                       checked={file.verification_status === 'approved'}
-                                       onCheckedChange={(checked) => {
-                                         const status = checked ? 'approved' : 'rejected';
-                                         handleVerifyFile(file.id, status);
-                                       }}
-                                       disabled={verifyingFile === file.id}
-                                       className={`transition-all duration-200 ${
-                                         file.verification_status === 'approved' 
-                                           ? 'data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600' 
-                                           : 'data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600'
-                                       }`}
-                                     />
-                                   </div>
-                                   <Label 
-                                     htmlFor={`verify-${file.id}`} 
-                                     className={`text-sm font-medium cursor-pointer transition-colors duration-200 ${
-                                       file.verification_status === 'approved' 
-                                         ? 'text-green-700' 
-                                         : 'text-red-700'
-                                     }`}
-                                   >
-                                     {file.verification_status === 'approved' ? 'Sesuai' : 'Tidak Sesuai'}
-                                   </Label>
+                                                                                                   <div className="flex items-center gap-3 transition-all duration-500 ease-in-out">
+                                    <div className="relative transform transition-all duration-500 ease-in-out hover:scale-105 active:scale-95">
+                                      <Switch
+                                        id={`verify-${file.id}`}
+                                        checked={file.verification_status === 'approved'}
+                                        onCheckedChange={(checked) => {
+                                          const status = checked ? 'approved' : 'rejected';
+                                          handleVerifyFile(file.id, status);
+                                        }}
+                                        disabled={verifyingFile === file.id}
+                                        className={`transition-all duration-500 ease-in-out transform ${
+                                          file.verification_status === 'approved' 
+                                            ? 'data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600' 
+                                            : 'data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600'
+                                        }`}
+                                      />
+                                    </div>
+                                                                       <Label 
+                                      htmlFor={`verify-${file.id}`} 
+                                      className={`text-sm font-medium cursor-pointer transition-all duration-500 ease-in-out transform hover:scale-105 ${
+                                        file.verification_status === 'approved' 
+                                          ? 'text-green-700' 
+                                          : 'text-red-700'
+                                      }`}
+                                    >
+                                      {file.verification_status === 'approved' ? 'Sesuai' : 'Tidak Sesuai'}
+                                    </Label>
                                  </div>
                               )}
                             </div>
                           )}
                           
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handlePreviewFile(file)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Preview
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDownloadFile(file)}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
+                                                     <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => handlePreviewFile(file)}
+                             className="px-3 py-2"
+                           >
+                             <Eye className="h-4 w-4 mr-2" />
+                             Preview
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => handleDownloadFile(file)}
+                             className="px-3 py-2"
+                           >
+                             <Download className="h-4 w-4 mr-2" />
+                             Download
+                           </Button>
                         </div>
                       </div>
                     </div>
@@ -675,62 +679,62 @@ const PengajuanDetail: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <p className="font-medium">Dibuat</p>
-                    <p className="text-sm text-gray-600">{formatDate(pengajuan.created_at)}</p>
-                  </div>
-                </div>
+                                 <div className="flex items-start gap-4">
+                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                   <div className="flex-1 space-y-1">
+                     <p className="font-medium">Dibuat</p>
+                     <p className="text-sm text-gray-600">{formatDate(pengajuan.created_at)}</p>
+                   </div>
+                 </div>
                 
-                {pengajuan.status !== 'draft' && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="font-medium">Submitted</p>
-                      <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
-                    </div>
-                  </div>
-                )}
+                                 {pengajuan.status !== 'draft' && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Diajukan</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
+                     </div>
+                   </div>
+                 )}
 
-                {pengajuan.status === 'approved' && pengajuan.approved_at && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="font-medium">Approved</p>
-                      <p className="text-sm text-gray-600">{formatDate(pengajuan.approved_at)}</p>
-                      {pengajuan.approved_by && (
-                        <p className="text-xs text-gray-500">by {pengajuan.approved_by}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                 {pengajuan.status === 'approved' && pengajuan.approved_at && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Disetujui</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.approved_at)}</p>
+                       {pengajuan.approved_by && (
+                         <p className="text-xs text-gray-500">oleh {pengajuan.approved_by}</p>
+                       )}
+                     </div>
+                   </div>
+                 )}
 
-                {pengajuan.status === 'rejected' && pengajuan.rejected_at && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="font-medium">Rejected</p>
-                      <p className="text-sm text-gray-600">{formatDate(pengajuan.rejected_at)}</p>
-                      {pengajuan.rejected_by && (
-                        <p className="text-xs text-gray-500">by {pengajuan.rejected_by}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                 {pengajuan.status === 'rejected' && pengajuan.rejected_at && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Ditolak</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.rejected_at)}</p>
+                       {pengajuan.rejected_by && (
+                         <p className="text-xs text-gray-500">oleh {pengajuan.rejected_by}</p>
+                       )}
+                     </div>
+                   </div>
+                 )}
 
-                {pengajuan.status === 'resubmitted' && pengajuan.resubmitted_at && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="font-medium">Resubmitted</p>
-                      <p className="text-sm text-gray-600">{formatDate(pengajuan.resubmitted_at)}</p>
-                      {pengajuan.resubmitted_by && (
-                        <p className="text-xs text-gray-500">by {pengajuan.resubmitted_by}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                 {pengajuan.status === 'resubmitted' && pengajuan.resubmitted_at && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Diajukan Ulang</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.resubmitted_at)}</p>
+                       {pengajuan.resubmitted_by && (
+                         <p className="text-xs text-gray-500">oleh {pengajuan.resubmitted_by}</p>
+                       )}
+                     </div>
+                   </div>
+                 )}
               </div>
             </CardContent>
           </Card>
@@ -742,18 +746,18 @@ const PengajuanDetail: React.FC = () => {
                 <CardTitle>Catatan</CardTitle>
               </CardHeader>
               <CardContent>
-                {pengajuan.catatan && (
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-1">Catatan Approval:</p>
-                    <p className="text-sm text-gray-900 bg-green-50 p-3 rounded-lg">{pengajuan.catatan}</p>
-                  </div>
-                )}
-                {pengajuan.rejection_reason && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Alasan Rejection:</p>
-                    <p className="text-sm text-gray-900 bg-red-50 p-3 rounded-lg">{pengajuan.rejection_reason}</p>
-                  </div>
-                )}
+                                 {pengajuan.catatan && (
+                   <div className="mb-6">
+                                           <p className="text-sm font-medium text-gray-700 mb-3">Catatan Persetujuan:</p>
+                     <p className="text-sm text-gray-900 bg-green-50 p-4 rounded-lg leading-relaxed">{pengajuan.catatan}</p>
+                   </div>
+                 )}
+                 {pengajuan.rejection_reason && (
+                   <div>
+                                           <p className="text-sm font-medium text-gray-700 mb-3">Alasan Penolakan:</p>
+                     <p className="text-sm text-gray-900 bg-red-50 p-4 rounded-lg leading-relaxed">{pengajuan.rejection_reason}</p>
+                   </div>
+                 )}
               </CardContent>
             </Card>
           )}
@@ -769,8 +773,8 @@ const PengajuanDetail: React.FC = () => {
                    onClick={() => setShowApproveDialog(true)}
                    className="w-full bg-green-600 hover:bg-green-700 text-white"
                  >
-                   <CheckCircle className="h-4 w-4 mr-2" />
-                   Approve
+                                       <CheckCircle className="h-4 w-4 mr-2" />
+                    Setujui
                  </Button>
                )}
                
@@ -780,29 +784,29 @@ const PengajuanDetail: React.FC = () => {
                    variant="destructive"
                    className="w-full"
                  >
-                   <XCircle className="h-4 w-4 mr-2" />
-                   Reject
+                                       <XCircle className="h-4 w-4 mr-2" />
+                    Tolak
                  </Button>
                )}
               
               {canResubmit && (
-                <Button
-                  onClick={handleResubmit}
-                  disabled={submitting}
-                  className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Resubmit
-                    </>
-                  )}
-                </Button>
+                                 <Button
+                   onClick={handleResubmit}
+                   disabled={submitting}
+                   className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                 >
+                   {submitting ? (
+                     <>
+                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                       Memproses...
+                     </>
+                   ) : (
+                     <>
+                       <RefreshCw className="h-4 w-4 mr-2" />
+                       Ajukan Ulang
+                     </>
+                   )}
+                 </Button>
               )}
               
                              {canEdit && (
@@ -844,18 +848,19 @@ const PengajuanDetail: React.FC = () => {
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Approve Pengajuan</DialogTitle>
+                         <DialogTitle>Setujui Pengajuan</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Catatan (Opsional)</label>
-              <Textarea
-                value={approvalNote}
-                onChange={(e) => setApprovalNote(e.target.value)}
-                placeholder="Masukkan catatan approval..."
-                rows={3}
-              />
-            </div>
+                       <div className="space-y-4">
+               <div className="space-y-2">
+                 <label className="text-sm font-medium text-gray-700">Catatan (Opsional)</label>
+                                   <Textarea
+                    value={approvalNote}
+                    onChange={(e) => setApprovalNote(e.target.value)}
+                    placeholder="Masukkan catatan persetujuan..."
+                    rows={3}
+                    className="min-h-[80px]"
+                  />
+               </div>
             <div className="flex gap-3">
               <Button
                 onClick={() => setShowApproveDialog(false)}
@@ -870,14 +875,14 @@ const PengajuanDetail: React.FC = () => {
                 disabled={submitting}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"
               >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Approve'
-                )}
+                                 {submitting ? (
+                   <>
+                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                     Memproses...
+                   </>
+                 ) : (
+                   'Setujui'
+                 )}
               </Button>
             </div>
           </div>
@@ -929,17 +934,17 @@ const PengajuanDetail: React.FC = () => {
                disabled={submitting}
                className="bg-blue-600 hover:bg-blue-700 text-white"
              >
-               {submitting ? (
-                 <>
-                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                   Generating...
-                 </>
-               ) : (
-                 <>
-                   <Printer className="h-4 w-4 mr-2" />
-                   Cetak Laporan
-                 </>
-               )}
+                                {submitting ? (
+                   <>
+                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                     Menyiapkan...
+                   </>
+                 ) : (
+                   <>
+                     <Printer className="h-4 w-4 mr-2" />
+                     Cetak Laporan
+                   </>
+                 )}
              </AlertDialogAction>
            </AlertDialogFooter>
          </AlertDialogContent>
@@ -949,19 +954,20 @@ const PengajuanDetail: React.FC = () => {
        <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Pengajuan</DialogTitle>
+                         <DialogTitle>Tolak Pengajuan</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Alasan Rejection *</label>
-              <Textarea
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Masukkan alasan rejection..."
-                rows={3}
-                required
-              />
-            </div>
+                     <div className="space-y-4">
+             <div className="space-y-2">
+                               <label className="text-sm font-medium text-gray-700">Alasan Penolakan *</label>
+                                 <Textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Masukkan alasan penolakan..."
+                    rows={3}
+                    required
+                    className="min-h-[80px]"
+                  />
+             </div>
             <div className="flex gap-3">
               <Button
                 onClick={() => setShowRejectDialog(false)}
@@ -977,14 +983,14 @@ const PengajuanDetail: React.FC = () => {
                 variant="destructive"
                 className="flex-1"
               >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Reject'
-                )}
+                                 {submitting ? (
+                   <>
+                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                     Memproses...
+                   </>
+                 ) : (
+                   'Tolak'
+                 )}
               </Button>
             </div>
           </div>
