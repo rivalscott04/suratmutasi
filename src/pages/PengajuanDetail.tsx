@@ -21,10 +21,11 @@ import {
   Loader2,
   Edit,
   Send,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiGet, apiPut } from '@/lib/api';
+import { apiGet, apiPut, apiDelete } from '@/lib/api';
 
 interface PengajuanFile {
   id: string;
@@ -71,6 +72,7 @@ const PengajuanDetail: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [approvalNote, setApprovalNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -161,6 +163,26 @@ const PengajuanDetail: React.FC = () => {
       setError('Terjadi kesalahan saat resubmit pengajuan');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setSubmitting(true);
+      const response = await apiDelete(`/api/pengajuan/${pengajuanId}`, token);
+      
+      if (response.success) {
+        // Redirect ke halaman index pengajuan setelah berhasil hapus
+        navigate('/pengajuan');
+      } else {
+        setError(response.message || 'Gagal menghapus pengajuan');
+      }
+    } catch (error) {
+      console.error('Error deleting pengajuan:', error);
+      setError('Terjadi kesalahan saat menghapus pengajuan');
+    } finally {
+      setSubmitting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -271,6 +293,7 @@ const PengajuanDetail: React.FC = () => {
 
   const isAdmin = user?.role === 'admin';
   const canEdit = pengajuan?.status === 'draft';
+  const canDelete = pengajuan?.status === 'draft'; // User bisa hapus jika status draft
   const canApprove = isAdmin && pengajuan?.status === 'submitted';
   const canReject = isAdmin && pengajuan?.status === 'submitted';
   const canResubmit = pengajuan?.status === 'rejected';
@@ -420,15 +443,6 @@ const PengajuanDetail: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                  {canEdit && (
-                    <Button
-                      onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Dokumen
-                    </Button>
-                  )}
                 </div>
               )}
             </CardContent>
@@ -586,6 +600,17 @@ const PengajuanDetail: React.FC = () => {
                    Edit Dokumen
                  </Button>
                )}
+               
+               {canDelete && (
+                 <Button
+                   onClick={() => setShowDeleteDialog(true)}
+                   variant="destructive"
+                   className="w-full"
+                 >
+                   <Trash2 className="h-4 w-4 mr-2" />
+                   Hapus Pengajuan
+                 </Button>
+               )}
             </CardContent>
           </Card>
         </div>
@@ -635,8 +660,37 @@ const PengajuanDetail: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Reject Dialog */}
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+             {/* Delete Dialog */}
+       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle>Hapus Pengajuan</AlertDialogTitle>
+             <AlertDialogDescription>
+               Apakah Anda yakin ingin menghapus pengajuan ini? Tindakan ini tidak dapat dibatalkan dan semua file yang diupload akan dihapus secara permanen.
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
+             <AlertDialogAction
+               onClick={handleDelete}
+               disabled={submitting}
+               className="bg-red-600 hover:bg-red-700 text-white"
+             >
+               {submitting ? (
+                 <>
+                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                   Menghapus...
+                 </>
+               ) : (
+                 'Hapus Pengajuan'
+               )}
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
+
+       {/* Reject Dialog */}
+       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Pengajuan</DialogTitle>

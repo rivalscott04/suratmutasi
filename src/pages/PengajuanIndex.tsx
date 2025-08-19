@@ -328,7 +328,7 @@ const PengajuanIndex: React.FC = () => {
                                   </DropdownMenuItem>
                                 </>
                               )}
-                              {isAdmin && (
+                              {(isAdmin || pengajuan.status === 'draft') && (
                                 <DropdownMenuItem 
                                   onClick={() => {
                                     setPengajuanToDelete(pengajuan.id);
