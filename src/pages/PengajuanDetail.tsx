@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { 
   ArrowLeft, 
   Eye, 
@@ -22,7 +24,12 @@ import {
   Edit,
   Send,
   RefreshCw,
-  Trash2
+  Trash2,
+  Printer,
+  CheckSquare,
+  XSquare,
+  Check,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPut, apiDelete } from '@/lib/api';
@@ -33,7 +40,10 @@ interface PengajuanFile {
   file_name: string;
   file_size: number;
   upload_status: string;
+  verification_status: 'pending' | 'approved' | 'rejected';
   verification_notes?: string;
+  verified_by?: string;
+  verified_at?: string;
   blobUrl?: string;
 }
 
@@ -73,9 +83,11 @@ const PengajuanDetail: React.FC = () => {
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [approvalNote, setApprovalNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [verifyingFile, setVerifyingFile] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -241,6 +253,139 @@ const PengajuanDetail: React.FC = () => {
     return fileTypeMap[fileType] || fileType.replace(/_/g, ' ').toUpperCase();
   };
 
+  // Fungsi untuk verifikasi file
+  const handleVerifyFile = async (fileId: string, verificationStatus: 'approved' | 'rejected', notes?: string) => {
+    try {
+      console.log('🔍 Debug handleVerifyFile:', { fileId, verificationStatus, notes, token });
+      setVerifyingFile(fileId);
+      
+      const requestData = {
+        verification_status: verificationStatus,
+        verification_notes: notes
+      };
+      console.log('📤 Request data:', requestData);
+      
+      const response = await apiPut(`/api/pengajuan/files/${fileId}/verify`, requestData, token);
+      console.log('📥 Response:', response);
+      
+      if (response.success) {
+        // Update local state immediately for smooth UX
+        setPengajuan(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            files: prev.files.map(file => 
+              file.id === fileId 
+                ? { 
+                    ...file, 
+                    verification_status: verificationStatus,
+                    verified_by: user?.email || user?.id,
+                    verified_at: new Date().toISOString()
+                  }
+                : file
+            )
+          };
+        });
+      } else {
+        setError(response.message || 'Gagal verifikasi file');
+      }
+    } catch (error) {
+      console.error('❌ Error verifying file:', error);
+      setError('Terjadi kesalahan saat verifikasi file');
+    } finally {
+      setVerifyingFile(null);
+    }
+  };
+
+  // Fungsi untuk cetak laporan
+  const handlePrintReport = async () => {
+    try {
+      setSubmitting(true);
+      const response = await apiGet(`/api/pengajuan/${pengajuanId}/print-report`, token);
+      
+      if (response.success) {
+        // Generate dan cetak laporan
+        generatePrintReport(response.data);
+      } else {
+        setError(response.message || 'Gagal generate laporan');
+      }
+    } catch (error) {
+      console.error('Error generating print report:', error);
+      setError('Terjadi kesalahan saat generate laporan');
+    } finally {
+      setSubmitting(false);
+      setShowPrintDialog(false);
+    }
+  };
+
+  // Generate HTML untuk cetak
+  const generatePrintReport = (data: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan Pengajuan - ${data.pegawai.nama}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .info { margin-bottom: 20px; }
+          .info table { width: 100%; border-collapse: collapse; }
+          .info td { padding: 5px; }
+          .info td:first-child { font-weight: bold; width: 150px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          .checkbox { width: 20px; height: 20px; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>LAPORAN PENGAJUAN JABATAN</h2>
+        </div>
+        
+        <div class="info">
+          <table>
+            <tr><td>Nama</td><td>: ${data.pegawai.nama}</td></tr>
+            <tr><td>NIP</td><td>: ${data.pegawai.nip}</td></tr>
+            <tr><td>Jabatan</td><td>: ${data.pegawai.jabatan}</td></tr>
+            <tr><td>Status</td><td>: ${data.pengajuan.status}</td></tr>
+            <tr><td>Tanggal Approval</td><td>: ${new Date(data.pengajuan.approved_at).toLocaleDateString('id-ID')}</td></tr>
+          </table>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama Berkas</th>
+              <th>Ada Berkas</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.files.map((file: any, index: number) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${getFileDisplayName(file.file_type)}</td>
+                <td>
+                  <input type="checkbox" class="checkbox" ${file.verification_status === 'approved' ? 'checked' : ''} disabled>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
       day: '2-digit',
@@ -297,6 +442,10 @@ const PengajuanDetail: React.FC = () => {
   const canApprove = isAdmin && pengajuan?.status === 'submitted';
   const canReject = isAdmin && pengajuan?.status === 'submitted';
   const canResubmit = pengajuan?.status === 'rejected';
+  
+  // Check if all files are approved
+  const allFilesApproved = pengajuan?.files.every(file => file.verification_status === 'approved') ?? false;
+  const hasRejectedFiles = pengajuan?.files.some(file => file.verification_status === 'rejected') ?? false;
 
   if (loading) {
     return (
@@ -393,10 +542,18 @@ const PengajuanDetail: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Dokumen yang Diupload
-                <Badge variant="outline" className="ml-2">
-                  {pengajuan.files.length} / {pengajuan.total_dokumen}
-                </Badge>
+                                 Dokumen yang Diupload
+                 <Badge variant="outline" className="ml-2">
+                   {pengajuan.files.length} / {pengajuan.total_dokumen}
+                 </Badge>
+                 {isAdmin && pengajuan.status === 'submitted' && (
+                   <Badge 
+                     variant={allFilesApproved ? 'default' : 'destructive'}
+                     className={`ml-2 ${allFilesApproved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                   >
+                     {allFilesApproved ? 'Semua Dokumen Sesuai' : 'Ada Dokumen Tidak Sesuai'}
+                   </Badge>
+                 )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -417,29 +574,86 @@ const PengajuanDetail: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {pengajuan.files.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{getFileDisplayName(file.file_type)}</h4>
-                        <p className="text-sm text-gray-600">{file.file_name}</p>
-                        <p className="text-xs text-gray-500">{getFileSize(file.file_size)}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handlePreviewFile(file)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Preview
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDownloadFile(file)}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </Button>
+                    <div key={file.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{getFileDisplayName(file.file_type)}</h4>
+                          <p className="text-sm text-gray-600">{file.file_name}</p>
+                          <p className="text-xs text-gray-500">{getFileSize(file.file_size)}</p>
+                          
+                          {/* Status Verifikasi untuk User atau saat sudah ada status */}
+                          {(!isAdmin || file.verification_status !== 'pending') && file.verification_status !== 'pending' && (
+                            <div className="mt-2">
+                              <Badge 
+                                variant={file.verification_status === 'approved' ? 'default' : 'destructive'}
+                                className={file.verification_status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
+                              >
+                                {file.verification_status === 'approved' ? 'Sesuai' : 'Tidak Sesuai'}
+                                {file.verified_by && ` - ${file.verified_by}`}
+                              </Badge>
+                              {file.verification_notes && (
+                                <p className="text-xs text-gray-600 mt-1">{file.verification_notes}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          {/* Switch Toggle Verifikasi - Hanya untuk Admin */}
+                          {isAdmin && pengajuan.status === 'submitted' && (
+                            <div className="flex items-center gap-2 mr-2">
+                              {verifyingFile === file.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                              ) : (
+                                                                 <div className="flex items-center gap-2">
+                                   <div className="relative">
+                                     <Switch
+                                       id={`verify-${file.id}`}
+                                       checked={file.verification_status === 'approved'}
+                                       onCheckedChange={(checked) => {
+                                         const status = checked ? 'approved' : 'rejected';
+                                         handleVerifyFile(file.id, status);
+                                       }}
+                                       disabled={verifyingFile === file.id}
+                                       className={`transition-all duration-200 ${
+                                         file.verification_status === 'approved' 
+                                           ? 'data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600' 
+                                           : 'data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600'
+                                       }`}
+                                     />
+                                   </div>
+                                   <Label 
+                                     htmlFor={`verify-${file.id}`} 
+                                     className={`text-sm font-medium cursor-pointer transition-colors duration-200 ${
+                                       file.verification_status === 'approved' 
+                                         ? 'text-green-700' 
+                                         : 'text-red-700'
+                                     }`}
+                                   >
+                                     {file.verification_status === 'approved' ? 'Sesuai' : 'Tidak Sesuai'}
+                                   </Label>
+                                 </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePreviewFile(file)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Preview
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDownloadFile(file)}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -550,26 +764,26 @@ const PengajuanDetail: React.FC = () => {
               <CardTitle>Aksi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {canApprove && (
-                <Button
-                  onClick={() => setShowApproveDialog(true)}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Approve
-                </Button>
-              )}
-              
-              {canReject && (
-                <Button
-                  onClick={() => setShowRejectDialog(true)}
-                  variant="destructive"
-                  className="w-full"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Reject
-                </Button>
-              )}
+                             {canApprove && allFilesApproved && (
+                 <Button
+                   onClick={() => setShowApproveDialog(true)}
+                   className="w-full bg-green-600 hover:bg-green-700 text-white"
+                 >
+                   <CheckCircle className="h-4 w-4 mr-2" />
+                   Approve
+                 </Button>
+               )}
+               
+               {canReject && (hasRejectedFiles || !allFilesApproved) && (
+                 <Button
+                   onClick={() => setShowRejectDialog(true)}
+                   variant="destructive"
+                   className="w-full"
+                 >
+                   <XCircle className="h-4 w-4 mr-2" />
+                   Reject
+                 </Button>
+               )}
               
               {canResubmit && (
                 <Button
@@ -609,6 +823,16 @@ const PengajuanDetail: React.FC = () => {
                  >
                    <Trash2 className="h-4 w-4 mr-2" />
                    Hapus Pengajuan
+                 </Button>
+               )}
+               
+               {pengajuan.status === 'approved' && (
+                 <Button
+                   onClick={() => setShowPrintDialog(true)}
+                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                 >
+                   <Printer className="h-4 w-4 mr-2" />
+                   Cetak Laporan
                  </Button>
                )}
             </CardContent>
@@ -683,6 +907,38 @@ const PengajuanDetail: React.FC = () => {
                  </>
                ) : (
                  'Hapus Pengajuan'
+               )}
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
+
+       {/* Print Report Dialog */}
+       <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle>Cetak Laporan</AlertDialogTitle>
+             <AlertDialogDescription>
+               Apakah Anda yakin ingin mencetak laporan pengajuan ini? Laporan akan dibuka di tab baru untuk dicetak.
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
+             <AlertDialogAction
+               onClick={handlePrintReport}
+               disabled={submitting}
+               className="bg-blue-600 hover:bg-blue-700 text-white"
+             >
+               {submitting ? (
+                 <>
+                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                   Generating...
+                 </>
+               ) : (
+                 <>
+                   <Printer className="h-4 w-4 mr-2" />
+                   Cetak Laporan
+                 </>
                )}
              </AlertDialogAction>
            </AlertDialogFooter>
