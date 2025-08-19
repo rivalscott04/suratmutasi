@@ -361,6 +361,20 @@ const PengajuanEdit: React.FC = () => {
                           <Label htmlFor={`file-${upload.file_type}`} className="text-sm font-medium text-red-800">
                             Upload Dokumen Baru
                           </Label>
+                          <div className="mt-1 flex items-center gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById(`file-${upload.file_type}`)?.click()}
+                              className="bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Pilih File
+                            </Button>
+                            <span className="text-sm text-gray-600">
+                              {upload.file ? upload.file.name : 'Belum ada file dipilih'}
+                            </span>
+                          </div>
                           <Input
                             id={`file-${upload.file_type}`}
                             type="file"
@@ -371,13 +385,8 @@ const PengajuanEdit: React.FC = () => {
                                 handleFileChange(upload.file_type, file);
                               }
                             }}
-                            className="mt-1"
+                            className="hidden"
                           />
-                          {upload.file && (
-                            <p className="text-xs text-green-600 mt-1">
-                              File dipilih: {upload.file.name}
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>

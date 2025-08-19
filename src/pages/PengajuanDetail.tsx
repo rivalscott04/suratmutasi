@@ -475,13 +475,15 @@ const PengajuanDetail: React.FC = () => {
   const canDelete = pengajuan?.status === 'draft'; // User bisa hapus jika status draft
   const canApprove = isAdmin && pengajuan?.status === 'submitted';
   const canReject = isAdmin && pengajuan?.status === 'submitted';
-  const canResubmit = pengajuan?.status === 'rejected';
+  // Tampilkan tombol Ajukan Ulang saat status ditolak, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
+  const canShowResubmit = pengajuan?.status === 'rejected';
   
 
   
   // Check if all files are approved
   const allFilesApproved = pengajuan?.files.every(file => file.verification_status === 'approved') ?? false;
   const hasRejectedFiles = pengajuan?.files.some(file => file.verification_status === 'rejected') ?? false;
+  const resubmitEnabled = !hasRejectedFiles; // aktif jika tidak ada file yang masih ditolak
 
   if (loading) {
     return (
@@ -869,10 +871,10 @@ const PengajuanDetail: React.FC = () => {
                   </Button>
                 )}
                 
-                {canResubmit && (
+                {canShowResubmit && (
                   <Button
                     onClick={handleResubmit}
-                    disabled={submitting}
+                    disabled={submitting || !resubmitEnabled}
                     className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
                   >
                     {submitting ? (

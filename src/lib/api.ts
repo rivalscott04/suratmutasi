@@ -42,14 +42,22 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   const fetchOptions: RequestInit = {
     method,
     headers: {
-      'Content-Type': 'application/json',
       ...headers,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: 'include', // penting agar cookie refresh token dikirim
   };
   if (data) {
-    fetchOptions.body = JSON.stringify(data);
+    // Jika data adalah FormData, biarkan browser set Content-Type boundary otomatis
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      fetchOptions.body = data as any;
+    } else {
+      fetchOptions.headers = {
+        'Content-Type': 'application/json',
+        ...fetchOptions.headers,
+      };
+      fetchOptions.body = JSON.stringify(data);
+    }
   }
   let res = await fetch(fullUrl, fetchOptions);
   let contentType = res.headers.get('content-type');
