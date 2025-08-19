@@ -38,9 +38,6 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   const BASE_URL = getBaseUrl();
   const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
   
-  console.log(`🌐 API Request to: ${fullUrl} (${getCurrentEnvironment()})`);
-  console.log(`🔧 Base URL: ${BASE_URL}, Environment: ${getCurrentEnvironment()}, Hostname: ${window.location.hostname}`);
-  
   const fetchOptions: RequestInit = {
     method,
     headers: {
