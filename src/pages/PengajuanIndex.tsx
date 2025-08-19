@@ -55,14 +55,19 @@ const PengajuanIndex: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [createdByFilter, setCreatedByFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pengajuanToDelete, setPengajuanToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<{
+    users: Array<{ id: string; email: string; full_name: string }>;
+  }>({ users: [] });
 
   const itemsPerPage = 10;
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -70,33 +75,52 @@ const PengajuanIndex: React.FC = () => {
       return;
     }
     fetchPengajuanData();
-  }, [isAuthenticated, navigate, currentPage, statusFilter]);
+  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter]);
 
-  const fetchPengajuanData = async () => {
+  useEffect(() => {
+    if (isAuthenticated && isAdmin) {
+      fetchFilterOptions();
+    }
+  }, [isAuthenticated, isAdmin]);
+
+    const fetchPengajuanData = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
         ...(statusFilter !== 'all' && { status: statusFilter }),
-        ...(searchTerm && { search: searchTerm })
+        ...(searchTerm && { search: searchTerm }),
+        ...(isAdmin && createdByFilter !== 'all' && { created_by: createdByFilter })
       });
 
              const response = await apiGet(`/api/pengajuan?${params}`, token);
-       if (response.success) {
-         setPengajuanList(response.data.data || response.data);
-         setTotalPages(response.data.pagination?.totalPages || 1);
-         setTotalItems(response.data.pagination?.total || 0);
-       } else {
-         setError(response.message || 'Gagal mengambil data pengajuan');
-       }
-    } catch (error) {
-      console.error('Error fetching pengajuan data:', error);
-      setError('Terjadi kesalahan saat mengambil data pengajuan');
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (response.success) {
+          setPengajuanList(response.data.data || response.data);
+          setTotalPages(response.data.pagination?.totalPages || 1);
+          setTotalItems(response.data.pagination?.total || 0);
+        } else {
+          setError(response.message || 'Gagal mengambil data pengajuan');
+        }
+     } catch (error) {
+       console.error('Error fetching pengajuan data:', error);
+       setError('Terjadi kesalahan saat mengambil data pengajuan');
+     } finally {
+       setLoading(false);
+     }
+   };
+
+       const fetchFilterOptions = async () => {
+      try {
+        const response = await apiGet('/api/pengajuan/filter-options', token);
+        if (response.success) {
+          console.log('🔍 Debug fetchFilterOptions - Response:', response.data);
+          setFilterOptions(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -107,6 +131,13 @@ const PengajuanIndex: React.FC = () => {
     setStatusFilter(value);
     setCurrentPage(1);
   };
+
+  const handleCreatedByFilter = (value: string) => {
+    setCreatedByFilter(value);
+    setCurrentPage(1);
+  };
+
+
 
     const handleDelete = async () => {
     if (!pengajuanToDelete) return;
@@ -170,8 +201,6 @@ const PengajuanIndex: React.FC = () => {
       minute: '2-digit'
     });
   };
-
-  const isAdmin = user?.role === 'admin';
   
   // Debug info
   console.log('🔍 Debug PengajuanIndex:', {
@@ -210,34 +239,59 @@ const PengajuanIndex: React.FC = () => {
             </div>
           )}
 
-          {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Cari berdasarkan nama pegawai, jabatan, atau jenis jabatan..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                                  <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="submitted">Diajukan</SelectItem>
-                <SelectItem value="approved">Disetujui</SelectItem>
-                <SelectItem value="rejected">Ditolak</SelectItem>
-                <SelectItem value="resubmitted">Diajukan Ulang</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                     {/* Search and Filter */}
+           <div className="flex flex-col gap-4 mb-6">
+             {/* Search Bar */}
+             <div className="relative flex-1">
+               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+               <Input
+                 placeholder="Cari berdasarkan nama pegawai, jabatan, atau jenis jabatan..."
+                 value={searchTerm}
+                 onChange={(e) => handleSearch(e.target.value)}
+                 className="pl-10"
+               />
+             </div>
+             
+             {/* Filter Row */}
+             <div className="flex flex-col sm:flex-row gap-4">
+               <div className="flex items-center gap-2">
+                 <Filter className="h-4 w-4 text-gray-400" />
+                 <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                   <SelectTrigger className="w-48">
+                     <SelectValue placeholder="Filter Status" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="all">Semua Status</SelectItem>
+                     <SelectItem value="draft">Draft</SelectItem>
+                     <SelectItem value="submitted">Diajukan</SelectItem>
+                     <SelectItem value="approved">Disetujui</SelectItem>
+                     <SelectItem value="rejected">Ditolak</SelectItem>
+                     <SelectItem value="resubmitted">Diajukan Ulang</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+               
+                               {/* Admin Only Filters */}
+                {isAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-400" />
+                    <Select value={createdByFilter} onValueChange={handleCreatedByFilter}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filter Pembuat" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Pembuat</SelectItem>
+                        {filterOptions.users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.full_name || user.email || 'Unknown User'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+             </div>
+           </div>
 
           {/* Table */}
           <div className="border rounded-lg overflow-hidden">
@@ -267,17 +321,18 @@ const PengajuanIndex: React.FC = () => {
               </div>
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Pegawai</TableHead>
-                      <TableHead>Jenis Jabatan</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Dokumen</TableHead>
-                      <TableHead>Tanggal Dibuat</TableHead>
-                      <TableHead className="text-right">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                                 <Table>
+                   <TableHeader>
+                     <TableRow>
+                       <TableHead>Pegawai</TableHead>
+                       <TableHead>Jenis Jabatan</TableHead>
+                       <TableHead>Status</TableHead>
+                       <TableHead>Dokumen</TableHead>
+                       {isAdmin && <TableHead>Pembuat</TableHead>}
+                       <TableHead>Tanggal Dibuat</TableHead>
+                       <TableHead className="text-right">Aksi</TableHead>
+                     </TableRow>
+                   </TableHeader>
                   <TableBody>
                     {pengajuanList.map((pengajuan) => (
                       <TableRow key={pengajuan.id} className="hover:bg-gray-50">
@@ -295,18 +350,33 @@ const PengajuanIndex: React.FC = () => {
                                                  <TableCell>
                            {getStatusBadge(pengajuan.status)}
                          </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">{pengajuan.files.length}</span>
-                            <span className="text-gray-500">/</span>
-                            <span className="text-sm">{pengajuan.total_dokumen}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-gray-600">
-                            {formatDate(pengajuan.created_at)}
-                          </div>
-                        </TableCell>
+                                                 <TableCell>
+                           <div className="flex items-center gap-2">
+                             <span className="text-sm">{pengajuan.files.length}</span>
+                             <span className="text-gray-500">/</span>
+                             <span className="text-sm">{pengajuan.total_dokumen}</span>
+                           </div>
+                         </TableCell>
+                                                   {isAdmin && (
+                            <TableCell>
+                              <div className="text-sm text-gray-600">
+                                {(() => {
+                                  const user = filterOptions.users.find(u => u.id === pengajuan.created_by);
+                                  if (user) {
+                                    // Prioritaskan full_name, jika tidak ada gunakan email
+                                    return user.full_name || user.email || 'Unknown User';
+                                  }
+                                  // Jika user tidak ditemukan, tampilkan email dari created_by (jika itu email)
+                                  return pengajuan.created_by?.includes('@') ? pengajuan.created_by : 'Unknown User';
+                                })()}
+                              </div>
+                            </TableCell>
+                          )}
+                         <TableCell>
+                           <div className="text-sm text-gray-600">
+                             {formatDate(pengajuan.created_at)}
+                           </div>
+                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
