@@ -88,6 +88,12 @@ const PengajuanDetail: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [verifyingFile, setVerifyingFile] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  
+  // Debug log untuk isScrolled
+  useEffect(() => {
+    console.log('isScrolled changed:', isScrolled);
+  }, [isScrolled]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -98,6 +104,21 @@ const PengajuanDetail: React.FC = () => {
       fetchPengajuanData();
     }
   }, [isAuthenticated, navigate, pengajuanId]);
+
+  // Deteksi scroll untuk floating sidebar
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      console.log('Scroll position:', scrollTop); // Debug log
+      setIsScrolled(scrollTop > 50); // Mulai floating setelah scroll 50px
+    };
+
+    // Trigger initial check
+    handleScroll();
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const fetchPengajuanData = async () => {
     try {
@@ -475,6 +496,24 @@ const PengajuanDetail: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .sidebar-scroll::-webkit-scrollbar {
+            width: 8px;
+          }
+          .sidebar-scroll::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 4px;
+          }
+          .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+          }
+          .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+          }
+        `
+      }} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
                  <div className="flex items-center gap-4">
@@ -667,8 +706,20 @@ const PengajuanDetail: React.FC = () => {
           </Card>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
+                          {/* Sidebar */}
+          <div 
+            className={`space-y-6 transition-all duration-300 ${
+              isScrolled ? 'lg:sticky lg:top-6 lg:z-40 lg:self-start sidebar-scroll' : ''
+            }`}
+                         style={isScrolled ? { 
+               position: 'sticky', 
+               top: '80px', 
+               zIndex: 40,
+               maxHeight: 'calc(100vh - 120px)',
+               overflowY: 'scroll',
+               paddingRight: '12px'
+             } : {}}
+          >
           {/* Timeline Status */}
           <Card>
             <CardHeader>
@@ -762,85 +813,85 @@ const PengajuanDetail: React.FC = () => {
             </Card>
           )}
 
-          {/* Aksi */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Aksi</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-                             {canApprove && allFilesApproved && (
-                 <Button
-                   onClick={() => setShowApproveDialog(true)}
-                   className="w-full bg-green-600 hover:bg-green-700 text-white"
-                 >
-                                       <CheckCircle className="h-4 w-4 mr-2" />
+                     {/* Aksi */}
+           <Card>
+             <CardHeader>
+               <CardTitle>Aksi</CardTitle>
+             </CardHeader>
+                           <CardContent className="space-y-3">
+                {canApprove && allFilesApproved && (
+                  <Button
+                    onClick={() => setShowApproveDialog(true)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
                     Setujui
-                 </Button>
-               )}
-               
-               {canReject && (hasRejectedFiles || !allFilesApproved) && (
-                 <Button
-                   onClick={() => setShowRejectDialog(true)}
-                   variant="destructive"
-                   className="w-full"
-                 >
-                                       <XCircle className="h-4 w-4 mr-2" />
+                  </Button>
+                )}
+                
+                {canReject && (hasRejectedFiles || !allFilesApproved) && (
+                  <Button
+                    onClick={() => setShowRejectDialog(true)}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
                     Tolak
-                 </Button>
-               )}
-              
-              {canResubmit && (
-                                 <Button
-                   onClick={handleResubmit}
-                   disabled={submitting}
-                   className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                 >
-                   {submitting ? (
-                     <>
-                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                       Memproses...
-                     </>
-                   ) : (
-                     <>
-                       <RefreshCw className="h-4 w-4 mr-2" />
-                       Ajukan Ulang
-                     </>
-                   )}
-                 </Button>
-              )}
-              
-                             {canEdit && (
-                 <Button
-                   onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}
-                   className="w-full bg-green-600 hover:bg-green-700 text-white"
-                 >
-                   <Edit className="h-4 w-4 mr-2" />
-                   Edit Dokumen
-                 </Button>
-               )}
-               
-               {canDelete && (
-                 <Button
-                   onClick={() => setShowDeleteDialog(true)}
-                   variant="destructive"
-                   className="w-full"
-                 >
-                   <Trash2 className="h-4 w-4 mr-2" />
-                   Hapus Pengajuan
-                 </Button>
-               )}
-               
-               {pengajuan.status === 'approved' && (
-                 <Button
-                   onClick={() => setShowPrintDialog(true)}
-                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                 >
-                   <Printer className="h-4 w-4 mr-2" />
-                   Cetak Laporan
-                 </Button>
-               )}
-            </CardContent>
-          </Card>
+                  </Button>
+                )}
+                
+                {canResubmit && (
+                  <Button
+                    onClick={handleResubmit}
+                    disabled={submitting}
+                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Ajukan Ulang
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {canEdit && (
+                  <Button
+                    onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Dokumen
+                  </Button>
+                )}
+                
+                {canDelete && (
+                  <Button
+                    onClick={() => setShowDeleteDialog(true)}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Hapus Pengajuan
+                  </Button>
+                )}
+                
+                {pengajuan.status === 'approved' && (
+                  <Button
+                    onClick={() => setShowPrintDialog(true)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Cetak Laporan
+                  </Button>
+                )}
+              </CardContent>
+           </Card>
         </div>
       </div>
 
@@ -1025,6 +1076,8 @@ const PengajuanDetail: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      
     </div>
   );
 };
