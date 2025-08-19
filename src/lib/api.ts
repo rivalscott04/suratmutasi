@@ -14,8 +14,10 @@ const getBaseUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:3001';
   }
-  
-  return 'https://bemutasi.rivaldev.site';
+
+  // Production default: use same-origin with relative path (to be reverse-proxied, e.g., /api)
+  // This avoids mixed content when the app is served over HTTPS
+  return '';
 };
 
 // Get current environment for logging
