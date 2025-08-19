@@ -677,7 +677,7 @@ const Letters: React.FC = () => {
                 <Button
                   variant={selectAll ? "destructive" : "outline"}
                   onClick={() => handleSelectAll(!selectAll)}
-                  className={selectAll ? "bg-red-600 hover:bg-red-700" : "border-blue-200 text-blue-700 hover:bg-blue-50"}
+                  className={selectAll ? "bg-red-600 hover:bg-red-700" : "border-green-200 text-green-700 hover:bg-green-50"}
                 >
                   {selectAll ? (
                     <>
@@ -762,7 +762,7 @@ const Letters: React.FC = () => {
                   setSelectedLetters([]);
                   setSelectAll(false);
                 }}
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                className="border-green-300 text-green-700 hover:bg-green-50"
               >
                 Batal Pilih
               </Button>
@@ -806,7 +806,7 @@ const Letters: React.FC = () => {
               onClick={() => setActiveTab('all')}
               className={`flex-1 flex items-center justify-center py-3 px-4 rounded-md font-medium text-sm transition-all duration-200 ${
                 activeTab === 'all'
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                  ? 'bg-green-50 text-green-700 border border-green-200 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
@@ -851,7 +851,7 @@ const Letters: React.FC = () => {
         <div className="mt-3 text-sm text-gray-600">
           {activeTab === 'all' && (
             <div className="flex items-center">
-              <Info className="w-4 h-4 mr-2 text-blue-500" />
+              <Info className="w-4 h-4 mr-2 text-green-500" />
               Menampilkan semua surat yang telah dibuat dalam sistem
             </div>
           )}
@@ -1377,7 +1377,7 @@ const Letters: React.FC = () => {
                <Button 
                  onClick={handleSaveEditPejabatPegawai} 
                  disabled={editSaving || !editPejabat || ((editLetter.template_id !== 2 && editLetter.template_id !== 9) && !editPegawai)} 
-                 className="bg-blue-600 hover:bg-blue-700 text-white"
+                 className="bg-green-600 hover:bg-green-700 text-white"
                >
                  {editSaving ? 'Menyimpan...' : 'Simpan'}
                </Button>

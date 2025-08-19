@@ -1,74 +1,34 @@
 // Helper API untuk request ke backend dengan JWT
 import { useAuth } from '@/contexts/AuthContext';
 
-// Environment configuration
-const ENVIRONMENTS = {
-  development: {
-    name: 'Development (Local)',
-    url: 'http://localhost:3001',
-    color: 'text-green-600'
-  },
-  production: {
-    name: 'Production (Server)',
-    url: 'https://bemutasi.rivaldev.site',
-    color: 'text-blue-600'
-  }
-};
-
-// Get current environment from localStorage or default to development
-const getCurrentEnvironment = () => {
-  // Jika di localhost, selalu gunakan development
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'development';
-  }
-  
-  // Jika di production server, force ke production
-  return 'production';
-};
-
-// Get base URL for current environment
+// Environment configuration - simplified
 const getBaseUrl = () => {
-  const env = getCurrentEnvironment();
-  return ENVIRONMENTS[env as keyof typeof ENVIRONMENTS]?.url || ENVIRONMENTS.development.url;
-};
-
-// Export environment utilities
-export const getEnvironmentConfig = () => {
-  const current = getCurrentEnvironment();
+  // Use environment variable if available, otherwise detect based on hostname
+  const apiUrl = import.meta.env.VITE_API_URL;
   
-  // Jika di localhost, sembunyikan environment switcher (selalu development)
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  // Jika di production server, sembunyikan environment switcher
-  const isProductionServer = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  if (apiUrl) {
+    return apiUrl;
+  }
   
-  return {
-    current,
-    environments: isLocalhost ? { development: ENVIRONMENTS.development } : 
-                 isProductionServer ? { production: ENVIRONMENTS.production } : ENVIRONMENTS,
-    baseUrl: getBaseUrl(),
-    isProductionServer,
-    isLocalhost
-  };
-};
-
-export const setEnvironment = (env: string) => {
-  // Jangan izinkan switch environment di localhost (selalu development)
+  // Fallback: detect based on hostname
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.warn('Environment switching tidak diizinkan di localhost (selalu development)');
-    return;
+    return 'http://localhost:3001';
   }
   
-  // Jangan izinkan switch environment di production server
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    console.warn('Environment switching tidak diizinkan di production server');
-    return;
+  return 'https://bemutasi.rivaldev.site';
+};
+
+// Get current environment for logging
+const getCurrentEnvironment = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  
+  if (apiUrl) {
+    return apiUrl.includes('localhost') ? 'development' : 'production';
   }
   
-  if (ENVIRONMENTS[env as keyof typeof ENVIRONMENTS]) {
-    localStorage.setItem('api_environment', env);
-    // Reload page to apply new environment
-    window.location.reload();
-  }
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'development' 
+    : 'production';
 };
 
 export async function apiFetch(method: string, url: string, options: { data?: any; token?: string; headers?: any } = {}) {

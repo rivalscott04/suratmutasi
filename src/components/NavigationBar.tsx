@@ -44,7 +44,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import EnvironmentSwitcher from './EnvironmentSwitcher';
+
 
 interface User {
   id: string;
@@ -239,8 +239,7 @@ const NavigationBar = () => {
                 );
               })}
               
-              {/* Environment Switcher */}
-              <EnvironmentSwitcher />
+
             </div>
 
             {/* User Menu */}
@@ -329,10 +328,7 @@ const NavigationBar = () => {
           {isMobileMenuOpen && (
             <div className="md:hidden">
               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
-                {/* Environment Switcher for Mobile */}
-                <div className="px-3 py-2">
-                  <EnvironmentSwitcher />
-                </div>
+
                 
                 {navigationItems.map((item) => {
                   const Icon = item.icon;

@@ -544,7 +544,7 @@ const Users = () => {
             <Button 
               onClick={() => handleSubmit(true)}
               disabled={isSubmitting || !formData.email || !formData.full_name}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Update User

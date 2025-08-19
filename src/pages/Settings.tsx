@@ -27,7 +27,7 @@ const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, cl
   return (
     <span className={`inline-flex items-center gap-1 cursor-pointer group ${className || ''}`} onClick={handleCopy} title="Salin">
       <span>{text}</span>
-      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Clipboard className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />}
+      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Clipboard className="w-4 h-4 text-gray-400 group-hover:text-green-500" />}
     </span>
   );
 };
@@ -117,7 +117,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
           <Button
             variant="outline"
             onClick={() => setEditModalOpen(true)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-green-600 text-green-600 hover:bg-green-50"
           >
             <Plus className="h-4 w-4" />
             Tambah Pegawai
@@ -182,6 +182,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
+              className="border-green-600 text-green-600 hover:bg-green-50 disabled:border-gray-300 disabled:text-gray-400"
             >
               Sebelumnya
             </Button>
@@ -191,6 +192,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
                 variant={currentPage === page ? "default" : "outline"}
                 size="sm"
                 onClick={() => handlePageChange(page)}
+                className={currentPage === page ? "bg-green-600 hover:bg-green-700 text-white" : ""}
               >
                 {page}
               </Button>
@@ -200,6 +202,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
+              className="border-green-600 text-green-600 hover:bg-green-50 disabled:border-gray-300 disabled:text-gray-400"
             >
               Selanjutnya
             </Button>
@@ -311,7 +314,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
               <DialogClose asChild>
                 <Button type="button" variant="outline">Batal</Button>
               </DialogClose>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving} className="bg-green-600 hover:bg-green-700 text-white">
                 {saving ? 'Menyimpan...' : (editData ? 'Update' : 'Simpan')}
               </Button>
             </DialogFooter>
@@ -873,7 +876,7 @@ const Settings = () => {
                     </div>
                   </div>
 
-                  <Button onClick={handleSaveOfficeSettings} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button onClick={handleSaveOfficeSettings} className="w-full bg-green-600 hover:bg-green-700 text-white">
                     <Save className="mr-2 h-4 w-4" />
                     Simpan Pengaturan Kantor
                   </Button>
@@ -937,6 +940,7 @@ const Settings = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handleEditJobConfig(config)}
+                              className="border-green-600 text-green-600 hover:bg-green-50"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -1113,6 +1117,7 @@ const Settings = () => {
             <Button
               variant="outline"
               onClick={() => setShowJobConfigDialog(false)}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Batal
             </Button>

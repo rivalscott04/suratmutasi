@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, Send, Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Users, Send, Loader2, AlertCircle, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
+import JabatanSelectionModal from '@/components/JabatanSelectionModal';
 
 interface PegawaiData {
   nip: string;
@@ -17,6 +18,15 @@ interface PegawaiData {
   unit_kerja: string;
   induk_unit: string;
   total_surat: number;
+}
+
+interface JobTypeConfig {
+  id: number;
+  jenis_jabatan: string;
+  min_dokumen: number;
+  max_dokumen: number;
+  required_files: string[];
+  is_active: boolean;
 }
 
 const PengajuanSelect: React.FC = () => {
@@ -33,25 +43,61 @@ const PengajuanSelect: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
+  // Jabatan selection state
+  const [showJabatanModal, setShowJabatanModal] = useState(false);
+  const [selectedJabatan, setSelectedJabatan] = useState<JobTypeConfig | null>(null);
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/');
       return;
     }
-    fetchPegawaiData();
+    // Tidak perlu fetch data pegawai di awal, tunggu sampai jabatan dipilih
   }, [isAuthenticated, navigate]);
 
-  const fetchPegawaiData = async () => {
+
+
+  const handleJabatanSelected = (jabatan: JobTypeConfig) => {
+    setSelectedJabatan(jabatan);
+    // Setelah jabatan dipilih, fetch pegawai yang sesuai dengan jabatan tersebut
+    fetchPegawaiByJabatan(jabatan.id);
+  };
+
+  const fetchPegawaiByJabatan = async (jabatanId: number) => {
     try {
       setLoading(true);
+      setError(null); // Clear previous errors
+      
+      // Gunakan endpoint yang sudah ada
       const response = await apiGet('/api/pengajuan/pegawai-grouped', token);
       if (response.success) {
-        setPegawaiData(response.data);
+        // Filter pegawai berdasarkan jabatan yang dipilih
+        const filteredData: Record<string, PegawaiData[]> = {};
+        
+        Object.entries(response.data).forEach(([key, pegawaiList]) => {
+          const filteredPegawai = (pegawaiList as PegawaiData[]).filter(pegawai => {
+            // Filter berdasarkan jabatan yang dipilih
+            // Untuk sementara, kita akan menampilkan semua pegawai yang memiliki surat
+            // karena belum ada mapping yang jelas antara job type dan jabatan pegawai
+            return true; // Tampilkan semua pegawai yang memiliki surat
+          });
+          
+          if (filteredPegawai.length > 0) {
+            filteredData[key] = filteredPegawai;
+          }
+        });
+        
+        setPegawaiData(filteredData);
+        
+        // Jika tidak ada data, tampilkan pesan yang sesuai
+        if (Object.keys(filteredData).length === 0) {
+          setError('Tidak ada pegawai yang tersedia untuk jabatan ini');
+        }
       } else {
         setError(response.message || 'Gagal mengambil data pegawai');
       }
     } catch (error) {
-      console.error('Error fetching pegawai data:', error);
+      console.error('Error fetching pegawai by jabatan:', error);
       setError('Terjadi kesalahan saat mengambil data pegawai');
     } finally {
       setLoading(false);
@@ -59,11 +105,14 @@ const PengajuanSelect: React.FC = () => {
   };
 
   const handleCreatePengajuan = async () => {
-    if (!selectedPegawai) return;
+    if (!selectedPegawai || !selectedJabatan) return;
 
     try {
       setSubmitting(true);
-      const response = await apiPost('/api/pengajuan', { pegawai_nip: selectedPegawai }, token);
+      const response = await apiPost('/api/pengajuan', { 
+        pegawai_nip: selectedPegawai,
+        jabatan_id: selectedJabatan.id 
+      }, token);
       if (response.success) {
         // Redirect ke halaman upload file
         navigate(`/pengajuan/${response.data.id}/upload`);
@@ -136,13 +185,65 @@ const PengajuanSelect: React.FC = () => {
             Pilih Pegawai untuk Pengajuan
           </CardTitle>
           <div className="text-sm text-gray-600">
-            Pilih pegawai yang akan diajukan berdasarkan surat yang telah dibuat
+            {selectedJabatan 
+              ? `Pilih pegawai untuk pengajuan jabatan: ${selectedJabatan.jenis_jabatan}`
+              : 'Pilih jabatan terlebih dahulu, kemudian pilih pegawai yang akan diajukan'
+            }
           </div>
         </CardHeader>
         <CardContent>
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
+                     {/* Jabatan Selection */}
+           {!selectedJabatan && (
+             <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-lg text-center">
+               <Briefcase className="h-12 w-12 text-green-500 mx-auto mb-4" />
+               <h3 className="text-lg font-semibold text-green-800 mb-2">
+                 Pilih Jabatan Terlebih Dahulu
+               </h3>
+               <p className="text-green-600 mb-4">
+                 Untuk memulai pengajuan, Anda perlu memilih jenis jabatan yang akan diajukan.
+               </p>
+               <Button
+                 onClick={() => setShowJabatanModal(true)}
+                 className="bg-green-600 hover:bg-green-700 text-white"
+               >
+                 <Briefcase className="h-4 w-4 mr-2" />
+                 Pilih Jabatan
+               </Button>
+             </div>
+           )}
+
+          {/* Selected Jabatan Info */}
+          {selectedJabatan && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-green-800">
+                    Jabatan: {selectedJabatan.jenis_jabatan}
+                  </h3>
+                  <p className="text-sm text-green-600">
+                    {selectedJabatan.required_files.length} jenis dokumen diperlukan
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-green-600 text-white">
+                    {selectedJabatan.max_dokumen} dokumen
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowJabatanModal(true)}
+                    className="border-green-600 text-green-600 hover:bg-green-50"
+                  >
+                    Ubah Jabatan
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -166,10 +267,27 @@ const PengajuanSelect: React.FC = () => {
 
           {/* DataTable */}
           <div className="border rounded-lg overflow-hidden">
-            {loading ? (
+            {!selectedJabatan ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Pilih jabatan terlebih dahulu untuk melihat daftar pegawai</p>
+                </div>
+              </div>
+            ) : loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin mr-2" />
                 <span>Memuat data pegawai...</span>
+              </div>
+            ) : error ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                  <p className="text-red-600 mb-2">{error}</p>
+                  <p className="text-sm text-gray-500">
+                    Pastikan sudah ada surat yang dibuat untuk pegawai di menu Template Generator
+                  </p>
+                </div>
               </div>
             ) : (
               <>
@@ -198,7 +316,7 @@ const PengajuanSelect: React.FC = () => {
                             'Tidak ada pegawai yang sesuai dengan pencarian'
                           ) : (
                             <div>
-                              <p className="mb-2">Tidak ada pegawai dengan surat yang di-generate</p>
+                              <p className="mb-2">Tidak ada pegawai yang tersedia</p>
                               <p className="text-sm text-gray-400">
                                 Pastikan sudah ada surat yang dibuat untuk pegawai di menu Template Generator
                               </p>
@@ -284,7 +402,7 @@ const PengajuanSelect: React.FC = () => {
           <div className="mt-6 flex justify-end">
             <Button
               onClick={handleCreatePengajuan}
-              disabled={!selectedPegawai || submitting}
+              disabled={!selectedPegawai || !selectedJabatan || submitting}
               size="lg"
               className="bg-green-600 hover:bg-green-700 text-white"
             >
@@ -302,13 +420,20 @@ const PengajuanSelect: React.FC = () => {
             </Button>
           </div>
 
-          {!selectedPegawai && filteredData.length > 0 && (
+          {!selectedPegawai && selectedJabatan && filteredData.length > 0 && (
             <p className="text-sm text-gray-500 mt-2 text-center">
               Pilih satu pegawai untuk melanjutkan proses pengajuan
             </p>
           )}
         </CardContent>
       </Card>
+
+      {/* Jabatan Selection Modal */}
+      <JabatanSelectionModal
+        open={showJabatanModal}
+        onOpenChange={setShowJabatanModal}
+        onJabatanSelected={handleJabatanSelected}
+      />
     </div>
   );
 };

@@ -10,7 +10,7 @@ Aplikasi web untuk membuat surat-surat resmi Kementerian Agama dengan template y
 - **Export PDF**: Generate surat dalam format PDF
 - **Multi-role User**: Support untuk admin, operator, dan user biasa
 - **Responsive Design**: Interface yang responsif untuk semua perangkat
-- **Environment Switcher**: Switch antara development dan production tanpa deploy ulang
+- **Environment Configuration**: Konfigurasi environment yang sederhana untuk development dan production
 
 ## 📋 Template Surat yang Tersedia
 
@@ -309,40 +309,63 @@ npm run db:seed
 
 5. **Start development server**
 
-**Opsi 1: Frontend saja**
+**Opsi 1: Development mode (localhost)**
 ```bash
 npm run dev
 ```
 
-**Opsi 2: Frontend + Backend sekaligus**
+**Opsi 2: Production mode (server)**
+```bash
+npm run dev:prod
+```
+
+**Opsi 3: Frontend + Backend sekaligus**
 ```bash
 npm run dev:full
 ```
 
-**Opsi 3: Backend saja**
+**Opsi 4: Backend saja**
 ```bash
 npm run backend:dev
 ```
 
-## 🌐 Environment Switcher
+## 🌐 Environment Configuration
 
-Fitur untuk switching environment antara development (localhost) dan production (server) tanpa perlu deploy ulang.
+Konfigurasi environment yang sederhana untuk development dan production.
+
+### Environment Files
+
+**Development (env.development)**
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+**Production (env.production)**
+```env
+VITE_API_URL=https://bemutasi.rivaldev.site
+```
 
 ### Cara Menggunakan
-1. Buka aplikasi di browser
-2. Di navigation bar, ada dropdown "Environment"
-3. Pilih:
-   - **Development (Local)** - untuk testing di localhost
-   - **Production (Server)** - untuk testing di server
+
+**Development Mode**
+```bash
+npm run dev
+```
+- Menggunakan `env.development`
+- API URL: `http://localhost:3001`
+
+**Production Mode**
+```bash
+npm run dev:prod
+```
+- Menggunakan `env.production`
+- API URL: `https://bemutasi.rivaldev.site`
 
 ### Keuntungan
-- ✅ Tidak perlu deploy ulang untuk testing di environment berbeda
-- ✅ Switch cepat antara local dan server
-- ✅ Visual indicator dengan warna dan icon
-- ✅ Mobile responsive
-- ✅ Persistent setting di browser
-
-Dokumentasi lengkap: [ENVIRONMENT_SWITCHER.md](ENVIRONMENT_SWITCHER.md)
+- ✅ Konfigurasi sederhana dengan file environment
+- ✅ Tidak perlu UI switcher yang kompleks
+- ✅ Otomatis detect environment berdasarkan mode
+- ✅ Mudah untuk maintenance dan deployment
 
 ## 🔧 Build & Deployment
 

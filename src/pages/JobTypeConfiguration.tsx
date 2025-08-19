@@ -104,12 +104,57 @@ const JobTypeConfiguration: React.FC = () => {
   };
 
   const handleEdit = (config: JobTypeConfig) => {
-         setFormData({
-       jenis_jabatan: config.jenis_jabatan,
-       total_dokumen: config.max_dokumen,
-       required_files: config.required_files,
-       is_active: config.is_active
-     });
+    // Map database file names to frontend file type IDs
+    const mapFileNamesToIds = (fileNames: string[]): string[] => {
+      const nameToIdMap: Record<string, string> = {
+        // New format file names
+        'Surat Pengantar': 'surat_pengantar',
+        'Surat Permohonan Dari Yang Bersangkutan': 'surat_permohonan_dari_yang_bersangkutan',
+        'Surat Keputusan CPNS': 'surat_keputusan_cpns',
+        'Surat Keputusan PNS': 'surat_keputusan_pns',
+        'Surat Keputusan Kenaikan Pangkat Terakhir': 'surat_keputusan_kenaikan_pangkat_terakhir',
+        'Surat Keputusan Jabatan Terakhir': 'surat_keputusan_jabatan_terakhir',
+        'SKP 2 Tahun Terakhir': 'skp_2_tahun_terakhir',
+        'Surat Keterangan Bebas Temuan Yang Diterbitkan Inspektorat Jenderal Kementerian Agama': 'surat_keterangan_bebas_temuan_inspektorat',
+        'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi asal': 'surat_keterangan_anjab_abk_instansi_asal',
+        'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi penerima': 'surat_keterangan_anjab_abk_instansi_penerima',
+        'Surat Pernyataan Tidak Pernah Dijatuhi Hukuman Disiplin Tingkat Sedang atau Berat Dalam 1 (satu) Tahun Terakhir Dari PPK': 'surat_pernyataan_tidak_hukuman_disiplin',
+        'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki': 'surat_persetujuan_mutasi_asal',
+        'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju': 'surat_lolos_butuh_ppk',
+        'Peta Jabatan': 'peta_jabatan',
+        'Surat Keterangan Tidak Sedang Tugas Belajar': 'surat_keterangan_tidak_tugas_belajar',
+        'SPTJM Pimpinan Satker dari Asal': 'sptjm_pimpinan_satker_asal',
+        'SPTJM Pimpinan Satker dari Penerima': 'sptjm_pimpinan_satker_penerima',
+        // Legacy database values (from migration files)
+        'SK Pangkat Terakhir': 'surat_keputusan_kenaikan_pangkat_terakhir',
+        'SK Jabatan Terakhir': 'surat_keputusan_jabatan_terakhir',
+        'Ijazah Terakhir': 'surat_keputusan_pns',
+        'Sertifikat Diklat': 'surat_keputusan_cpns',
+        'Surat Pernyataan': 'surat_pernyataan_tidak_hukuman_disiplin',
+        'Foto': 'surat_pengantar'
+      };
+      
+      console.log('Original required_files from database:', config.required_files);
+      const mappedFiles = fileNames
+        .map(name => {
+          const mappedId = nameToIdMap[name];
+          console.log(`Mapping "${name}" to "${mappedId}"`);
+          return mappedId;
+        })
+        .filter(id => id !== undefined); // Remove any unmapped values
+      
+      console.log('Mapped required_files:', mappedFiles);
+      return mappedFiles;
+    };
+
+    const mappedRequiredFiles = mapFileNamesToIds(config.required_files);
+    
+    setFormData({
+      jenis_jabatan: config.jenis_jabatan,
+      total_dokumen: config.max_dokumen,
+      required_files: mappedRequiredFiles,
+      is_active: config.is_active
+    });
     setEditingConfig(config);
     setShowAddDialog(true);
   };
@@ -118,9 +163,46 @@ const JobTypeConfiguration: React.FC = () => {
     try {
       setSaving(true);
       
+      // Map frontend file type IDs back to database file names
+      const mapIdsToFileNames = (fileTypeIds: string[]): string[] => {
+        const idToNameMap: Record<string, string> = {
+          'surat_pengantar': 'Surat Pengantar',
+          'surat_permohonan_dari_yang_bersangkutan': 'Surat Permohonan Dari Yang Bersangkutan',
+          'surat_keputusan_cpns': 'Surat Keputusan CPNS',
+          'surat_keputusan_pns': 'Surat Keputusan PNS',
+          'surat_keputusan_kenaikan_pangkat_terakhir': 'Surat Keputusan Kenaikan Pangkat Terakhir',
+          'surat_keputusan_jabatan_terakhir': 'Surat Keputusan Jabatan Terakhir',
+          'skp_2_tahun_terakhir': 'SKP 2 Tahun Terakhir',
+          'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan Yang Diterbitkan Inspektorat Jenderal Kementerian Agama',
+          'surat_keterangan_anjab_abk_instansi_asal': 'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi asal',
+          'surat_keterangan_anjab_abk_instansi_penerima': 'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi penerima',
+          'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan Tidak Pernah Dijatuhi Hukuman Disiplin Tingkat Sedang atau Berat Dalam 1 (satu) Tahun Terakhir Dari PPK',
+          'surat_persetujuan_mutasi_asal': 'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki',
+          'surat_lolos_butuh_ppk': 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju',
+          'peta_jabatan': 'Peta Jabatan',
+          'surat_keterangan_tidak_tugas_belajar': 'Surat Keterangan Tidak Sedang Tugas Belajar',
+          'sptjm_pimpinan_satker_asal': 'SPTJM Pimpinan Satker dari Asal',
+          'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima'
+        };
+        
+        console.log('Frontend file type IDs:', fileTypeIds);
+        const mappedNames = fileTypeIds
+          .map(id => {
+            const mappedName = idToNameMap[id];
+            console.log(`Mapping "${id}" to "${mappedName}"`);
+            return mappedName;
+          })
+          .filter(name => name !== undefined); // Remove any unmapped values
+        
+        console.log('Mapped file names for database:', mappedNames);
+        return mappedNames;
+      };
+
+      const mappedRequiredFiles = mapIdsToFileNames(formData.required_files);
+      
       const payload = {
         ...formData,
-        required_files: formData.required_files,
+        required_files: mappedRequiredFiles,
         is_active: formData.is_active
       };
 
