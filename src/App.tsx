@@ -19,6 +19,7 @@ import PengajuanSelect from "./pages/PengajuanSelect";
 import PengajuanFileUpload from "./components/PengajuanFileUpload";
 import PengajuanIndex from "./pages/PengajuanIndex";
 import PengajuanDetail from "./pages/PengajuanDetail";
+import PengajuanEdit from "./pages/PengajuanEdit";
 import JobTypeConfiguration from "./pages/JobTypeConfiguration";
 import { Lock } from 'lucide-react';
 
@@ -114,6 +115,11 @@ const AppRoutes = () => {
       <Route path="/pengajuan/:pengajuanId/upload" element={
         <ProtectedRoute>
           <PengajuanFileUpload />
+        </ProtectedRoute>
+      } />
+      <Route path="/pengajuan/:pengajuanId/edit" element={
+        <ProtectedRoute>
+          <PengajuanEdit />
         </ProtectedRoute>
       } />
       <Route path="/job-type-configuration" element={

@@ -81,14 +81,14 @@ const PengajuanIndex: React.FC = () => {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await apiGet(`/api/pengajuan?${params}`, token);
-      if (response.success) {
-        setPengajuanList(response.data.data || response.data);
-        setTotalPages(response.data.pagination?.totalPages || 1);
-        setTotalItems(response.data.pagination?.total || 0);
-      } else {
-        setError(response.message || 'Gagal mengambil data pengajuan');
-      }
+             const response = await apiGet(`/api/pengajuan?${params}`, token);
+       if (response.success) {
+         setPengajuanList(response.data.data || response.data);
+         setTotalPages(response.data.pagination?.totalPages || 1);
+         setTotalItems(response.data.pagination?.total || 0);
+       } else {
+         setError(response.message || 'Gagal mengambil data pengajuan');
+       }
     } catch (error) {
       console.error('Error fetching pengajuan data:', error);
       setError('Terjadi kesalahan saat mengambil data pengajuan');
@@ -110,31 +110,32 @@ const PengajuanIndex: React.FC = () => {
   const handleDelete = async () => {
     if (!pengajuanToDelete) return;
 
-    try {
-      setDeleting(true);
-      const response = await apiDelete(`/api/pengajuan/${pengajuanToDelete}`, token);
-      if (response.success) {
-        fetchPengajuanData();
-        setDeleteDialogOpen(false);
-        setPengajuanToDelete(null);
-      } else {
-        setError(response.message || 'Gagal menghapus pengajuan');
-      }
-    } catch (error) {
-      console.error('Error deleting pengajuan:', error);
-      setError('Terjadi kesalahan saat menghapus pengajuan');
-    } finally {
-      setDeleting(false);
-    }
+         try {
+       setDeleting(true);
+       const response = await apiDelete(`/api/pengajuan/${pengajuanToDelete}`, token);
+       
+       if (response.success) {
+         fetchPengajuanData();
+         setDeleteDialogOpen(false);
+         setPengajuanToDelete(null);
+       } else {
+         setError(response.message || 'Gagal menghapus pengajuan');
+       }
+     } catch (error) {
+       console.error('Error deleting pengajuan:', error);
+       setError('Terjadi kesalahan saat menghapus pengajuan');
+     } finally {
+       setDeleting(false);
+     }
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800', icon: Clock },
-      submitted: { label: 'Submitted', className: 'bg-blue-100 text-blue-800', icon: FileText },
-      approved: { label: 'Approved', className: 'bg-green-100 text-green-800', icon: CheckCircle },
-      rejected: { label: 'Rejected', className: 'bg-red-100 text-red-800', icon: XCircle },
-      resubmitted: { label: 'Resubmitted', className: 'bg-yellow-100 text-yellow-800', icon: Clock }
+      submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800', icon: FileText },
+      approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800', icon: CheckCircle },
+      rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800', icon: XCircle },
+      resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800', icon: Clock }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
@@ -220,11 +221,11 @@ const PengajuanIndex: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="submitted">Submitted</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="resubmitted">Resubmitted</SelectItem>
+                                  <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="submitted">Diajukan</SelectItem>
+                <SelectItem value="approved">Disetujui</SelectItem>
+                <SelectItem value="rejected">Ditolak</SelectItem>
+                <SelectItem value="resubmitted">Diajukan Ulang</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -283,9 +284,9 @@ const PengajuanIndex: React.FC = () => {
                             {getJabatanDisplayName(pengajuan.jenis_jabatan)}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          {getStatusBadge(pengajuan.status)}
-                        </TableCell>
+                                                 <TableCell>
+                           {getStatusBadge(pengajuan.status)}
+                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <span className="text-sm">{pengajuan.files.length}</span>
@@ -310,36 +311,43 @@ const PengajuanIndex: React.FC = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Lihat Detail
                               </DropdownMenuItem>
-                              {pengajuan.status === 'draft' && (
-                                <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Upload Files
-                                </DropdownMenuItem>
-                              )}
-                              {isAdmin && pengajuan.status === 'submitted' && (
-                                <>
-                                  <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/approve`)}>
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Approve
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/reject`)}>
-                                    <XCircle className="h-4 w-4 mr-2" />
-                                    Reject
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {(isAdmin || pengajuan.status === 'draft') && (
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setPengajuanToDelete(pengajuan.id);
-                                    setDeleteDialogOpen(true);
-                                  }}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Hapus
-                                </DropdownMenuItem>
-                              )}
+                                                             {pengajuan.status === 'draft' && (
+                                 <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}>
+                                   <Edit className="h-4 w-4 mr-2" />
+                                   Upload Dokumen
+                                 </DropdownMenuItem>
+                               )}
+                               {pengajuan.status === 'rejected' && (
+                                 <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}>
+                                   <Edit className="h-4 w-4 mr-2" />
+                                   Perbaiki Dokumen
+                                 </DropdownMenuItem>
+                               )}
+                               {isAdmin && pengajuan.status === 'submitted' && (
+                                 <>
+                                   <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                     <CheckCircle className="h-4 w-4 mr-2" />
+                                     Setujui
+                                   </DropdownMenuItem>
+                                   <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                     <XCircle className="h-4 w-4 mr-2" />
+                                     Tolak
+                                   </DropdownMenuItem>
+                                 </>
+                               )}
+                                                                                          {(isAdmin || pengajuan.status === 'draft') && (
+                               <DropdownMenuItem 
+                                 onClick={() => {
+                                   setPengajuanToDelete(pengajuan.id);
+                                   setDeleteDialogOpen(true);
+                                 }}
+                                 className="text-red-600"
+                               >
+                                 <Trash2 className="h-4 w-4 mr-2" />
+                                 Hapus
+                               </DropdownMenuItem>
+                             )}
+                             
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

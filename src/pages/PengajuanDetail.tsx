@@ -49,6 +49,8 @@ interface PengajuanFile {
 
 interface PengajuanData {
   id: string;
+  user_id?: string;
+  created_by?: string;
   pegawai: {
     nama: string;
     jabatan: string;
@@ -84,16 +86,15 @@ const PengajuanDetail: React.FC = () => {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [approvalNote, setApprovalNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [verifyingFile, setVerifyingFile] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   
-  // Debug log untuk isScrolled
-  useEffect(() => {
-    console.log('isScrolled changed:', isScrolled);
-  }, [isScrolled]);
+
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -109,7 +110,6 @@ const PengajuanDetail: React.FC = () => {
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      console.log('Scroll position:', scrollTop); // Debug log
       setIsScrolled(scrollTop > 50); // Mulai floating setelah scroll 50px
     };
 
@@ -145,6 +145,8 @@ const PengajuanDetail: React.FC = () => {
       }, token);
       
       if (response.success) {
+        setSuccessMessage('Pengajuan berhasil disetujui!');
+        setShowSuccessDialog(true);
         setShowApproveDialog(false);
         setApprovalNote('');
         await fetchPengajuanData();
@@ -167,6 +169,8 @@ const PengajuanDetail: React.FC = () => {
       }, token);
       
       if (response.success) {
+        setSuccessMessage('Pengajuan berhasil ditolak!');
+        setShowSuccessDialog(true);
         setShowRejectDialog(false);
         setRejectionReason('');
         await fetchPengajuanData();
@@ -187,6 +191,8 @@ const PengajuanDetail: React.FC = () => {
       const response = await apiPut(`/api/pengajuan/${pengajuanId}/resubmit`, {}, token);
       
       if (response.success) {
+        setSuccessMessage('Pengajuan berhasil diajukan ulang!');
+        setShowSuccessDialog(true);
         await fetchPengajuanData();
       } else {
         setError(response.message || 'Gagal resubmit pengajuan');
@@ -205,17 +211,23 @@ const PengajuanDetail: React.FC = () => {
       const response = await apiDelete(`/api/pengajuan/${pengajuanId}`, token);
       
       if (response.success) {
-        // Redirect ke halaman index pengajuan setelah berhasil hapus
-        navigate('/pengajuan');
+        setSuccessMessage('Pengajuan berhasil dihapus!');
+        setShowSuccessDialog(true);
+        setShowDeleteDialog(false);
+        // Redirect setelah 2 detik agar user bisa lihat pesan sukses
+        setTimeout(() => {
+          navigate('/pengajuan');
+        }, 2000);
       } else {
         setError(response.message || 'Gagal menghapus pengajuan');
+        setShowDeleteDialog(false);
       }
     } catch (error) {
       console.error('Error deleting pengajuan:', error);
       setError('Terjadi kesalahan saat menghapus pengajuan');
+      setShowDeleteDialog(false);
     } finally {
       setSubmitting(false);
-      setShowDeleteDialog(false);
     }
   };
 
@@ -458,11 +470,14 @@ const PengajuanDetail: React.FC = () => {
   };
 
   const isAdmin = user?.role === 'admin';
-  const canEdit = pengajuan?.status === 'draft';
+  const canEdit = (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected') && 
+                  (isAdmin || pengajuan?.created_by === user?.id);
   const canDelete = pengajuan?.status === 'draft'; // User bisa hapus jika status draft
   const canApprove = isAdmin && pengajuan?.status === 'submitted';
   const canReject = isAdmin && pengajuan?.status === 'submitted';
   const canResubmit = pengajuan?.status === 'rejected';
+  
+
   
   // Check if all files are approved
   const allFilesApproved = pengajuan?.files.every(file => file.verification_status === 'approved') ?? false;
@@ -600,15 +615,15 @@ const PengajuanDetail: React.FC = () => {
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">Belum ada dokumen yang diupload</p>
-                  {canEdit && (
-                    <Button
-                      onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}
-                      className="mt-4 bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Upload Dokumen
-                    </Button>
-                  )}
+                                     {canEdit && (
+                     <Button
+                       onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}
+                       className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+                     >
+                       <Edit className="h-4 w-4 mr-2" />
+                       {pengajuan.status === 'draft' ? 'Upload Dokumen' : 'Perbaiki Dokumen'}
+                     </Button>
+                   )}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -620,28 +635,35 @@ const PengajuanDetail: React.FC = () => {
                            <p className="text-sm text-gray-600">{file.file_name}</p>
                            <p className="text-xs text-gray-500">{getFileSize(file.file_size)}</p>
                           
-                                                     {/* Status Verifikasi untuk User atau saat sudah ada status */}
-                           {(!isAdmin || file.verification_status !== 'pending') && file.verification_status !== 'pending' && (
-                             <div className="mt-3 space-y-2">
-                                                               <Badge 
-                                  variant={file.verification_status === 'approved' ? 'default' : 'destructive'}
-                                  className={`transition-all duration-500 ease-in-out transform ${
-                                    file.verification_status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                  }`}
-                                >
-                                  {file.verification_status === 'approved' ? 'Sesuai' : 'Tidak Sesuai'}
-                                  {file.verified_by && ` - ${file.verified_by}`}
-                                </Badge>
-                               {file.verification_notes && (
-                                 <p className="text-xs text-gray-600">{file.verification_notes}</p>
-                               )}
-                             </div>
-                           )}
+                                                     {/* Status Verifikasi - Selalu tampilkan status */}
+                           <div className="mt-3 space-y-2">
+                             <Badge 
+                               variant={file.verification_status === 'approved' ? 'default' : 'destructive'}
+                               className={`transition-all duration-500 ease-in-out transform ${
+                                 file.verification_status === 'approved' 
+                                   ? 'bg-green-100 text-green-800' 
+                                   : file.verification_status === 'rejected'
+                                   ? 'bg-red-100 text-red-800'
+                                   : 'bg-gray-100 text-gray-800'
+                               }`}
+                             >
+                               {file.verification_status === 'approved' 
+                                 ? 'Sesuai' 
+                                 : file.verification_status === 'rejected'
+                                 ? 'Tidak Sesuai'
+                                 : 'Belum Diverifikasi'
+                               }
+                               {file.verified_by && ` - ${file.verified_by}`}
+                             </Badge>
+                             {file.verification_notes && (
+                               <p className="text-xs text-gray-600">{file.verification_notes}</p>
+                             )}
+                           </div>
                         </div>
                         
                                                  <div className="flex items-center gap-3">
                            {/* Switch Toggle Verifikasi - Hanya untuk Admin */}
-                           {isAdmin && pengajuan.status === 'submitted' && (
+                           {isAdmin && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected') && (
                              <div className="flex items-center gap-3 mr-3">
                               {verifyingFile === file.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
@@ -659,7 +681,7 @@ const PengajuanDetail: React.FC = () => {
                                         className={`transition-all duration-500 ease-in-out transform ${
                                           file.verification_status === 'approved' 
                                             ? 'data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600' 
-                                            : 'data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600'
+                                            : 'data-[state=unchecked]:bg-red-600 data-[state=unchecked]:border-red-600'
                                         }`}
                                       />
                                     </div>
@@ -668,10 +690,17 @@ const PengajuanDetail: React.FC = () => {
                                       className={`text-sm font-medium cursor-pointer transition-all duration-500 ease-in-out transform hover:scale-105 ${
                                         file.verification_status === 'approved' 
                                           ? 'text-green-700' 
-                                          : 'text-red-700'
+                                          : file.verification_status === 'rejected'
+                                          ? 'text-red-700'
+                                          : 'text-gray-700'
                                       }`}
                                     >
-                                      {file.verification_status === 'approved' ? 'Sesuai' : 'Tidak Sesuai'}
+                                      {file.verification_status === 'approved' 
+                                        ? 'Sesuai' 
+                                        : file.verification_status === 'rejected'
+                                        ? 'Tidak Sesuai'
+                                        : 'Belum Diverifikasi'
+                                      }
                                     </Label>
                                  </div>
                               )}
@@ -860,15 +889,17 @@ const PengajuanDetail: React.FC = () => {
                   </Button>
                 )}
                 
-                {canEdit && (
-                  <Button
-                    onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Dokumen
-                  </Button>
-                )}
+                                 {canEdit && (
+                   <Button
+                     onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}
+                     className="w-full bg-green-600 hover:bg-green-700 text-white"
+                   >
+                     <Edit className="h-4 w-4 mr-2" />
+                     {pengajuan.status === 'draft' ? 'Upload Dokumen' : 'Perbaiki Dokumen'}
+                   </Button>
+                 )}
+                 
+                 
                 
                 {canDelete && (
                   <Button
@@ -1048,38 +1079,61 @@ const PengajuanDetail: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Preview Modal */}
-      <Dialog open={showPreview} onOpenChange={(open) => {
-        setShowPreview(open);
-        // Cleanup blob URL when modal closes
-        if (!open && previewFile?.blobUrl) {
-          URL.revokeObjectURL(previewFile.blobUrl);
-        }
-      }}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Preview File: {previewFile?.file_name}</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            {previewFile && (
-              <div className="border rounded-lg overflow-hidden bg-white">
-                <div className="bg-green-600 text-white px-4 py-2 flex items-center justify-between">
-                  <span className="font-medium">{previewFile.file_name}</span>
-                </div>
-                <iframe
-                  src={previewFile.blobUrl || `/api/pengajuan/files/${previewFile.id}`}
-                  className="w-full h-96 border-0"
-                  title="File Preview"
-                />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+             {/* Preview Modal */}
+       <Dialog open={showPreview} onOpenChange={(open) => {
+         setShowPreview(open);
+         // Cleanup blob URL when modal closes
+         if (!open && previewFile?.blobUrl) {
+           URL.revokeObjectURL(previewFile.blobUrl);
+         }
+       }}>
+         <DialogContent className="max-w-4xl">
+           <DialogHeader>
+             <DialogTitle>Preview File: {previewFile?.file_name}</DialogTitle>
+           </DialogHeader>
+           <div className="mt-4">
+             {previewFile && (
+               <div className="border rounded-lg overflow-hidden bg-white">
+                 <div className="bg-green-600 text-white px-4 py-2 flex items-center justify-between">
+                   <span className="font-medium">{previewFile.file_name}</span>
+                 </div>
+                 <iframe
+                   src={previewFile.blobUrl || `/api/pengajuan/files/${previewFile.id}`}
+                   className="w-full h-96 border-0"
+                   title="File Preview"
+                 />
+               </div>
+             )}
+           </div>
+         </DialogContent>
+       </Dialog>
 
-      
-    </div>
-  );
-};
+       {/* Success Dialog */}
+       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle className="flex items-center gap-2">
+               <CheckCircle className="h-5 w-5 text-green-600" />
+               Berhasil!
+             </AlertDialogTitle>
+             <AlertDialogDescription className="text-green-700">
+               {successMessage}
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogAction
+               onClick={() => setShowSuccessDialog(false)}
+               className="bg-green-600 hover:bg-green-700 text-white"
+             >
+               OK
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
 
-export default PengajuanDetail;
+       
+     </div>
+   );
+ };
+
+ export default PengajuanDetail;
