@@ -112,6 +112,9 @@ const PengajuanFileUpload: React.FC = () => {
   // Ambil data jabatan dari state navigation jika ada
   const jabatanData = location.state?.jabatan;
   const requiredFilesFromState = location.state?.requiredFiles;
+  
+  // State untuk menyimpan data job type configuration
+  const [jobTypeConfig, setJobTypeConfig] = useState<any>(null);
 
   useEffect(() => {
     if (pengajuanId) {
@@ -129,6 +132,10 @@ const PengajuanFileUpload: React.FC = () => {
         // Prioritas 1: Gunakan requiredFiles dari state navigation (jika ada)
         if (requiredFilesFromState && requiredFilesFromState.length > 0) {
           setRequiredFiles(requiredFilesFromState);
+          // Set job type config dari state navigation jika ada
+          if (jabatanData) {
+            setJobTypeConfig(jabatanData);
+          }
         }
         // Prioritas 2: Gunakan requiredFiles dari response API
         else if (response.data.requiredFiles && response.data.requiredFiles.length > 0) {
@@ -139,7 +146,9 @@ const PengajuanFileUpload: React.FC = () => {
           try {
             const jobTypeResponse = await apiGet(`/api/job-type-configurations/${response.data.pengajuan.jabatan_id}`, token);
             if (jobTypeResponse.success && jobTypeResponse.data.required_files) {
+              // required_files sudah di-parse di backend
               setRequiredFiles(jobTypeResponse.data.required_files);
+              setJobTypeConfig(jobTypeResponse.data);
             } else {
               // Fallback: gunakan required files default berdasarkan jenis jabatan
               setRequiredFiles(getDefaultRequiredFiles(response.data.pengajuan.jenis_jabatan));
@@ -365,7 +374,7 @@ const PengajuanFileUpload: React.FC = () => {
             Jenis Jabatan: {getJabatanDisplayName(pengajuan.jenis_jabatan)}
           </div>
           <div className="text-sm text-gray-500">
-            Total Dokumen: {requiredFiles.length} surat
+            Total Dokumen: {jobTypeConfig ? jobTypeConfig.max_dokumen : requiredFiles.length} surat
           </div>
         </CardHeader>
         <CardContent>
