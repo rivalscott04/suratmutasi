@@ -33,6 +33,7 @@ interface PengajuanFile {
   file_size: number;
   upload_status: string;
   verification_notes?: string;
+  blobUrl?: string;
 }
 
 interface PengajuanData {
@@ -235,9 +236,33 @@ const PengajuanDetail: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handlePreviewFile = (file: PengajuanFile) => {
-    setPreviewFile(file);
-    setShowPreview(true);
+  const handlePreviewFile = async (file: PengajuanFile) => {
+    try {
+      // Fetch file dengan token authorization
+      const response = await fetch(`/api/pengajuan/files/${file.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Gagal mengambil file');
+      }
+      
+      // Convert ke blob
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Set preview file dengan blob URL
+      setPreviewFile({
+        ...file,
+        blobUrl: blobUrl
+      });
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Error previewing file:', error);
+      setError('Gagal preview file. Silakan coba lagi.');
+    }
   };
 
   const handleDownloadFile = (file: PengajuanFile) => {
@@ -657,7 +682,13 @@ const PengajuanDetail: React.FC = () => {
       </Dialog>
 
       {/* Preview Modal */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+      <Dialog open={showPreview} onOpenChange={(open) => {
+        setShowPreview(open);
+        // Cleanup blob URL when modal closes
+        if (!open && previewFile?.blobUrl) {
+          URL.revokeObjectURL(previewFile.blobUrl);
+        }
+      }}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Preview File: {previewFile?.file_name}</DialogTitle>
@@ -669,7 +700,7 @@ const PengajuanDetail: React.FC = () => {
                   <span className="font-medium">{previewFile.file_name}</span>
                 </div>
                 <iframe
-                  src={`/api/pengajuan/files/${previewFile.id}`}
+                  src={previewFile.blobUrl || `/api/pengajuan/files/${previewFile.id}`}
                   className="w-full h-96 border-0"
                   title="File Preview"
                 />
