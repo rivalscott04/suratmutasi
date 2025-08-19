@@ -29,6 +29,7 @@ import { apiGet, apiDelete } from '@/lib/api';
 
 interface PengajuanData {
   id: string;
+  created_by?: string;
   pegawai: {
     nama: string;
     jabatan: string;
@@ -107,26 +108,26 @@ const PengajuanIndex: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleDelete = async () => {
+    const handleDelete = async () => {
     if (!pengajuanToDelete) return;
 
-         try {
-       setDeleting(true);
-       const response = await apiDelete(`/api/pengajuan/${pengajuanToDelete}`, token);
-       
-       if (response.success) {
-         fetchPengajuanData();
-         setDeleteDialogOpen(false);
-         setPengajuanToDelete(null);
-       } else {
-         setError(response.message || 'Gagal menghapus pengajuan');
-       }
-     } catch (error) {
-       console.error('Error deleting pengajuan:', error);
-       setError('Terjadi kesalahan saat menghapus pengajuan');
-     } finally {
-       setDeleting(false);
-     }
+    try {
+      setDeleting(true);
+      const response = await apiDelete(`/api/pengajuan/${pengajuanToDelete}`, token);
+      
+      if (response.success) {
+        fetchPengajuanData();
+        setDeleteDialogOpen(false);
+        setPengajuanToDelete(null);
+      } else {
+        setError(response.message || 'Gagal menghapus pengajuan');
+      }
+    } catch (error) {
+      console.error('Error deleting pengajuan:', error);
+      setError('Terjadi kesalahan saat menghapus pengajuan');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -171,6 +172,13 @@ const PengajuanIndex: React.FC = () => {
   };
 
   const isAdmin = user?.role === 'admin';
+  
+  // Debug info
+  console.log('🔍 Debug PengajuanIndex:', {
+    userRole: user?.role,
+    isAdmin,
+    userEmail: user?.email
+  });
 
   return (
     <div className="container mx-auto p-6">
@@ -338,6 +346,12 @@ const PengajuanIndex: React.FC = () => {
                                                                                           {(isAdmin || pengajuan.status === 'draft') && (
                                <DropdownMenuItem 
                                  onClick={() => {
+                                   console.log('🔍 Debug: Klik hapus untuk pengajuan:', {
+                                     id: pengajuan.id,
+                                     status: pengajuan.status,
+                                     isAdmin,
+                                     userRole: user?.role
+                                   });
                                    setPengajuanToDelete(pengajuan.id);
                                    setDeleteDialogOpen(true);
                                  }}
