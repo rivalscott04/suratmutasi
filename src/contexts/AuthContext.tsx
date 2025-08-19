@@ -61,13 +61,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
+    const storedOriginalToken = localStorage.getItem('originalToken');
+    const storedOriginalUser = localStorage.getItem('originalUser');
+    
     if (storedToken) {
       setToken(storedToken);
+      
+      // Restore original token and user if they exist (for impersonation)
+      if (storedOriginalToken && storedOriginalUser) {
+        try {
+          setOriginalToken(storedOriginalToken);
+          setOriginalUser(JSON.parse(storedOriginalUser));
+        } catch (error) {
+          console.error('Error parsing stored original user:', error);
+          // Clear invalid stored data
+          localStorage.removeItem('originalToken');
+          localStorage.removeItem('originalUser');
+        }
+      }
+      
       apiGet('/api/auth/me', storedToken)
         .then((res) => {
           setUser(res.user);
-          // Jika user sudah login, set originalUser juga
-          if (!originalUser) {
+          // Jika user sudah login dan tidak ada originalUser, set originalUser
+          if (!originalUser && !storedOriginalUser) {
             setOriginalUser(res.user);
           }
         })
@@ -90,6 +107,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setOriginalUser(res.user); // Set original user saat login
       setOriginalToken(null); // Reset impersonate
       localStorage.setItem('token', res.token);
+      
+      // Clean up impersonation data from localStorage
+      localStorage.removeItem('originalToken');
+      localStorage.removeItem('originalUser');
     } finally {
       setLoading(false);
     }
@@ -101,6 +122,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setOriginalUser(null);
     setOriginalToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('originalToken');
+    localStorage.removeItem('originalUser');
   };
 
   const refreshUser = async () => {
@@ -129,7 +152,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       // Simpan token admin asli jika belum
-      if (!originalToken) setOriginalToken(token);
+      if (!originalToken) {
+        setOriginalToken(token);
+        localStorage.setItem('originalToken', token);
+      }
+      
+      // Simpan original user jika belum
+      if (!originalUser) {
+        setOriginalUser(user);
+        localStorage.setItem('originalUser', JSON.stringify(user));
+      }
       
       const res = await apiPost('/api/auth/impersonate', { userId }, token);
       setToken(res.token);
@@ -165,6 +197,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setOriginalToken(null);
       localStorage.setItem('token', res.token);
       
+      // Clean up localStorage
+      localStorage.removeItem('originalToken');
+      localStorage.removeItem('originalUser');
+      
       console.log('Impersonation stopped successfully');
     } catch (error) {
       console.error('Error stopping impersonation:', error);
@@ -175,6 +211,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(originalUser);
         setOriginalToken(null);
         localStorage.setItem('token', originalToken);
+        
+        // Clean up localStorage
+        localStorage.removeItem('originalToken');
+        localStorage.removeItem('originalUser');
       }
     } finally {
       setLoading(false);

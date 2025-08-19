@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ interface PengajuanData {
     jabatan: string;
   };
   jenis_jabatan: string;
+  jabatan_id?: number;
   total_dokumen: number;
   status: string;
   files: PengajuanFile[];
@@ -79,9 +80,22 @@ const getFileCategory = (fileType: string): string => {
   return categoryMap[fileType] || 'Dokumen Lainnya';
 };
 
+// Helper function untuk menampilkan nama jabatan
+const getJabatanDisplayName = (jenisJabatan: string): string => {
+  const jabatanMap: Record<string, string> = {
+    'guru': 'Guru',
+    'eselon_iv': 'Eselon IV',
+    'fungsional': 'Fungsional',
+    'pelaksana': 'Pelaksana'
+  };
+  
+  return jabatanMap[jenisJabatan] || jenisJabatan;
+};
+
 const PengajuanFileUpload: React.FC = () => {
   const { pengajuanId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { token } = useAuth();
   const [pengajuan, setPengajuan] = useState<PengajuanData | null>(null);
   const [requiredFiles, setRequiredFiles] = useState<string[]>([]);
@@ -95,6 +109,10 @@ const PengajuanFileUpload: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [replacingFile, setReplacingFile] = useState<string | null>(null);
 
+  // Ambil data jabatan dari state navigation jika ada
+  const jabatanData = location.state?.jabatan;
+  const requiredFilesFromState = location.state?.requiredFiles;
+
   useEffect(() => {
     if (pengajuanId) {
       fetchPengajuanData();
@@ -107,7 +125,34 @@ const PengajuanFileUpload: React.FC = () => {
       const response = await apiGet(`/api/pengajuan/${pengajuanId}`, token);
       if (response.success) {
         setPengajuan(response.data.pengajuan);
-        setRequiredFiles(response.data.requiredFiles);
+        
+        // Prioritas 1: Gunakan requiredFiles dari state navigation (jika ada)
+        if (requiredFilesFromState && requiredFilesFromState.length > 0) {
+          setRequiredFiles(requiredFilesFromState);
+        }
+        // Prioritas 2: Gunakan requiredFiles dari response API
+        else if (response.data.requiredFiles && response.data.requiredFiles.length > 0) {
+          setRequiredFiles(response.data.requiredFiles);
+        }
+        // Prioritas 3: Ambil dari job type configuration berdasarkan jabatan_id
+        else if (response.data.pengajuan.jabatan_id) {
+          try {
+            const jobTypeResponse = await apiGet(`/api/job-type-configurations/${response.data.pengajuan.jabatan_id}`, token);
+            if (jobTypeResponse.success && jobTypeResponse.data.required_files) {
+              setRequiredFiles(jobTypeResponse.data.required_files);
+            } else {
+              // Fallback: gunakan required files default berdasarkan jenis jabatan
+              setRequiredFiles(getDefaultRequiredFiles(response.data.pengajuan.jenis_jabatan));
+            }
+          } catch (jobTypeError) {
+            console.error('Error fetching job type configuration:', jobTypeError);
+            // Fallback: gunakan required files default berdasarkan jenis jabatan
+            setRequiredFiles(getDefaultRequiredFiles(response.data.pengajuan.jenis_jabatan));
+          }
+        } else {
+          // Fallback: gunakan required files default berdasarkan jenis jabatan
+          setRequiredFiles(getDefaultRequiredFiles(response.data.pengajuan.jenis_jabatan));
+        }
       } else {
         setError(response.message || 'Gagal mengambil data pengajuan');
       }
@@ -117,6 +162,56 @@ const PengajuanFileUpload: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function untuk mendapatkan required files default berdasarkan jenis jabatan
+  const getDefaultRequiredFiles = (jenisJabatan: string): string[] => {
+    const defaultFiles: Record<string, string[]> = {
+      'guru': [
+        'surat_pengantar',
+        'surat_permohonan_dari_yang_bersangkutan',
+        'surat_keputusan_cpns',
+        'surat_keputusan_pns',
+        'surat_keputusan_kenaikan_pangkat_terakhir',
+        'surat_keputusan_jabatan_terakhir',
+        'skp_2_tahun_terakhir',
+        'surat_keterangan_bebas_temuan_inspektorat'
+      ],
+      'eselon_iv': [
+        'surat_pengantar',
+        'surat_permohonan_dari_yang_bersangkutan',
+        'surat_keputusan_cpns',
+        'surat_keputusan_pns',
+        'surat_keputusan_kenaikan_pangkat_terakhir',
+        'surat_keputusan_jabatan_terakhir',
+        'skp_2_tahun_terakhir',
+        'surat_keterangan_bebas_temuan_inspektorat',
+        'surat_keterangan_anjab_abk_instansi_asal',
+        'surat_keterangan_anjab_abk_instansi_penerima'
+      ],
+      'fungsional': [
+        'surat_pengantar',
+        'surat_permohonan_dari_yang_bersangkutan',
+        'surat_keputusan_cpns',
+        'surat_keputusan_pns',
+        'surat_keputusan_kenaikan_pangkat_terakhir',
+        'surat_keputusan_jabatan_terakhir',
+        'skp_2_tahun_terakhir',
+        'surat_keterangan_bebas_temuan_inspektorat'
+      ],
+      'pelaksana': [
+        'surat_pengantar',
+        'surat_permohonan_dari_yang_bersangkutan',
+        'surat_keputusan_cpns',
+        'surat_keputusan_pns',
+        'surat_keputusan_kenaikan_pangkat_terakhir',
+        'surat_keputusan_jabatan_terakhir',
+        'skp_2_tahun_terakhir',
+        'surat_keterangan_bebas_temuan_inspektorat'
+      ]
+    };
+    
+    return defaultFiles[jenisJabatan] || defaultFiles['pelaksana'];
   };
 
   const handleFileUpload = async (fileType: string, file: File) => {
@@ -267,10 +362,10 @@ const PengajuanFileUpload: React.FC = () => {
             {pengajuan.pegawai.nama} - {pengajuan.pegawai.jabatan}
           </div>
           <div className="text-sm text-gray-500">
-            Jenis Jabatan: {pengajuan.jenis_jabatan === 'guru' ? 'Guru' : pengajuan.jenis_jabatan === 'eselon_iv' ? 'Eselon IV' : pengajuan.jenis_jabatan === 'fungsional' ? 'Fungsional' : 'Pelaksana'}
+            Jenis Jabatan: {getJabatanDisplayName(pengajuan.jenis_jabatan)}
           </div>
           <div className="text-sm text-gray-500">
-            Total Dokumen: {pengajuan.total_dokumen} surat
+            Total Dokumen: {requiredFiles.length} surat
           </div>
         </CardHeader>
         <CardContent>
@@ -281,7 +376,14 @@ const PengajuanFileUpload: React.FC = () => {
           )}
 
           {/* File Upload Sections by Category */}
-          {Object.entries(groupedFiles).map(([category, fileTypes]) => (
+          {requiredFiles.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 mb-2">Tidak ada dokumen yang diperlukan</p>
+              <p className="text-sm text-gray-400">Silakan hubungi admin untuk mengkonfigurasi dokumen yang diperlukan</p>
+            </div>
+          ) : (
+            Object.entries(groupedFiles).map(([category, fileTypes]) => (
             <div key={category} className="mb-8">
               <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">
                 {category}
@@ -398,33 +500,36 @@ const PengajuanFileUpload: React.FC = () => {
                 })}
               </div>
             </div>
-          ))}
+          ))
+          )}
 
-          <div className="mt-8 pt-6 border-t">
-            <Button
-              onClick={handleSubmitPengajuan}
-              disabled={!isAllFilesUploaded() || submitting}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-              size="lg"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Pengajuan
-                </>
+          {requiredFiles.length > 0 && (
+            <div className="mt-8 pt-6 border-t">
+              <Button
+                onClick={handleSubmitPengajuan}
+                disabled={!isAllFilesUploaded() || submitting}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                size="lg"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Submit Pengajuan
+                  </>
+                )}
+              </Button>
+              {!isAllFilesUploaded() && (
+                <p className="text-sm text-gray-500 mt-2 text-center">
+                  Semua berkas harus diupload sebelum dapat submit
+                </p>
               )}
-            </Button>
-            {!isAllFilesUploaded() && (
-              <p className="text-sm text-gray-500 mt-2 text-center">
-                Semua berkas harus diupload sebelum dapat submit
-              </p>
-            )}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

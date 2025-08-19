@@ -111,11 +111,17 @@ const PengajuanSelect: React.FC = () => {
       setSubmitting(true);
       const response = await apiPost('/api/pengajuan', { 
         pegawai_nip: selectedPegawai,
-        jabatan_id: selectedJabatan.id 
+        jabatan_id: selectedJabatan.id,
+        jenis_jabatan: selectedJabatan.jenis_jabatan
       }, token);
       if (response.success) {
-        // Redirect ke halaman upload file
-        navigate(`/pengajuan/${response.data.id}/upload`);
+        // Redirect ke halaman upload file dengan data jabatan
+        navigate(`/pengajuan/${response.data.id}/upload`, {
+          state: { 
+            jabatan: selectedJabatan,
+            requiredFiles: selectedJabatan.required_files 
+          }
+        });
       } else {
         setError(response.message || 'Gagal membuat pengajuan');
       }

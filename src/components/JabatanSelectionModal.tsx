@@ -43,11 +43,9 @@ const JabatanSelectionModal: React.FC<JabatanSelectionModalProps> = ({
   const fetchJobTypes = async () => {
     try {
       setLoading(true);
-      const response = await apiGet('/api/job-type-configurations', token);
+      const response = await apiGet('/api/job-type-configurations?active_only=true', token);
       if (response.success) {
-        // Filter hanya yang aktif
-        const activeJobTypes = response.data.filter((job: JobTypeConfig) => job.is_active);
-        setJobTypes(activeJobTypes);
+        setJobTypes(response.data);
       }
     } catch (error) {
       console.error('Error fetching job types:', error);
