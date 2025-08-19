@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Upload, CheckCircle, X, FileText, Send, Loader2, AlertCircle, Eye, Download, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost, apiPut } from '@/lib/api';
@@ -103,6 +104,7 @@ const PengajuanFileUpload: React.FC = () => {
   const [uploadingStates, setUploadingStates] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -296,6 +298,7 @@ const PengajuanFileUpload: React.FC = () => {
       setError('Terjadi kesalahan saat submit pengajuan');
     } finally {
       setSubmitting(false);
+      setShowSubmitDialog(false);
     }
   };
 
@@ -542,22 +545,13 @@ const PengajuanFileUpload: React.FC = () => {
           {requiredFiles.length > 0 && (
             <div className="mt-8 pt-6 border-t">
               <Button
-                onClick={handleSubmitPengajuan}
+                onClick={() => setShowSubmitDialog(true)}
                 disabled={!isAllFilesUploaded() || submitting}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 size="lg"
               >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Submit Pengajuan
-                  </>
-                )}
+                <Send className="h-4 w-4 mr-2" />
+                Submit Pengajuan
               </Button>
               {!isAllFilesUploaded() && (
                 <p className="text-sm text-gray-500 mt-2 text-center">
@@ -568,6 +562,35 @@ const PengajuanFileUpload: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Submit Confirmation Dialog */}
+      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Pengajuan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin submit pengajuan ini? Setelah disubmit, pengajuan tidak dapat diedit lagi dan akan diproses oleh admin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSubmitPengajuan}
+              disabled={submitting}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Pengajuan'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Success Modal */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
