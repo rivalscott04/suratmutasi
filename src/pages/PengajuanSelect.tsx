@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, Send, Loader2, AlertCircle, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
+import { Search, Users, Send, Loader2, AlertCircle, ChevronLeft, ChevronRight, Briefcase, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 import JabatanSelectionModal from '@/components/JabatanSelectionModal';
@@ -184,6 +184,18 @@ const PengajuanSelect: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6">
+      {/* Header dengan button kembali */}
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => navigate('/pengajuan')}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Kembali ke Data Pengajuan
+        </Button>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

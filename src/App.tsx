@@ -17,6 +17,8 @@ import LetterPrintPreview from "./pages/LetterPrintPreview";
 import Users from "./pages/Users";
 import PengajuanSelect from "./pages/PengajuanSelect";
 import PengajuanFileUpload from "./components/PengajuanFileUpload";
+import PengajuanIndex from "./pages/PengajuanIndex";
+import PengajuanDetail from "./pages/PengajuanDetail";
 import JobTypeConfiguration from "./pages/JobTypeConfiguration";
 import { Lock } from 'lucide-react';
 
@@ -94,9 +96,19 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       <Route path="/letters/:id/preview" element={<LetterPrintPreview />} />
+      <Route path="/pengajuan" element={
+        <ProtectedRoute>
+          <PengajuanIndex />
+        </ProtectedRoute>
+      } />
       <Route path="/pengajuan/select" element={
         <ProtectedRoute>
           <PengajuanSelect />
+        </ProtectedRoute>
+      } />
+      <Route path="/pengajuan/:pengajuanId" element={
+        <ProtectedRoute>
+          <PengajuanDetail />
         </ProtectedRoute>
       } />
       <Route path="/pengajuan/:pengajuanId/upload" element={

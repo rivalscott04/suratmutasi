@@ -175,6 +175,18 @@ const PengajuanFileUpload: React.FC = () => {
 
   // Helper function untuk mendapatkan required files default berdasarkan jenis jabatan
   const getDefaultRequiredFiles = (jenisJabatan: string): string[] => {
+    // Fallback ke fungsional umum jika tidak ada konfigurasi spesifik
+    const fungsionalUmum = [
+      'surat_pengantar',
+      'surat_permohonan_dari_yang_bersangkutan',
+      'surat_keputusan_cpns',
+      'surat_keputusan_pns',
+      'surat_keputusan_kenaikan_pangkat_terakhir',
+      'surat_keputusan_jabatan_terakhir',
+      'skp_2_tahun_terakhir',
+      'surat_keterangan_bebas_temuan_inspektorat'
+    ];
+    
     const defaultFiles: Record<string, string[]> = {
       'guru': [
         'surat_pengantar',
@@ -198,16 +210,7 @@ const PengajuanFileUpload: React.FC = () => {
         'surat_keterangan_anjab_abk_instansi_asal',
         'surat_keterangan_anjab_abk_instansi_penerima'
       ],
-      'fungsional': [
-        'surat_pengantar',
-        'surat_permohonan_dari_yang_bersangkutan',
-        'surat_keputusan_cpns',
-        'surat_keputusan_pns',
-        'surat_keputusan_kenaikan_pangkat_terakhir',
-        'surat_keputusan_jabatan_terakhir',
-        'skp_2_tahun_terakhir',
-        'surat_keterangan_bebas_temuan_inspektorat'
-      ],
+      'fungsional': fungsionalUmum,
       'pelaksana': [
         'surat_pengantar',
         'surat_permohonan_dari_yang_bersangkutan',
@@ -215,12 +218,11 @@ const PengajuanFileUpload: React.FC = () => {
         'surat_keputusan_pns',
         'surat_keputusan_kenaikan_pangkat_terakhir',
         'surat_keputusan_jabatan_terakhir',
-        'skp_2_tahun_terakhir',
-        'surat_keterangan_bebas_temuan_inspektorat'
+        'skp_2_tahun_terakhir'
       ]
     };
     
-    return defaultFiles[jenisJabatan] || defaultFiles['pelaksana'];
+    return defaultFiles[jenisJabatan] || fungsionalUmum;
   };
 
   const handleFileUpload = async (fileType: string, file: File) => {

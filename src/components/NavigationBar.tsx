@@ -72,7 +72,7 @@ const NavigationBar = () => {
       { name: 'Dashboard', href: '/dashboard', icon: Home },
       { name: 'Template Generator', href: '/generator', icon: FileText },
       { name: 'Riwayat Surat', href: '/letters', icon: FileText },
-      { name: 'Pengajuan', href: '/pengajuan/select', icon: Upload },
+      { name: 'Data Pengajuan', href: '/pengajuan', icon: Upload },
     ];
 
     // Tambahkan Management User untuk admin
@@ -115,10 +115,13 @@ const NavigationBar = () => {
     }
   };
 
-  // Deteksi active, support /letters dan /letters/:id
+  // Deteksi active, support /letters dan /letters/:id, serta /pengajuan dan /pengajuan/:id
   const isActive = (path: string) => {
     if (path === '/letters') {
       return location.pathname.startsWith('/letters');
+    }
+    if (path === '/pengajuan') {
+      return location.pathname.startsWith('/pengajuan');
     }
     return location.pathname === path;
   };
