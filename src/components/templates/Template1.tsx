@@ -14,7 +14,7 @@ export const Template1: React.FC<Template1Props> = ({ data }) => {
         {/* Header */}
         <div style={{ position: 'relative', minHeight: 100, marginBottom: 20 }}>
           <img
-            src={import.meta.env.BASE_URL + 'logo-kemenag.png'}
+            src="/FE/logo-kemenag.png"
             alt="Logo Kementerian Agama"
             style={{ position: 'absolute', left: 0, top: 0, width: 100, height: 100, objectFit: 'contain' }}
           />

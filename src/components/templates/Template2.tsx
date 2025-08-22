@@ -13,7 +13,7 @@ export const Template2: React.FC<Template2Props> = ({ data }) => {
       {/* Header */}
       <div className="text-center mb-6 border-b-2 border-black pb-3 relative">
         <img 
-                      src={import.meta.env.BASE_URL + 'logo-kemenag.png'} 
+                      src="/FE/logo-kemenag.png" 
           alt="Logo Kementerian Agama" 
           className="w-20 h-20 absolute top-1 left-2"
           style={{ width: 100, height: 100 }}

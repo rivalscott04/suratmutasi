@@ -86,7 +86,7 @@ const SuratGenerator: React.FC = () => {
         <section className="sheet">
           {/* Header - EXACT COPY FROM HTML */}
           <div className="header">
-            <img src={import.meta.env.BASE_URL + 'logo-kemenag.png'} alt="Logo Kementerian Agama" className="logo" />
+            <img src="/FE/logo-kemenag.png" alt="Logo Kementerian Agama" className="logo" />
             <div className="header-content">
               <div className="header-text">
                 KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />

@@ -184,7 +184,7 @@ const NavigationBar = () => {
             <div className="flex items-center">
               <Link to="/dashboard" className="flex items-center space-x-3">
                 <img 
-                  src={import.meta.env.BASE_URL + 'logo-kemenag.png'}
+                  src="/FE/logo-kemenag.png"
                   alt="Kementerian Agama" 
                   className="h-8 w-8"
                   onError={(e) => {
