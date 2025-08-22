@@ -66,7 +66,8 @@ const JobTypeConfiguration: React.FC = () => {
     { id: 'peta_jabatan', name: 'Peta Jabatan', category: 'Dokumen Pendukung' },
     { id: 'surat_keterangan_tidak_tugas_belajar', name: 'Surat Keterangan Tidak Sedang Tugas Belajar', category: 'Dokumen Keterangan' },
     { id: 'sptjm_pimpinan_satker_asal', name: 'SPTJM Pimpinan Satker dari Asal', category: 'Dokumen Pernyataan' },
-    { id: 'sptjm_pimpinan_satker_penerima', name: 'SPTJM Pimpinan Satker dari Penerima', category: 'Dokumen Pernyataan' }
+    { id: 'sptjm_pimpinan_satker_penerima', name: 'SPTJM Pimpinan Satker dari Penerima', category: 'Dokumen Pernyataan' },
+    { id: 'surat_rekomendasi_instansi_pembina', name: 'Surat Rekomendasi Instansi Pembina', category: 'Dokumen Rekomendasi' }
   ];
 
   useEffect(() => {
@@ -125,6 +126,7 @@ const JobTypeConfiguration: React.FC = () => {
         'Surat Keterangan Tidak Sedang Tugas Belajar': 'surat_keterangan_tidak_tugas_belajar',
         'SPTJM Pimpinan Satker dari Asal': 'sptjm_pimpinan_satker_asal',
         'SPTJM Pimpinan Satker dari Penerima': 'sptjm_pimpinan_satker_penerima',
+        'Surat Rekomendasi Instansi Pembina': 'surat_rekomendasi_instansi_pembina',
         // Legacy database values (from migration files)
         'SK Pangkat Terakhir': 'surat_keputusan_kenaikan_pangkat_terakhir',
         'SK Jabatan Terakhir': 'surat_keputusan_jabatan_terakhir',
@@ -182,7 +184,8 @@ const JobTypeConfiguration: React.FC = () => {
           'peta_jabatan': 'Peta Jabatan',
           'surat_keterangan_tidak_tugas_belajar': 'Surat Keterangan Tidak Sedang Tugas Belajar',
           'sptjm_pimpinan_satker_asal': 'SPTJM Pimpinan Satker dari Asal',
-          'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima'
+          'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima',
+          'surat_rekomendasi_instansi_pembina': 'Surat Rekomendasi Instansi Pembina'
         };
         
         console.log('Frontend file type IDs:', fileTypeIds);

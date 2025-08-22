@@ -48,8 +48,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Fungsi untuk show session expired modal
     window.showSessionExpiredModal = () => {
+      // Cek apakah sedang di halaman login
+      const currentPath = window.location.pathname;
+      const isOnLoginPage = currentPath === '/' || currentPath === '/login';
+      
+      // Jika sedang di halaman login, langsung logout tanpa modal/redirect
+      if (isOnLoginPage) {
+        logout();
+        return;
+      }
+      
+      // Jika di halaman lain, logout dan redirect ke login
       logout();
-      // Redirect ke login page
       window.location.href = '/';
     };
 

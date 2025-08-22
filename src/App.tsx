@@ -21,6 +21,7 @@ import PengajuanIndex from "./pages/PengajuanIndex";
 import PengajuanDetail from "./pages/PengajuanDetail";
 import PengajuanEdit from "./pages/PengajuanEdit";
 import JobTypeConfiguration from "./pages/JobTypeConfiguration";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { Lock } from 'lucide-react';
 
 const queryClient = new QueryClient();
@@ -135,10 +136,89 @@ const AppRoutes = () => {
 const AppInner = () => {
   const [showSessionExpiredModal, setShowSessionExpiredModal] = React.useState(false);
   const navigate = useNavigate();
+  
   React.useEffect(() => {
-    window.showSessionExpiredModal = () => setShowSessionExpiredModal(true);
+    window.showSessionExpiredModal = () => {
+      // Cek apakah sedang di halaman login
+      const currentPath = window.location.pathname;
+      const isOnLoginPage = currentPath === '/' || currentPath === '/login';
+      
+      // Jika sedang di halaman login, jangan tampilkan modal
+      if (isOnLoginPage) {
+        return;
+      }
+      
+      // Jika di halaman lain, tampilkan modal
+      setShowSessionExpiredModal(true);
+    };
     window.dispatchTokenUpdate = (token) => {
       localStorage.setItem('token', token);
+    };
+
+    // Global error handler untuk catch 403 errors dari nginx atau server lain
+    const handleGlobalError = (event: ErrorEvent) => {
+      // Check if error is related to HTTP 403
+      if (event.error && event.error.message && 
+          (event.error.message.includes('403') || event.error.message.includes('Forbidden'))) {
+        event.preventDefault();
+        if (window.showSessionExpiredModal) {
+          window.showSessionExpiredModal();
+        }
+      }
+    };
+
+    // Handle unhandled promise rejections (fetch errors)
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason && typeof event.reason === 'object') {
+        const error = event.reason as any;
+        if (error.status === 403 || error.message?.includes('403') || error.message?.includes('Forbidden')) {
+          event.preventDefault();
+          if (window.showSessionExpiredModal) {
+            window.showSessionExpiredModal();
+          }
+        }
+      }
+    };
+
+    // Intercept fetch requests to catch 403 errors
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        const response = await originalFetch(...args);
+        
+        // If we get a 403 response, show session expired modal
+        if (response.status === 403) {
+          const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
+          // Don't intercept auth-related requests
+          if (!url.includes('/api/auth/')) {
+            if (window.showSessionExpiredModal) {
+              window.showSessionExpiredModal();
+            }
+            // Return a custom response to prevent the default 403 page
+            return new Response(JSON.stringify({ 
+              success: false, 
+              message: 'Sesi berakhir, silakan login kembali' 
+            }), {
+              status: 403,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        }
+        
+        return response;
+      } catch (error) {
+        // Re-throw the error if it's not a 403
+        throw error;
+      }
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      window.fetch = originalFetch;
     };
   }, []);
 
@@ -146,8 +226,8 @@ const AppInner = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         {showSessionExpiredModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center animate-fade-in">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center animate-scale-in">
               <Lock className="w-16 h-16 text-yellow-500 mb-4" />
               <h2 className="text-2xl font-bold mb-2 text-gray-900">Sesi Berakhir</h2>
               <p className="text-gray-600 mb-6 text-center">Sesi Anda telah habis. Silakan login kembali untuk melanjutkan.</p>
@@ -173,9 +253,11 @@ const AppInner = () => {
 };
 
 const App = () => (
-  <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/FE' : '/'}>
-    <AppInner />
-  </BrowserRouter>
+  <ErrorBoundary>
+    <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/FE' : '/'}>
+      <AppInner />
+    </BrowserRouter>
+  </ErrorBoundary>
 );
 
 export default App;

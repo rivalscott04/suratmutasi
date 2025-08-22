@@ -130,7 +130,8 @@ const PengajuanEdit: React.FC = () => {
       'peta_jabatan': 'Peta Jabatan',
       'surat_keterangan_tidak_tugas_belajar': 'Surat Keterangan Tidak Sedang Tugas Belajar',
       'sptjm_pimpinan_satker_asal': 'SPTJM Pimpinan Satker dari Asal',
-      'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima'
+      'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima',
+      'surat_rekomendasi_instansi_pembina': 'Surat Rekomendasi Instansi Pembina'
     };
     
     return fileTypeMap[fileType] || fileType.replace(/_/g, ' ').toUpperCase();

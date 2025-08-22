@@ -51,7 +51,8 @@ const getFileDisplayName = (fileType: string): string => {
     'peta_jabatan': 'Peta Jabatan',
     'surat_keterangan_tidak_tugas_belajar': 'Surat Keterangan Tidak Sedang Tugas Belajar',
     'sptjm_pimpinan_satker_asal': 'SPTJM Pimpinan Satker dari Asal',
-    'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima'
+    'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima',
+    'surat_rekomendasi_instansi_pembina': 'Surat Rekomendasi Instansi Pembina'
   };
   
   return fileTypeMap[fileType] || fileType.replace(/_/g, ' ').toUpperCase();
@@ -76,7 +77,8 @@ const getFileCategory = (fileType: string): string => {
     'peta_jabatan': 'Dokumen Pendukung',
     'surat_keterangan_tidak_tugas_belajar': 'Dokumen Keterangan',
     'sptjm_pimpinan_satker_asal': 'Dokumen Pernyataan',
-    'sptjm_pimpinan_satker_penerima': 'Dokumen Pernyataan'
+    'sptjm_pimpinan_satker_penerima': 'Dokumen Pernyataan',
+    'surat_rekomendasi_instansi_pembina': 'Dokumen Rekomendasi'
   };
   
   return categoryMap[fileType] || 'Dokumen Lainnya';

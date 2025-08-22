@@ -66,8 +66,9 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   } else {
     responseData = await res.text();
   }
-  // Jika token expired/401, coba refresh token
-  if (res.status === 401 && url !== '/api/auth/refresh') {
+  
+  // Handle authentication errors (401) and authorization errors (403) that might indicate session expiry
+  if ((res.status === 401 || res.status === 403) && url !== '/api/auth/refresh') {
     try {
       const refreshRes = await fetch(getBaseUrl() + '/api/auth/refresh', {
         method: 'POST',
@@ -110,6 +111,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
       throw new Error('Sesi berakhir, silakan login kembali');
     }
   }
+  
   if (!res.ok) {
     throw new Error(responseData?.message || res.statusText);
   }

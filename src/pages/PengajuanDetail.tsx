@@ -280,7 +280,8 @@ const PengajuanDetail: React.FC = () => {
       'peta_jabatan': 'Peta Jabatan',
       'surat_keterangan_tidak_tugas_belajar': 'Surat Keterangan Tidak Sedang Tugas Belajar',
       'sptjm_pimpinan_satker_asal': 'SPTJM Pimpinan Satker dari Asal',
-      'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima'
+      'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima',
+      'surat_rekomendasi_instansi_pembina': 'Surat Rekomendasi Instansi Pembina'
     };
     
     return fileTypeMap[fileType] || fileType.replace(/_/g, ' ').toUpperCase();
@@ -368,7 +369,7 @@ const PengajuanDetail: React.FC = () => {
           .info table { width: 100%; border-collapse: collapse; }
           .info td { padding: 5px; }
           .info td:first-child { font-weight: bold; width: 150px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: Arial, sans-serif; font-size: 10pt; }
           th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
           th { background-color: #f2f2f2; font-weight: bold; }
           .checkbox { width: 20px; height: 20px; }
@@ -410,6 +411,19 @@ const PengajuanDetail: React.FC = () => {
             `).join('')}
           </tbody>
         </table>
+        
+        <!-- Verification Footer -->
+        <div style="margin-top: 40px; padding: 15px; border-top: 2px solid #ddd; text-align: center; font-size: 10pt; color: #666;">
+          <div style="margin-bottom: 8px; font-weight: bold;">
+            ✓ Dokumen ini telah diverifikasi dan disetujui oleh Admin Kanwil
+          </div>
+          <div style="font-size: 9pt;">
+            Tanggal Approval: ${data.approved_at ? new Date(data.approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}
+          </div>
+          <div style="font-size: 8pt; margin-top: 5px;">
+            Sistem Informasi Generator Surat - Kementerian Agama
+          </div>
+        </div>
       </body>
       </html>
     `;
