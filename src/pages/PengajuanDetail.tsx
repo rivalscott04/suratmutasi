@@ -633,7 +633,7 @@ const PengajuanDetail: React.FC = () => {
                   <p className="text-gray-500">Belum ada dokumen yang diupload</p>
                                      {canEdit && (
                      <Button
-                       onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}
+                       onClick={() => navigate(pengajuan.status === 'draft' ? `/pengajuan/${pengajuan.id}/upload` : `/pengajuan/${pengajuan.id}/edit`)}
                        className="mt-4 bg-green-600 hover:bg-green-700 text-white"
                      >
                        <Edit className="h-4 w-4 mr-2" />
@@ -907,7 +907,7 @@ const PengajuanDetail: React.FC = () => {
                 
                                  {canEdit && (
                    <Button
-                     onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}
+                     onClick={() => navigate(pengajuan.status === 'draft' ? `/pengajuan/${pengajuan.id}/upload` : `/pengajuan/${pengajuan.id}/edit`)}
                      className="w-full bg-green-600 hover:bg-green-700 text-white"
                    >
                      <Edit className="h-4 w-4 mr-2" />
