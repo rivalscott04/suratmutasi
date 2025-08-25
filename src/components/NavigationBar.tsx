@@ -41,9 +41,14 @@ import {
   Loader2,
   UserCog,
   Upload,
-  CheckCircle
+  CheckCircle,
+  Search,
+  ArrowLeft,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 
 interface User {
@@ -65,6 +70,9 @@ const NavigationBar = () => {
   const [selectedUser, setSelectedUser] = useState('');
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+
 
   // Navigation items berdasarkan role
   const getNavigationItems = () => {
@@ -91,24 +99,28 @@ const NavigationBar = () => {
 
   // Fetch available users untuk impersonate
   useEffect(() => {
-    if (showImpersonateModal && isAdminKanwil) {
+    if (showUserSelectionModal && isAdminKanwil) {
       fetchAvailableUsers();
     }
-  }, [showImpersonateModal, isAdminKanwil]);
+  }, [showUserSelectionModal, isAdminKanwil]);
 
   const fetchAvailableUsers = async () => {
     if (!token) return;
     
     setLoadingUsers(true);
     try {
+      console.log(' Fetching users for impersonation...');
       const response = await apiGet('/api/users', token);
+      console.log(' Raw users response:', response);
+      
       // Filter out current user dan admin lain
       const filteredUsers = response.users.filter((u: User) => 
         u.id !== originalUser?.id && u.role !== 'admin'
       );
+      console.log('✅ Filtered users:', filteredUsers);
       setAvailableUsers(filteredUsers);
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      console.error('❌ Failed to fetch users:', error);
       setAvailableUsers([]);
     } finally {
       setLoadingUsers(false);
@@ -137,9 +149,20 @@ const NavigationBar = () => {
   };
 
   const handleImpersonateClick = () => {
-    setShowImpersonateModal(true);
+    setShowUserSelectionModal(true); // Buka modal selection dulu
     setIsMobileMenuOpen(false);
   };
+
+  const handleUserSelection = (userId: string) => {
+    setSelectedUser(userId);
+    setShowUserSelectionModal(false);
+    setShowImpersonateModal(true);
+  };
+
+  const filteredUsers = availableUsers.filter(user =>
+    user.full_name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+  );
 
   const handleImpersonateConfirm = async () => {
     if (selectedUser) {
@@ -414,7 +437,90 @@ const NavigationBar = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Impersonate User Modal */}
+      {/* User Selection Modal */}
+      <Dialog open={showUserSelectionModal} onOpenChange={setShowUserSelectionModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="w-5 h-5 text-blue-500" />
+              Pilih User untuk Impersonate
+            </DialogTitle>
+            <DialogDescription>
+              Pilih user yang ingin Anda impersonate dari daftar di bawah ini.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Cari user..."
+                value={userSearchTerm}
+                onChange={(e) => setUserSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* User List */}
+            <div className="max-h-96 overflow-y-auto border rounded-lg">
+              {loadingUsers ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                  <span className="text-sm text-gray-500">Loading users...</span>
+                </div>
+              ) : availableUsers.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  Tidak ada user yang tersedia untuk impersonation
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  Tidak ada user yang cocok dengan pencarian
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleUserSelection(user.id)}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <User className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{user.full_name}</div>
+                          <div className="text-xs text-gray-500">{user.email}</div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {user.role}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {user.office_id || 'No Office'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button 
+              onClick={() => setShowUserSelectionModal(false)}
+              variant="outline"
+            >
+              Batal
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Impersonate User Modal (Modified) */}
       <Dialog open={showImpersonateModal} onOpenChange={setShowImpersonateModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -423,43 +529,57 @@ const NavigationBar = () => {
               Impersonate User
             </DialogTitle>
             <DialogDescription>
-              Pilih user yang ingin Anda impersonate. Anda akan melihat sistem dari perspektif user tersebut.
+              Konfirmasi untuk impersonate user yang dipilih.
             </DialogDescription>
           </DialogHeader>
+          
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Pilih User:</label>
-              {loadingUsers ? (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  <span className="text-sm text-gray-500">Loading users...</span>
-                </div>
-              ) : (
-                <Select value={selectedUser} onValueChange={setSelectedUser}>
-                  <SelectTrigger className="w-full mt-1">
-                    <SelectValue placeholder="Pilih user untuk impersonate" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableUsers.length === 0 ? (
-                      <div className="px-2 py-1 text-sm text-gray-500">
-                        Tidak ada user yang tersedia
-                      </div>
-                    ) : (
-                      availableUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{user.full_name}</span>
-                            <span className="text-xs text-gray-500">{user.email}</span>
-                            <span className="text-xs text-gray-500">{user.role} - {user.office_id || 'No Office'}</span>
+            {selectedUser && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <User className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    {(() => {
+                      const selectedUserData = availableUsers.find(u => u.id === selectedUser);
+                      return selectedUserData ? (
+                        <>
+                          <div className="font-medium text-sm">{selectedUserData.full_name}</div>
+                          <div className="text-xs text-gray-500">{selectedUserData.email}</div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {selectedUserData.role}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {selectedUserData.office_id || 'No Office'}
+                            </span>
                           </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500">User tidak ditemukan</div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-center">
+              <Button 
+                onClick={() => {
+                  setShowImpersonateModal(false);
+                  setShowUserSelectionModal(true);
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Pilih User Lain
+              </Button>
             </div>
           </div>
+
           <div className="flex justify-end gap-2">
             <Button 
               onClick={() => setShowImpersonateModal(false)}
@@ -469,7 +589,7 @@ const NavigationBar = () => {
             </Button>
             <Button 
               onClick={handleImpersonateConfirm}
-              disabled={!selectedUser || loadingUsers}
+              disabled={!selectedUser}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Impersonate
