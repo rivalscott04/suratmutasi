@@ -148,7 +148,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">{employee.unit_kerja}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{employee.jabatan}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{employee.pangkat_gol}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{employee.golongan}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     <Button
                       variant="ghost"
@@ -229,7 +229,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
                 nip: formData.get('nip') as string,
                 unit_kerja: formData.get('unit_kerja') as string,
                 jabatan: formData.get('jabatan') as string,
-                pangkat_gol: formData.get('pangkat_gol') as string,
+                golongan: formData.get('golongan') as string,
               };
 
               if (editData) {
@@ -301,11 +301,11 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
                 />
               </div>
               <div>
-                <Label htmlFor="pangkat_gol">Pangkat/Golongan</Label>
+                <Label htmlFor="golongan">Pangkat/Golongan</Label>
                 <Input
-                  id="pangkat_gol"
-                  name="pangkat_gol"
-                  defaultValue={editData?.pangkat_gol || ''}
+                  id="golongan"
+                  name="golongan"
+                  defaultValue={editData?.golongan || ''}
                   required
                 />
               </div>
