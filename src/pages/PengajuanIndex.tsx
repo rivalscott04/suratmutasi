@@ -223,13 +223,16 @@ const PengajuanIndex: React.FC = () => {
                 {isAdmin ? 'Semua pengajuan mutasi PNS' : 'Pengajuan mutasi PNS Anda'}
               </p>
             </div>
-            <Button
-              onClick={() => navigate('/pengajuan/select')}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Pengajuan
-            </Button>
+            {/* Only show Add button for admin and operator, not for user role */}
+            {user?.role !== 'user' && (
+              <Button
+                onClick={() => navigate('/pengajuan/select')}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Pengajuan
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -309,7 +312,7 @@ const PengajuanIndex: React.FC = () => {
                     : 'Belum ada pengajuan'
                   }
                 </p>
-                {!searchTerm && statusFilter === 'all' && (
+                {!searchTerm && statusFilter === 'all' && user?.role !== 'user' && (
                   <Button
                     onClick={() => navigate('/pengajuan/select')}
                     className="bg-green-600 hover:bg-green-700 text-white"
@@ -389,18 +392,23 @@ const PengajuanIndex: React.FC = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Lihat Detail
                               </DropdownMenuItem>
-                                                             {pengajuan.status === 'draft' && (
-                                 <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}>
-                                   <Edit className="h-4 w-4 mr-2" />
-                                   Upload Dokumen
-                                 </DropdownMenuItem>
-                               )}
-                               {pengajuan.status === 'rejected' && (
-                                 <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}>
-                                   <Edit className="h-4 w-4 mr-2" />
-                                   Perbaiki Dokumen
-                                 </DropdownMenuItem>
-                               )}
+                              {/* Only show edit actions for admin and operator, not for user role */}
+                              {user?.role !== 'user' && (
+                                <>
+                                  {pengajuan.status === 'draft' && (
+                                    <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Upload Dokumen
+                                    </DropdownMenuItem>
+                                  )}
+                                  {pengajuan.status === 'rejected' && (
+                                    <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Perbaiki Dokumen
+                                    </DropdownMenuItem>
+                                  )}
+                                </>
+                              )}
                                {isAdmin && pengajuan.status === 'submitted' && (
                                  <>
                                    <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
@@ -413,24 +421,25 @@ const PengajuanIndex: React.FC = () => {
                                    </DropdownMenuItem>
                                  </>
                                )}
-                                                                                          {(isAdmin || pengajuan.status === 'draft') && (
-                               <DropdownMenuItem 
-                                 onClick={() => {
-                                   console.log('🔍 Debug: Klik hapus untuk pengajuan:', {
-                                     id: pengajuan.id,
-                                     status: pengajuan.status,
-                                     isAdmin,
-                                     userRole: user?.role
-                                   });
-                                   setPengajuanToDelete(pengajuan.id);
-                                   setDeleteDialogOpen(true);
-                                 }}
-                                 className="text-red-600"
-                               >
-                                 <Trash2 className="h-4 w-4 mr-2" />
-                                 Hapus
-                               </DropdownMenuItem>
-                             )}
+                                                                                          {/* Only show delete for admin and operator, not for user role */}
+                              {(isAdmin || (pengajuan.status === 'draft' && user?.role !== 'user')) && (
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    console.log('🔍 Debug: Klik hapus untuk pengajuan:', {
+                                      id: pengajuan.id,
+                                      status: pengajuan.status,
+                                      isAdmin,
+                                      userRole: user?.role
+                                    });
+                                    setPengajuanToDelete(pengajuan.id);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Hapus
+                                </DropdownMenuItem>
+                              )}
                              
                             </DropdownMenuContent>
                           </DropdownMenu>

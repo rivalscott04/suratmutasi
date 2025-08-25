@@ -117,14 +117,14 @@ const Letters: React.FC = () => {
     acc[officeName].push(surat);
     return acc;
   }, {});
-
+ 
   // Filter grouped by search
   const filteredGrouped: [string, any[]][] = Object.entries(groupedByOffice).filter(([officeName, suratList]) => {
     if (!search) return true;
     return officeName.toLowerCase().includes(search.toLowerCase()) ||
       suratList.some(surat => surat.letter_number.toLowerCase().includes(search.toLowerCase()));
   });
-
+  
   useEffect(() => {
     if (!token) return;
     setLoading(true);
@@ -693,12 +693,15 @@ const Letters: React.FC = () => {
                 </Button>
               ) : null;
             })()}
-            <Button asChild className="bg-green-600 hover:bg-green-700">
-              <Link to="/generator">
-                <FileText className="w-4 h-4 mr-2" />
-                Buat Surat Baru
-              </Link>
-            </Button>
+            {/* Only show "Buat Surat Baru" button for admin and operator, not for user role */}
+            {user?.role !== 'user' && (
+              <Button asChild className="bg-green-600 hover:bg-green-700">
+                <Link to="/generator">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Buat Surat Baru
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1077,7 +1080,8 @@ const Letters: React.FC = () => {
                                         >
                                           <Eye className="w-4 h-4" />
                                         </Button>
-                                        {(user?.role === 'admin' || letter.created_by === user?.id) && letter.template_id !== 2 && letter.template_id !== 9 && (
+                                        {/* Only show edit buttons for admin/operator */}
+                                        {user?.role !== 'user' && (user?.role === 'admin' || letter.created_by === user?.id) && letter.template_id !== 2 && letter.template_id !== 9 && (
                                           <Button
                                             variant="outline"
                                             size="sm"
@@ -1088,7 +1092,7 @@ const Letters: React.FC = () => {
                                             Edit Pejabat & Pegawai
                                           </Button>
                                         )}
-                                        {(user?.role === 'admin' || letter.created_by === user?.id) && (letter.template_id === 2 || letter.template_id === 9) && (
+                                        {user?.role !== 'user' && (user?.role === 'admin' || letter.created_by === user?.id) && (letter.template_id === 2 || letter.template_id === 9) && (
                                           <Button
                                             variant="outline"
                                             size="sm"
@@ -1099,14 +1103,17 @@ const Letters: React.FC = () => {
                                             Edit Pejabat
                                           </Button>
                                         )}
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleDeleteLetter(letter)}
-                                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                        {/* Only show delete button for admin */}
+                                        {user?.role === 'admin' && (user?.role === 'admin' || letter.created_by === user?.id) && (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleDeleteLetter(letter)}
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </Button>
+                                        )}
                                       </div>
                                     </TableCell>
                                   </TableRow>

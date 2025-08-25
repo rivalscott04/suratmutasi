@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { TemplateCard } from '@/components/TemplateCard';
 import { FileText } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 const TEMPLATES = [
@@ -66,6 +67,7 @@ const TEMPLATES = [
 
 const TemplateSelection = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleCreateLetter = (templateId: string) => {
     navigate(`/generator/create/${templateId}`);
@@ -92,14 +94,16 @@ const TemplateSelection = () => {
                 isSelected={false}
                 onSelect={() => {}}
               />
-              <Button 
-                onClick={() => handleCreateLetter(template.id)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                size="lg"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Buat Surat
-              </Button>
+              {user?.role !== 'user' && (
+                <Button 
+                  onClick={() => handleCreateLetter(template.id)}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  size="lg"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Buat Surat
+                </Button>
+              )}
             </div>
           ))}
         </div>

@@ -180,6 +180,7 @@ const Users = () => {
       }
       
       fetchUsers();
+      // Close form modal first, then show result modal
       setShowAddDialog(false);
       setShowEditDialog(false);
       setFormData({
@@ -194,6 +195,9 @@ const Users = () => {
       setAddUserMessage(error?.message || 'Gagal menyimpan user.');
     } finally {
       setIsSubmitting(false);
+      // Close form modal first, then show result modal
+      setShowAddDialog(false);
+      setShowEditDialog(false);
       setShowAddUserResultModal(true);
     }
   };
@@ -246,7 +250,7 @@ const Users = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Modal Hasil Tambah User */}
       {showAddUserResultModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center animate-fade-in">
             {addUserSuccess ? (
               <div className="flex flex-col items-center">
@@ -377,7 +381,7 @@ const Users = () => {
 
       {/* Add User Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" style={{ zIndex: 50 }}>
           <DialogHeader>
             <DialogTitle>Tambah User Baru</DialogTitle>
             <DialogDescription>
@@ -466,7 +470,7 @@ const Users = () => {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" style={{ zIndex: 50 }}>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
@@ -555,7 +559,7 @@ const Users = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent style={{ zIndex: 50 }}>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus User</AlertDialogTitle>
             <AlertDialogDescription>

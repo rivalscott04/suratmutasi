@@ -485,12 +485,13 @@ const PengajuanDetail: React.FC = () => {
 
   const isAdmin = user?.role === 'admin';
   const canEdit = (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected') && 
-                  (isAdmin || pengajuan?.created_by === user?.id);
-  const canDelete = pengajuan?.status === 'draft'; // User bisa hapus jika status draft
+                  (isAdmin || pengajuan?.created_by === user?.id) && 
+                  user?.role !== 'user'; // User dengan role 'user' tidak bisa edit
+  const canDelete = pengajuan?.status === 'draft' && user?.role !== 'user'; // User dengan role 'user' tidak bisa hapus
   const canApprove = isAdmin && pengajuan?.status === 'submitted';
   const canReject = isAdmin && pengajuan?.status === 'submitted';
   // Tampilkan tombol Ajukan Ulang saat status ditolak, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
-  const canShowResubmit = pengajuan?.status === 'rejected';
+  const canShowResubmit = pengajuan?.status === 'rejected' && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
   
 
   

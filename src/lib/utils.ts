@@ -69,3 +69,28 @@ export function getKanwilSettings() {
     website: ''
   };
 }
+
+// Role-based permission utilities
+export const canCreate = (userRole: string): boolean => {
+  return ['admin', 'operator'].includes(userRole);
+};
+
+export const canEdit = (userRole: string): boolean => {
+  return ['admin', 'operator'].includes(userRole);
+};
+
+export const canDelete = (userRole: string): boolean => {
+  return userRole === 'admin';
+};
+
+export const canManageUsers = (userRole: string): boolean => {
+  return userRole === 'admin';
+};
+
+export const canManageSettings = (userRole: string): boolean => {
+  return userRole === 'admin';
+};
+
+export const isViewOnly = (userRole: string): boolean => {
+  return userRole === 'user';
+};

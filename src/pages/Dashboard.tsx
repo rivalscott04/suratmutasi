@@ -89,21 +89,24 @@ const Dashboard = () => {
       description: 'Mulai membuat surat dengan template yang tersedia',
       icon: FileText,
       href: '/generator',
-      color: 'bg-blue-500'
+      color: 'bg-blue-500',
+      showForRoles: ['admin', 'operator'] // Only show for admin and operator
     },
     {
       title: 'Kelola Pegawai',
       description: 'Tambah atau edit data pegawai',
       icon: Users,
       href: '/settings',
-      color: 'bg-green-500'
+      color: 'bg-green-500',
+      showForRoles: ['admin', 'operator'] // Only show for admin and operator
     },
     {
       title: 'Lihat Laporan',
       description: 'Analisis penggunaan surat',
       icon: BarChart3,
       href: '/reports',
-      color: 'bg-purple-500'
+      color: 'bg-purple-500',
+      showForRoles: ['admin', 'operator', 'user'] // Show for all roles
     }
   ];
 
@@ -163,7 +166,9 @@ const Dashboard = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {quickActions.map((action, index) => {
+        {quickActions
+          .filter(action => action.showForRoles.includes(user?.role || ''))
+          .map((action, index) => {
           const Icon = action.icon;
           return (
             <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">

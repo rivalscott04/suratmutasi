@@ -44,14 +44,24 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return null;
+    return <div>Loading...</div>;
   }
   
-  if (!user) {
-    return <Navigate to="/" replace />;
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
   }
   
-  if (user.role !== 'admin') {
+  return <AppLayout>{children}</AppLayout>;
+};
+
+const AdminOperatorRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!user || (user.role !== 'admin' && user.role !== 'operator')) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -68,14 +78,14 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       <Route path="/generator" element={
-        <ProtectedRoute>
+        <AdminOperatorRoute>
           <TemplateSelection />
-        </ProtectedRoute>
+        </AdminOperatorRoute>
       } />
       <Route path="/generator/create/:templateId" element={
-        <ProtectedRoute>
+        <AdminOperatorRoute>
           <TemplateForm />
-        </ProtectedRoute>
+        </AdminOperatorRoute>
       } />
       <Route path="/users" element={
         <AdminRoute>
@@ -104,9 +114,9 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       <Route path="/pengajuan/select" element={
-        <ProtectedRoute>
+        <AdminOperatorRoute>
           <PengajuanSelect />
-        </ProtectedRoute>
+        </AdminOperatorRoute>
       } />
       <Route path="/pengajuan/:pengajuanId" element={
         <ProtectedRoute>
@@ -114,14 +124,14 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       <Route path="/pengajuan/:pengajuanId/upload" element={
-        <ProtectedRoute>
+        <AdminOperatorRoute>
           <PengajuanFileUpload />
-        </ProtectedRoute>
+        </AdminOperatorRoute>
       } />
       <Route path="/pengajuan/:pengajuanId/edit" element={
-        <ProtectedRoute>
+        <AdminOperatorRoute>
           <PengajuanEdit />
-        </ProtectedRoute>
+        </AdminOperatorRoute>
       } />
       <Route path="/job-type-configuration" element={
         <AdminRoute>
