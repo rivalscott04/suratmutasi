@@ -19,16 +19,53 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
   const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text);
+  const [copiedOpen, setCopiedOpen] = useState(false);
+  const handleCopy = async (e?: React.MouseEvent | React.KeyboardEvent) => {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try { document.execCommand('copy'); } catch {}
+      document.body.removeChild(textarea);
+    }
     setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
+    setCopiedOpen(true);
+    setTimeout(() => {
+      setCopied(false);
+      setCopiedOpen(false);
+    }, 1200);
   };
   return (
-    <span className={`inline-flex items-center gap-1 cursor-pointer group ${className || ''}`} onClick={handleCopy} title="Salin">
-      <span>{text}</span>
-      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Clipboard className="w-4 h-4 text-gray-400 group-hover:text-green-500" />}
-    </span>
+    <>
+      <button
+        type="button"
+        onClick={handleCopy}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCopy(e); }}
+        className={`inline-flex items-center gap-1 cursor-pointer group text-left ${className || ''}`}
+        title="Salin"
+      >
+        <span>{text}</span>
+        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Clipboard className="w-4 h-4 text-gray-400 group-hover:text-green-500" />}
+        <span aria-live="polite" className="sr-only">{copied ? 'Disalin' : ''}</span>
+      </button>
+
+      <Dialog open={copiedOpen} onOpenChange={setCopiedOpen}>
+        <DialogContent className="max-w-xs p-4 text-center">
+          <DialogHeader>
+            <DialogTitle className="text-green-600">Tersalin</DialogTitle>
+            <DialogDescription className="text-sm">Teks berhasil disalin.</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
@@ -142,7 +179,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
             <tbody className="divide-y divide-gray-200">
               {paginatedEmployees.map((employee) => (
                 <tr key={employee.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">{employee.nama}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900"><CopyableText text={employee.nama} /></td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     <CopyableText text={employee.nip} className="font-mono" />
                   </td>
