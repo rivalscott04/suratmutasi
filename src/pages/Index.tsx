@@ -35,22 +35,27 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isLoading) return;
+    
+    // Reset states before submission
     setIsLoading(true);
+    setShowErrorModal(false);
+    setShowSuccessModal(false);
 
     try {
       await login(email, password);
       setShowSuccessModal(true);
     } catch (error) {
+      console.error('Login error:', error);
       setErrorMessage('Email atau password yang Anda masukkan tidak sesuai. Silakan periksa kembali kredensial Anda.');
-      setShowErrorModal(true);
+      // Use setTimeout to ensure state update happens after current execution
+      setTimeout(() => {
+        setShowErrorModal(true);
+      }, 0);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSubmit(e as any);
     }
   };
 
@@ -74,7 +79,12 @@ const Login = () => {
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4 relative">
+          <form onSubmit={handleSubmit} className="space-y-4 relative" onKeyDown={(e) => {
+            // Prevent any default browser behavior that might interfere
+            if (e.key === 'Enter' && isLoading) {
+              e.preventDefault();
+            }
+          }}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -102,7 +112,6 @@ const Login = () => {
                   required
                   className="h-11 pr-10 relative z-20"
                   autoComplete="current-password"
-                  onKeyDown={handleKeyDown}
                 />
                 <button
                   type="button"
@@ -121,7 +130,7 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full h-11 text-base font-medium bg-green-600 hover:bg-green-700 text-white relative z-20"
+              className="w-full h-11 text-base font-medium bg-green-600 hover:bg-green-700 text-white relative z-20 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isLoading || !email || !password}
             >
               {isLoading ? (
@@ -164,8 +173,13 @@ const Login = () => {
       </Dialog>
 
       {/* Error Modal */}
-      <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={showErrorModal} onOpenChange={(open) => {
+        // Only allow closing via buttons, not by clicking outside
+        if (!open) {
+          setShowErrorModal(false);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <XCircle className="w-6 h-6 text-red-500" />

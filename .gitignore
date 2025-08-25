@@ -7,10 +7,21 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Backend logs
+backend/logs/
+backend/*.log
+backend/logs/*
+backend/storage/logs/
+backend/storage/logs/*
+backend/app.log
+backend/error.log
+backend/access.log
+backend/combined.log
+
 backend
 node_modules
 *.local
-
+logs
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

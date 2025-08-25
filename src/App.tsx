@@ -1,5 +1,5 @@
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
@@ -144,10 +144,12 @@ const AppRoutes = () => {
 };
 
 const AppInner = () => {
-  const [showSessionExpiredModal, setShowSessionExpiredModal] = React.useState(false);
+  const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
   const navigate = useNavigate();
   
-  React.useEffect(() => {
+  // Setup global error handling and session expired modal
+  useEffect(() => {
+    // Setup window functions
     window.showSessionExpiredModal = () => {
       // Cek apakah sedang di halaman login
       const currentPath = window.location.pathname;
@@ -161,18 +163,24 @@ const AppInner = () => {
       // Jika di halaman lain, tampilkan modal
       setShowSessionExpiredModal(true);
     };
+    
     window.dispatchTokenUpdate = (token) => {
       localStorage.setItem('token', token);
     };
 
-    // Global error handler untuk catch 403 errors dari nginx atau server lain
+    // Handle global errors
     const handleGlobalError = (event: ErrorEvent) => {
-      // Check if error is related to HTTP 403
-      if (event.error && event.error.message && 
-          (event.error.message.includes('403') || event.error.message.includes('Forbidden'))) {
-        event.preventDefault();
-        if (window.showSessionExpiredModal) {
-          window.showSessionExpiredModal();
+      if (event.error && typeof event.error === 'object') {
+        const error = event.error as any;
+        if (error.status === 403 || error.message?.includes('403') || error.message?.includes('Forbidden')) {
+          event.preventDefault();
+          // Check if user is on login page
+          const currentPath = window.location.pathname;
+          const isOnLoginPage = currentPath === '/' || currentPath === '/login';
+          
+          if (!isOnLoginPage && window.showSessionExpiredModal) {
+            window.showSessionExpiredModal();
+          }
         }
       }
     };
@@ -183,7 +191,11 @@ const AppInner = () => {
         const error = event.reason as any;
         if (error.status === 403 || error.message?.includes('403') || error.message?.includes('Forbidden')) {
           event.preventDefault();
-          if (window.showSessionExpiredModal) {
+          // Check if user is on login page
+          const currentPath = window.location.pathname;
+          const isOnLoginPage = currentPath === '/' || currentPath === '/login';
+          
+          if (!isOnLoginPage && window.showSessionExpiredModal) {
             window.showSessionExpiredModal();
           }
         }
@@ -201,7 +213,11 @@ const AppInner = () => {
           const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
           // Don't intercept auth-related requests
           if (!url.includes('/api/auth/')) {
-            if (window.showSessionExpiredModal) {
+            // Check if user is on login page
+            const currentPath = window.location.pathname;
+            const isOnLoginPage = currentPath === '/' || currentPath === '/login';
+            
+            if (!isOnLoginPage && window.showSessionExpiredModal) {
               window.showSessionExpiredModal();
             }
             // Return a custom response to prevent the default 403 page
@@ -229,6 +245,8 @@ const AppInner = () => {
       window.removeEventListener('error', handleGlobalError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
       window.fetch = originalFetch;
+      delete window.showSessionExpiredModal;
+      delete window.dispatchTokenUpdate;
     };
   }, []);
 
@@ -236,8 +254,8 @@ const AppInner = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         {showSessionExpiredModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center animate-scale-in">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in-0 duration-200">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center animate-in zoom-in-95 duration-200">
               <Lock className="w-16 h-16 text-yellow-500 mb-4" />
               <h2 className="text-2xl font-bold mb-2 text-gray-900">Sesi Berakhir</h2>
               <p className="text-gray-600 mb-6 text-center">Sesi Anda telah habis. Silakan login kembali untuk melanjutkan.</p>
