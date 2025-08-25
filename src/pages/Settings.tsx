@@ -17,7 +17,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+const CopyableText: React.FC<{ text: string; label?: string; className?: string }> = ({ text, label = 'Teks', className }) => {
   const [copied, setCopied] = useState(false);
   const [copiedOpen, setCopiedOpen] = useState(false);
   const handleCopy = async (e?: React.MouseEvent | React.KeyboardEvent) => {
@@ -41,7 +41,7 @@ const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, cl
     setTimeout(() => {
       setCopied(false);
       setCopiedOpen(false);
-    }, 1200);
+    }, 1400);
   };
   return (
     <>
@@ -50,19 +50,21 @@ const CopyableText: React.FC<{ text: string; className?: string }> = ({ text, cl
         onClick={handleCopy}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCopy(e); }}
         className={`inline-flex items-center gap-1 cursor-pointer group text-left ${className || ''}`}
-        title="Salin"
+        title={`Salin ${label}`}
       >
         <span>{text}</span>
-        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Clipboard className="w-4 h-4 text-gray-400 group-hover:text-green-500" />}
-        <span aria-live="polite" className="sr-only">{copied ? 'Disalin' : ''}</span>
+        {copied ? <Check className="w-4 h-4 text-green-600" /> : <Clipboard className="w-4 h-4 text-gray-400 group-hover:text-green-600" />}
+        <span aria-live="polite" className="sr-only">{copied ? `${label} disalin` : ''}</span>
       </button>
 
       <Dialog open={copiedOpen} onOpenChange={setCopiedOpen}>
-        <DialogContent className="max-w-xs p-4 text-center">
-          <DialogHeader>
-            <DialogTitle className="text-green-600">Tersalin</DialogTitle>
-            <DialogDescription className="text-sm">Teks berhasil disalin.</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-sm min-w-[320px] px-4 py-3 pr-12 rounded-xl border shadow-lg">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-50 text-green-600 border border-green-500">
+              <Check className="h-4 w-4" />
+            </span>
+            <span className="text-sm font-semibold">Berhasil menyalin {label}</span>
+          </div>
         </DialogContent>
       </Dialog>
     </>
@@ -179,9 +181,9 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
             <tbody className="divide-y divide-gray-200">
               {paginatedEmployees.map((employee) => (
                 <tr key={employee.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900"><CopyableText text={employee.nama} /></td>
+                  <td className="px-4 py-3 text-sm text-gray-900"><CopyableText text={employee.nama} label="Nama" /></td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    <CopyableText text={employee.nip} className="font-mono" />
+                    <CopyableText text={employee.nip} label="NIP" className="font-mono" />
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">{employee.unit_kerja}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{employee.jabatan}</td>
