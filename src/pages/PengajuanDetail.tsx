@@ -59,7 +59,7 @@ interface PengajuanData {
   jenis_jabatan: string;
   jabatan_id?: number;
   total_dokumen: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected';
   catatan?: string;
   rejection_reason?: string;
   rejected_by?: string;
@@ -237,7 +237,7 @@ const PengajuanDetail: React.FC = () => {
       submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800', icon: FileText },
       approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800', icon: CheckCircle },
       rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800', icon: XCircle },
-      resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800', icon: RefreshCw }
+
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
@@ -496,7 +496,13 @@ const PengajuanDetail: React.FC = () => {
 
   
   // Check if all files are approved
-  const allFilesApproved = pengajuan?.files.every(file => file.verification_status === 'approved') ?? false;
+  // Untuk status 'submitted' setelah rejection, anggap file yang baru diupload sudah sesuai (karena user sudah memperbaiki)
+  const allFilesApproved = pengajuan?.files.every(file => 
+    pengajuan.status === 'submitted' 
+      ? (file.verification_status === 'approved' || file.verification_status === 'pending')
+      : file.verification_status === 'approved'
+  ) ?? false;
+  
   const hasRejectedFiles = pengajuan?.files.some(file => file.verification_status === 'rejected') ?? false;
   const resubmitEnabled = !hasRejectedFiles; // aktif jika tidak ada file yang masih ditolak
 
@@ -820,18 +826,7 @@ const PengajuanDetail: React.FC = () => {
                    </div>
                  )}
 
-                 {pengajuan.status === 'resubmitted' && pengajuan.resubmitted_at && (
-                   <div className="flex items-start gap-4">
-                     <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                     <div className="flex-1 space-y-1">
-                       <p className="font-medium">Diajukan Ulang</p>
-                       <p className="text-sm text-gray-600">{formatDate(pengajuan.resubmitted_at)}</p>
-                       {pengajuan.resubmitted_by && (
-                         <p className="text-xs text-gray-500">oleh {pengajuan.resubmitted_by}</p>
-                       )}
-                     </div>
-                   </div>
-                 )}
+                 
               </div>
             </CardContent>
           </Card>
