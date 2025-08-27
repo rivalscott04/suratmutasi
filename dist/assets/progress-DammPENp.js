@@ -1,0 +1,2 @@
+import{j as r,bf as a,bg as t}from"./ui-vendor-e65TVV2G.js";import{r as f}from"./react-vendor-C8WR5ETM.js";import{c as i}from"./index-D7IRgPP-.js";const m=f.forwardRef(({className:s,value:e,...l},o)=>r.jsx(a,{ref:o,className:i("relative h-4 w-full overflow-hidden rounded-full bg-gray-200",s),...l,children:r.jsx(t,{className:"h-full w-full flex-1 bg-green-600 transition-all",style:{transform:`translateX(-${100-(e||0)}%)`}})}));m.displayName=a.displayName;export{m as P};
+//# sourceMappingURL=progress-DammPENp.js.map

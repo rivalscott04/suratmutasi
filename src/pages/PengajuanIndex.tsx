@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
@@ -65,9 +66,25 @@ const PengajuanIndex: React.FC = () => {
   const [filterOptions, setFilterOptions] = useState<{
     users: Array<{ id: string; email: string; full_name: string }>;
   }>({ users: [] });
+  const [groupedByKabkota, setGroupedByKabkota] = useState<Record<string, PengajuanData[]>>({});
 
   const itemsPerPage = 10;
   const isAdmin = user?.role === 'admin';
+
+  // Fallback grouping on client for admin when server doesn't provide grouping
+  const clientGroupedByKabkota: Record<string, PengajuanData[]> = React.useMemo(() => {
+    if (!isAdmin) return {};
+    if (Object.keys(groupedByKabkota).length > 0) return groupedByKabkota;
+    if (!pengajuanList || pengajuanList.length === 0) return {};
+    return pengajuanList.reduce((acc: Record<string, PengajuanData[]>, item: any) => {
+      const kab = (item.office && (item.office.kabkota || item.office.name)) || (item.pegawai && (item.pegawai as any).induk_unit) || (item.pegawai as any)?.unit_kerja || 'Lainnya';
+      if (!acc[kab]) acc[kab] = [];
+      acc[kab].push(item);
+      return acc;
+    }, {});
+  }, [isAdmin, groupedByKabkota, pengajuanList]);
+
+  
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -97,6 +114,14 @@ const PengajuanIndex: React.FC = () => {
              const response = await apiGet(`/api/pengajuan?${params}`, token);
         if (response.success) {
           setPengajuanList(response.data.data || response.data);
+          if (isAdmin) {
+            const grouped = (response.data && response.data.grouped_by_kabkota) || (response.grouped_by_kabkota);
+            if (grouped) {
+              setGroupedByKabkota(grouped as Record<string, PengajuanData[]>);
+            } else {
+              setGroupedByKabkota({});
+            }
+          }
           setTotalPages(response.data.pagination?.totalPages || 1);
           setTotalItems(response.data.pagination?.total || 0);
         } else {
@@ -163,11 +188,11 @@ const PengajuanIndex: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800', icon: Clock },
-      submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800', icon: FileText },
-      approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800', icon: CheckCircle },
-      rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800', icon: XCircle },
-      resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800', icon: Clock }
+      draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800 hover:bg-gray-200', icon: Clock },
+      submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800 hover:bg-blue-200', icon: FileText },
+      approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800 hover:bg-green-200', icon: CheckCircle },
+      rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800 hover:bg-red-200', icon: XCircle },
+      resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
@@ -296,7 +321,155 @@ const PengajuanIndex: React.FC = () => {
              </div>
            </div>
 
-          {/* Table */}
+          {/* Admin grouped view */}
+          {isAdmin && Object.keys(clientGroupedByKabkota).length > 0 ? (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600">Tergabung berdasarkan kabupaten/kota</div>
+              <Accordion type="multiple" className="w-full">
+                {Object.entries(clientGroupedByKabkota).map(([kab, items]) => (
+                  <AccordionItem key={kab} value={kab} className="border rounded-lg">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="font-medium">{kab}</div>
+                        <Badge variant="secondary" className="ml-2">{items.length}</Badge>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-0">
+                      <div className="border-t">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Pegawai</TableHead>
+                              <TableHead>Jenis Jabatan</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Dokumen</TableHead>
+                              <TableHead>Pembuat</TableHead>
+                              <TableHead>Tanggal Dibuat</TableHead>
+                              <TableHead className="text-right">Aksi</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {items.map((pengajuan) => (
+                              <TableRow key={pengajuan.id} className="hover:bg-gray-50">
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{pengajuan.pegawai.nama}</div>
+                                    <div className="text-sm text-gray-500">{pengajuan.pegawai.jabatan}</div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">{getJabatanDisplayName(pengajuan.jenis_jabatan)}</Badge>
+                                </TableCell>
+                                <TableCell>{getStatusBadge(pengajuan.status)}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm">{pengajuan.files.length}</span>
+                                    <span className="text-gray-500">/</span>
+                                    <span className="text-sm">{pengajuan.total_dokumen}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-sm text-gray-600">
+                                    {(() => {
+                                      const u = filterOptions.users.find(u => u.id === pengajuan.created_by);
+                                      if (u) return u.full_name || u.email || 'Unknown User';
+                                      return pengajuan.created_by?.includes('@') ? pengajuan.created_by : 'Unknown User';
+                                    })()}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-sm text-gray-600">{formatDate(pengajuan.created_at)}</div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        Lihat Detail
+                                      </DropdownMenuItem>
+                                      {pengajuan.status === 'submitted' && (
+                                        <>
+                                          <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                            <CheckCircle className="h-4 w-4 mr-2" />
+                                            Setujui
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                            <XCircle className="h-4 w-4 mr-2" />
+                                            Tolak
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                      <DropdownMenuItem 
+                                        onClick={() => {
+                                          setPengajuanToDelete(pengajuan.id);
+                                          setDeleteDialogOpen(true);
+                                        }}
+                                        className="text-red-600"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Hapus
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+              {/* Pagination for admin grouped view */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border rounded-lg bg-gray-50">
+                  <div className="text-sm text-gray-700">
+                    Menampilkan {((currentPage - 1) * itemsPerPage) + 1} sampai {Math.min(currentPage * itemsPerPage, totalItems)} dari {totalItems} pengajuan
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Sebelumnya
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Selanjutnya
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+          /* Table */
           <div className="border rounded-lg overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-12">
@@ -495,6 +668,7 @@ const PengajuanIndex: React.FC = () => {
               </>
             )}
           </div>
+          )}
         </CardContent>
       </Card>
 

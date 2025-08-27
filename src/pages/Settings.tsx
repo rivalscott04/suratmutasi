@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown, FileText, Trash2 } from 'lucide-react';
+import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown, FileText, Trash2, FolderOpen } from 'lucide-react';
 import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
@@ -221,7 +222,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="border-green-600 text-green-600 hover:bg-green-50 disabled:border-gray-300 disabled:text-gray-400"
+              className="border-green-600 text-green-600 hover:bg-green-100 hover:text-green-800 disabled:border-gray-300 disabled:text-gray-400"
             >
               Sebelumnya
             </Button>
@@ -351,7 +352,13 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
             </div>
             <DialogFooter className="mt-6">
               <DialogClose asChild>
-                <Button type="button" variant="outline">Batal</Button>
+                              <Button 
+                type="button" 
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-200 hover:text-gray-900"
+              >
+                Batal
+              </Button>
               </DialogClose>
               <Button type="submit" disabled={saving} className="bg-green-600 hover:bg-green-700 text-white">
                 {saving ? 'Menyimpan...' : (editData ? 'Update' : 'Simpan')}
@@ -447,6 +454,9 @@ const Settings = () => {
     { id: 'surat_persetujuan_mutasi_asal', name: 'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki', category: 'Dokumen Persetujuan' },
     { id: 'surat_lolos_butuh_ppk', name: 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju', category: 'Dokumen Persetujuan' },
     { id: 'peta_jabatan', name: 'Peta Jabatan', category: 'Dokumen Pendukung' },
+    { id: 'hasil_assessment', name: 'Hasil Assessment', category: 'Dokumen Pendukung' },
+    { id: 'anjab_abk_instansi_asal', name: 'Anjab/Abk Instansi Asal', category: 'Dokumen Pendukung' },
+    { id: 'anjab_abk_instansi_penerima', name: 'Anjab/Abk Instansi Penerima', category: 'Dokumen Pendukung' },
     { id: 'surat_keterangan_tidak_tugas_belajar', name: 'Surat Keterangan Tidak Sedang Tugas Belajar', category: 'Dokumen Keterangan' },
     { id: 'sptjm_pimpinan_satker_asal', name: 'SPTJM Pimpinan Satker dari Asal', category: 'Dokumen Pernyataan' },
     { id: 'sptjm_pimpinan_satker_penerima', name: 'SPTJM Pimpinan Satker dari Penerima', category: 'Dokumen Pernyataan' },
@@ -524,6 +534,73 @@ const Settings = () => {
       fetchJobConfigs();
     }
   }, [token, user?.role]);
+
+  // Load mock admin wilayah configs
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      const mockConfigs = [
+        {
+          id: 1,
+          name: 'Penghulu',
+          description: 'Konfigurasi file wajib untuk jabatan penghulu',
+          files: [
+            {
+              id: 1,
+              name: 'Surat Pernyataan Persetujuan dari Kepala Wilayah Kementerian Agama Provinsi',
+              description: 'Surat pernyataan persetujuan dari kepala wilayah',
+              is_required: true,
+              is_active: true
+            },
+            {
+              id: 2,
+              name: 'Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar atau Ikatan Dinas',
+              description: 'Surat pernyataan tidak sedang menjalani tugas belajar',
+              is_required: true,
+              is_active: true
+            },
+            {
+              id: 6,
+              name: 'Surat Pengantar Permohonan Rekomendasi Pindah Tugas',
+              description: 'Surat pengantar permohonan rekomendasi (pilih varian)',
+              is_required: true,
+              is_active: true,
+              variant: '6.3'
+            }
+          ],
+          is_active: true,
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        {
+          id: 2,
+          name: 'Kepala Kantor',
+          description: 'Konfigurasi file wajib untuk jabatan kepala kantor',
+          files: [
+            {
+              id: 1,
+              name: 'Surat Pernyataan Persetujuan dari Kepala Wilayah Kementerian Agama Provinsi',
+              description: 'Surat pernyataan persetujuan dari kepala wilayah',
+              is_required: true,
+              is_active: true
+            },
+            {
+              id: 6,
+              name: 'Surat Pengantar Permohonan Rekomendasi Pindah Tugas',
+              description: 'Surat pengantar permohonan rekomendasi (pilih varian)',
+              is_required: true,
+              is_active: true,
+              variant: '6.1'
+            }
+          ],
+          is_active: true,
+          created_at: '2024-01-14T15:30:00Z',
+          updated_at: '2024-01-14T15:30:00Z'
+        }
+      ];
+      setAdminWilayahConfigs(mockConfigs);
+      setAdminWilayahConfigLoading(false);
+    }
+  }, [user?.role]);
 
   const fetchJobConfigs = async () => {
     try {
@@ -649,6 +726,89 @@ const Settings = () => {
     });
   };
 
+  // Admin Wilayah Configuration state
+  const [adminWilayahConfigs, setAdminWilayahConfigs] = useState<any[]>([]);
+  const [adminWilayahConfigLoading, setAdminWilayahConfigLoading] = useState(true);
+  const [showAdminWilayahConfigDialog, setShowAdminWilayahConfigDialog] = useState(false);
+  const [editingAdminWilayahConfig, setEditingAdminWilayahConfig] = useState<any | null>(null);
+  const [adminWilayahConfigSaving, setAdminWilayahConfigSaving] = useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [configToDelete, setConfigToDelete] = useState<any | null>(null);
+
+  // Admin Wilayah config form state
+  const [adminWilayahConfigForm, setAdminWilayahConfigForm] = useState({
+    name: '',
+    selectedFiles: {} as { [key: number]: boolean },
+    selectedVariant: '6.1',
+    is_active: true
+  });
+
+  // Available admin wilayah files
+  const adminWilayahFiles = [
+    {
+      id: 1,
+      name: 'Surat Pernyataan Persetujuan dari Kepala Wilayah Kementerian Agama Provinsi',
+      description: 'Surat pernyataan persetujuan dari kepala wilayah',
+      is_required: true,
+      is_active: true
+    },
+    {
+      id: 2,
+      name: 'Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar atau Ikatan Dinas',
+      description: 'Surat pernyataan tidak sedang menjalani tugas belajar',
+      is_required: true,
+      is_active: true
+    },
+    {
+      id: 3,
+      name: 'Surat Pernyataan Tidak Sedang Dijatuhi Hukuman Disiplin Tingkat Sedang atau Berat',
+      description: 'Surat pernyataan tidak sedang dijatuhi hukuman disiplin',
+      is_required: true,
+      is_active: true
+    },
+    {
+      id: 4,
+      name: 'Surat Pernyataan Tidak Sedang Menjalani Proses Pidana atau Pernah Dipidana Penjara',
+      description: 'Surat pernyataan tidak sedang menjalani proses pidana',
+      is_required: true,
+      is_active: true
+    },
+    {
+      id: 5,
+      name: 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+      description: 'Surat pernyataan tanggung jawab mutlak',
+      is_required: true,
+      is_active: true
+    },
+    {
+      id: 6,
+      name: 'Surat Pengantar Permohonan Rekomendasi Pindah Tugas',
+      description: 'Surat pengantar permohonan rekomendasi (pilih varian)',
+      is_required: true,
+      is_active: true,
+      variant: '6.1'
+    },
+    {
+      id: 7,
+      name: 'Surat Pengantar Permohonan Penerbitan SK Pindah Tugas kepada Kepala Biro SDM Sekjen Kemenag RI',
+      description: 'Surat pengantar permohonan penerbitan SK (untuk JFT Madya)',
+      is_required: true,
+      is_active: true
+    }
+  ];
+
+  const variantOptions = [
+    { value: '6.1', label: '6.1 - Permohonan Persetujuan/Rekomendasi Pengangkatan ke Dalam Jabatan Pengawas (Untuk Eselon)' },
+    { value: '6.2', label: '6.2 - Permohonan Pindah Tugas ke Dirjen Bimas Islam (Untuk Penyuluh Agama Islam)' },
+    { value: '6.3', label: '6.3 - Permohonan Pindah Tugas ke Dirjen PENDIS (Untuk Guru, Pengawas, Kepala Madrasah)' },
+    { value: '6.4', label: '6.4 - Permohonan Pindah Tugas ke Kepala Biro SDM Sekjen Kemenag RI (Untuk Analis SDM dan Asesor)' },
+    { value: '6.5', label: '6.5 - Permohonan Pindah Tugas ke Kepala Biro Umum Sekjen Kemenag RI (Arsiparis, BARJAS)' },
+    { value: '6.6', label: '6.6 - Permohonan Pindah Tugas ke Kepala Biro Keuangan dan BMN Sekjen Kemenag RI (Untuk Analis Pengelolaan Keuangan APBN dan Pranata Keuangan APBN)' },
+    { value: '6.7', label: '6.7 - Permohonan Pindah Tugas ke Kepala Biro Perencanaan dan Penganggaran Sekjen Kemenag RI (Untuk Perencana)' },
+    { value: '6.8', label: '6.8 - Permohonan Pindah Tugas ke Kepala Biro Humas (Untuk Pranata Humas)' },
+    { value: '6.9', label: '6.9 - Permohonan Pindah Tugas ke Kepala BMP-PSDM Kemenag RI (Untuk Analis Kebijakan)' }
+  ];
+
   // Job Configuration functions
   const handleAddJobConfig = () => {
     setJobConfigForm({
@@ -761,6 +921,115 @@ const Settings = () => {
     });
   };
 
+  // Admin Wilayah Configuration functions
+  const handleAddAdminWilayahConfig = () => {
+    setAdminWilayahConfigForm({
+      name: '',
+      selectedFiles: {},
+      selectedVariant: '6.1',
+      is_active: true
+    });
+    setEditingAdminWilayahConfig(null);
+    setShowAdminWilayahConfigDialog(true);
+  };
+
+  const handleEditAdminWilayahConfig = (config: any) => {
+    const selectedFilesMap: { [key: number]: boolean } = {};
+    config.files.forEach((file: any) => {
+      selectedFilesMap[file.id] = true;
+    });
+    
+    setAdminWilayahConfigForm({
+      name: config.name,
+      selectedFiles: selectedFilesMap,
+      selectedVariant: config.files.find((f: any) => f.id === 6)?.variant || '6.1',
+      is_active: config.is_active
+    });
+    setEditingAdminWilayahConfig(config);
+    setShowAdminWilayahConfigDialog(true);
+  };
+
+  const handleDeleteAdminWilayahConfig = (config: any) => {
+    setConfigToDelete(config);
+    setShowDeleteConfirmDialog(true);
+  };
+
+  const confirmDeleteAdminWilayahConfig = () => {
+    if (configToDelete) {
+      setAdminWilayahConfigs(prev => prev.filter(config => config.id !== configToDelete.id));
+      setConfigToDelete(null);
+    }
+    setShowDeleteConfirmDialog(false);
+  };
+
+  const handleAdminWilayahFileToggle = (fileId: number) => {
+    setAdminWilayahConfigForm(prev => ({
+      ...prev,
+      selectedFiles: {
+        ...prev.selectedFiles,
+        [fileId]: !prev.selectedFiles[fileId]
+      }
+    }));
+  };
+
+  const handleAdminWilayahVariantChange = (value: string) => {
+    setAdminWilayahConfigForm(prev => ({
+      ...prev,
+      selectedVariant: value
+    }));
+  };
+
+  const handleSaveAdminWilayahConfig = () => {
+    if (!adminWilayahConfigForm.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Nama konfigurasi harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedFileList = adminWilayahFiles.filter(file => adminWilayahConfigForm.selectedFiles[file.id]);
+    
+    // Update file 6 dengan varian yang dipilih
+    const updatedFileList = selectedFileList.map(file => {
+      if (file.id === 6) {
+        return { ...file, variant: adminWilayahConfigForm.selectedVariant };
+      }
+      return file;
+    });
+
+    if (editingAdminWilayahConfig) {
+      // Update existing config
+      setAdminWilayahConfigs(prev => prev.map(config => 
+        config.id === editingAdminWilayahConfig.id 
+          ? { 
+              ...config, 
+              name: adminWilayahConfigForm.name,
+              files: updatedFileList, 
+              is_active: adminWilayahConfigForm.is_active,
+              updated_at: new Date().toISOString() 
+            }
+          : config
+      ));
+    } else {
+      // Add new config
+      const newConfig = {
+        id: Date.now(),
+        name: adminWilayahConfigForm.name,
+        description: `Konfigurasi file wajib dengan ${updatedFileList.length} file`,
+        files: updatedFileList,
+        is_active: adminWilayahConfigForm.is_active,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setAdminWilayahConfigs(prev => [...prev, newConfig]);
+    }
+    
+    setShowAdminWilayahConfigDialog(false);
+    setEditingAdminWilayahConfig(null);
+  };
+
   if (!user) {
     return <div className="py-8 text-center">Silakan login terlebih dahulu.</div>;
   }
@@ -777,7 +1046,7 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="office" className="space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
           <TabsTrigger value="office" className="flex items-center space-x-2">
             <Building className="h-4 w-4" />
             <span>Kantor</span>
@@ -786,6 +1055,12 @@ const Settings = () => {
             <TabsTrigger value="job-config" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
               <span>Konfigurasi Jabatan</span>
+            </TabsTrigger>
+          )}
+          {isAdmin && (
+            <TabsTrigger value="admin-wilayah-config" className="flex items-center space-x-2">
+              <FolderOpen className="h-4 w-4 text-gray-600" />
+              <span>Konfigurasi Berkas Admin Wilayah</span>
             </TabsTrigger>
           )}
           <TabsTrigger value="employees" className="flex items-center space-x-2">
@@ -980,7 +1255,7 @@ const Settings = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handleEditJobConfig(config)}
-                              className="border-green-600 text-green-600 hover:bg-green-50"
+                              className="border-green-600 text-green-600 hover:bg-green-100 hover:text-green-800"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -1015,6 +1290,93 @@ const Settings = () => {
           </TabsContent>
         )}
 
+        {isAdmin && (
+          <TabsContent value="admin-wilayah-config">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Konfigurasi Berkas Admin Wilayah</CardTitle>
+                  <Button onClick={handleAddAdminWilayahConfig} className="bg-green-600 hover:bg-green-700 text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Tambah Konfigurasi
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {adminWilayahConfigLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-1/3 mb-2" />
+                    <Skeleton className="h-10 w-full mb-2" />
+                    <Skeleton className="h-10 w-full mb-2" />
+                    <Skeleton className="h-10 w-full mb-2" />
+                  </div>
+                ) : adminWilayahConfigs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada konfigurasi berkas admin wilayah</h3>
+                    <p className="text-gray-500 mb-4">Mulai dengan menambahkan konfigurasi berkas admin wilayah pertama Anda.</p>
+                    <Button onClick={handleAddAdminWilayahConfig} className="bg-green-600 hover:bg-green-700 text-white">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Tambah Konfigurasi Pertama
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {adminWilayahConfigs.map((config) => (
+                      <div key={config.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-medium text-gray-900">{config.name}</h3>
+                            <p className="text-sm text-gray-500">{config.description}</p>
+                            <p className="text-sm text-gray-500">
+                              {config.files?.length || 0} berkas diperlukan
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge 
+                              className={config.is_active 
+                                ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100" 
+                                : "bg-red-100 text-red-800 border-red-200 hover:bg-red-100"
+                              }
+                            >
+                              {config.is_active ? "Aktif" : "Nonaktif"}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditAdminWilayahConfig(config)}
+                              className="border-green-600 text-green-600 hover:bg-green-50"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteAdminWilayahConfig(config)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        {config.files && config.files.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {config.files.map((file: any) => (
+                              <Badge key={file.id} variant="outline" className="text-xs">
+                                {file.id === 6 ? `${file.name} (${file.variant})` : file.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
         <TabsContent value="employees">
           <Card>
             <CardHeader>
@@ -1033,11 +1395,19 @@ const Settings = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button onClick={handleExportData} variant="outline" className="flex items-center gap-2">
+                <Button 
+                  onClick={handleExportData} 
+                  variant="outline" 
+                  className="flex items-center gap-2 border-green-600 text-green-600 hover:bg-green-100 hover:text-green-800"
+                >
                   <Download className="h-4 w-4" />
                   Export Data
                 </Button>
-                <Button onClick={handleImportData} variant="outline" className="flex items-center gap-2">
+                <Button 
+                  onClick={handleImportData} 
+                  variant="outline" 
+                  className="flex items-center gap-2 border-green-600 text-green-600 hover:bg-green-100 hover:text-green-800"
+                >
                   <Upload className="h-4 w-4" />
                   Import Data
                 </Button>
@@ -1055,7 +1425,12 @@ const Settings = () => {
             <AlertDialogDescription>{officeModalMessage}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowOfficeModal(false)}>Tutup</AlertDialogAction>
+            <AlertDialogAction 
+              onClick={() => setShowOfficeModal(false)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Tutup
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1068,7 +1443,12 @@ const Settings = () => {
             <AlertDialogDescription>{kanwilModalMessage}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowKanwilModal(false)}>Tutup</AlertDialogAction>
+            <AlertDialogAction 
+              onClick={() => setShowKanwilModal(false)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Tutup
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1171,6 +1551,171 @@ const Settings = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Admin Wilayah Configuration Dialog */}
+      <Dialog open={showAdminWilayahConfigDialog} onOpenChange={setShowAdminWilayahConfigDialog}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAdminWilayahConfig ? 'Edit Konfigurasi Berkas Admin Wilayah' : 'Tambah Konfigurasi Berkas Admin Wilayah Baru'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingAdminWilayahConfig 
+                ? 'Edit konfigurasi berkas wajib untuk admin wilayah'
+                : 'Buat konfigurasi berkas wajib baru untuk admin wilayah'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Active Status - dipindah ke atas */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="admin-wilayah-is-active"
+                checked={adminWilayahConfigForm.is_active}
+                onCheckedChange={(checked) => setAdminWilayahConfigForm({
+                  ...adminWilayahConfigForm,
+                  is_active: checked
+                })}
+                className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-gray-200"
+              />
+              <Label htmlFor="admin-wilayah-is-active">Aktif</Label>
+            </div>
+
+            {/* Nama Konfigurasi */}
+            <div className="space-y-2">
+              <Label htmlFor="admin-wilayah-config-name">Nama Konfigurasi *</Label>
+              <Input
+                id="admin-wilayah-config-name"
+                value={adminWilayahConfigForm.name}
+                onChange={(e) => setAdminWilayahConfigForm({
+                  ...adminWilayahConfigForm,
+                  name: e.target.value
+                })}
+                placeholder="Contoh: Penghulu, Kepala Kantor, Kepala Seksi"
+              />
+            </div>
+
+            {/* File Selection dengan 2 kolom */}
+            <div>
+              <Label>Pilih Berkas Wajib Admin Wilayah</Label>
+              <div className="mt-2 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {adminWilayahFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      className={`p-3 border rounded-lg transition-all duration-200 ${
+                        adminWilayahConfigForm.selectedFiles[file.id]
+                          ? 'border-green-200 bg-green-50'
+                          : 'border-gray-200 hover:border-green-300'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={adminWilayahConfigForm.selectedFiles[file.id] || false}
+                          onCheckedChange={() => handleAdminWilayahFileToggle(file.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="font-medium text-gray-900 text-sm">{file.name}</h4>
+                            {file.is_required && (
+                              <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">Wajib</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-600">{file.description}</p>
+                          
+                          {/* Varian selector untuk file 6 */}
+                          {file.id === 6 && adminWilayahConfigForm.selectedFiles[file.id] && (
+                            <div className="mt-3">
+                              <Label className="text-xs font-medium text-gray-700 mb-2 block">
+                                Pilih Varian File 6:
+                              </Label>
+                              <Select 
+                                value={adminWilayahConfigForm.selectedVariant} 
+                                onValueChange={handleAdminWilayahVariantChange}
+                              >
+                                <SelectTrigger className="w-full focus:ring-green-500 focus:border-green-500">
+                                  <SelectValue placeholder="Pilih varian 6.x..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {variantOptions.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-2">Ringkasan Konfigurasi</h4>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>Total berkas yang dipilih: {Object.values(adminWilayahConfigForm.selectedFiles).filter(Boolean).length}</p>
+                <p>Berkas wajib: {adminWilayahFiles.filter(f => f.is_required && adminWilayahConfigForm.selectedFiles[f.id]).length}</p>
+                {adminWilayahConfigForm.selectedFiles[6] && (
+                  <p>Varian berkas 6: {adminWilayahConfigForm.selectedVariant}</p>
+                )}
+              </div>
+            </div>
+
+
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAdminWilayahConfigDialog(false)}
+              className="border-gray-300 text-gray-700 hover:bg-gray-200 hover:text-gray-900"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleSaveAdminWilayahConfig}
+              disabled={adminWilayahConfigSaving}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {adminWilayahConfigSaving ? 'Menyimpan...' : (editingAdminWilayahConfig ? 'Update' : 'Simpan')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus konfigurasi "{configToDelete?.name}"? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setShowDeleteConfirmDialog(false)}
+              className="bg-gray-100 hover:bg-gray-300 text-gray-900 border border-gray-300"
+            >
+              Batal
+            </AlertDialogAction>
+            <AlertDialogAction 
+              onClick={confirmDeleteAdminWilayahConfig}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

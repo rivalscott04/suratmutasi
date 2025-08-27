@@ -381,7 +381,7 @@ const Users = () => {
 
       {/* Add User Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-md" style={{ zIndex: 50 }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Tambah User Baru</DialogTitle>
             <DialogDescription>
@@ -470,7 +470,7 @@ const Users = () => {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-md" style={{ zIndex: 50 }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
@@ -559,7 +559,7 @@ const Users = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent style={{ zIndex: 50 }}>
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus User</AlertDialogTitle>
             <AlertDialogDescription>

@@ -6,7 +6,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'operator' | 'user';
+  role: 'admin' | 'operator' | 'user' | 'admin_wilayah';
   office_id?: string | null;
   kabkota?: string;
   original_admin_id?: string; // For impersonation tracking
@@ -46,26 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('token', newToken);
     };
 
-    // Fungsi untuk show session expired modal
-    window.showSessionExpiredModal = () => {
-      // Cek apakah sedang di halaman login
-      const currentPath = window.location.pathname;
-      const isOnLoginPage = currentPath === '/' || currentPath === '/login';
-      
-      // Jika sedang di halaman login, langsung logout tanpa modal/redirect
-      if (isOnLoginPage) {
-        logout();
-        return;
-      }
-      
-      // Jika di halaman lain, logout dan redirect ke login
-      logout();
-      window.location.href = '/';
-    };
-
     return () => {
       delete window.dispatchTokenUpdate;
-      delete window.showSessionExpiredModal;
     };
   }, []);
 
@@ -261,6 +243,5 @@ export const useAuth = () => useContext(AuthContext);
 declare global {
   interface Window {
     dispatchTokenUpdate?: (token: string) => void;
-    showSessionExpiredModal?: () => void;
   }
 }

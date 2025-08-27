@@ -90,6 +90,17 @@ const NavigationBar = () => {
       baseItems.push({ name: 'Management User', href: '/users', icon: UserCog });
     }
 
+    // Tambahkan menu khusus untuk admin wilayah
+    const isAdminWilayah = isImpersonating ? originalUser?.role === 'admin_wilayah' : user?.role === 'admin_wilayah';
+    if (isAdminWilayah) {
+      baseItems.push(
+        { name: 'Dashboard Admin Wilayah', href: '/admin-wilayah/dashboard', icon: Home },
+        { name: 'Upload File', href: '/admin-wilayah/upload', icon: Upload }
+      );
+    }
+
+
+
     baseItems.push({ name: 'Settings', href: '/settings', icon: Settings });
 
     return baseItems;

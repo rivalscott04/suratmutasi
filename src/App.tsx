@@ -1,28 +1,39 @@
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
-import Dashboard from "./pages/Dashboard";
-import Settings from "./pages/Settings";
-import TemplateSelection from "./pages/TemplateSelection";
-import TemplateForm from "./pages/TemplateForm";
-import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
-import LetterDetail from "./pages/LetterDetail";
-import Letters from "./pages/Letters";
-import LetterPrintPreview from "./pages/LetterPrintPreview";
-import Users from "./pages/Users";
-import PengajuanSelect from "./pages/PengajuanSelect";
-import PengajuanFileUpload from "./components/PengajuanFileUpload";
-import PengajuanIndex from "./pages/PengajuanIndex";
-import PengajuanDetail from "./pages/PengajuanDetail";
-import PengajuanEdit from "./pages/PengajuanEdit";
-import JobTypeConfiguration from "./pages/JobTypeConfiguration";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Lock } from 'lucide-react';
+
+// Lazy load all pages for code splitting
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Settings = lazy(() => import("./pages/Settings"));
+const TemplateSelection = lazy(() => import("./pages/TemplateSelection"));
+const TemplateForm = lazy(() => import("./pages/TemplateForm"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Index = lazy(() => import("./pages/Index"));
+const LetterDetail = lazy(() => import("./pages/LetterDetail"));
+const Letters = lazy(() => import("./pages/Letters"));
+const LetterPrintPreview = lazy(() => import("./pages/LetterPrintPreview"));
+const Users = lazy(() => import("./pages/Users"));
+const PengajuanSelect = lazy(() => import("./pages/PengajuanSelect"));
+const PengajuanFileUpload = lazy(() => import("./components/PengajuanFileUpload"));
+const PengajuanIndex = lazy(() => import("./pages/PengajuanIndex"));
+const PengajuanDetail = lazy(() => import("./pages/PengajuanDetail"));
+const PengajuanEdit = lazy(() => import("./pages/PengajuanEdit"));
+const JobTypeConfiguration = lazy(() => import("./pages/JobTypeConfiguration"));
+const AdminWilayahDashboard = lazy(() => import("./pages/AdminWilayahDashboard"));
+const AdminWilayahUploadPage = lazy(() => import("./pages/AdminWilayahUploadPage"));
+
+// Loading component for Suspense fallback
+const PageLoading = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -68,77 +79,147 @@ const AdminOperatorRoute = ({ children }: { children: React.ReactNode }) => {
   return <AppLayout>{children}</AppLayout>;
 };
 
+const AdminWilayahRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!user || user.role !== 'admin_wilayah') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <AppLayout>{children}</AppLayout>;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={
+        <Suspense fallback={<PageLoading />}>
+          <Index />
+        </Suspense>
+      } />
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <Dashboard />
+          <Suspense fallback={<PageLoading />}>
+            <Dashboard />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/generator" element={
         <AdminOperatorRoute>
-          <TemplateSelection />
+          <Suspense fallback={<PageLoading />}>
+            <TemplateSelection />
+          </Suspense>
         </AdminOperatorRoute>
       } />
       <Route path="/generator/create/:templateId" element={
         <AdminOperatorRoute>
-          <TemplateForm />
+          <Suspense fallback={<PageLoading />}>
+            <TemplateForm />
+          </Suspense>
         </AdminOperatorRoute>
       } />
       <Route path="/users" element={
         <AdminRoute>
-          <Users />
+          <Suspense fallback={<PageLoading />}>
+            <Users />
+          </Suspense>
         </AdminRoute>
       } />
       <Route path="/settings" element={
         <ProtectedRoute>
-          <Settings />
+          <Suspense fallback={<PageLoading />}>
+            <Settings />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/letters/:id" element={
         <ProtectedRoute>
-          <LetterDetail />
+          <Suspense fallback={<PageLoading />}>
+            <LetterDetail />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/letters" element={
         <ProtectedRoute>
-          <Letters />
+          <Suspense fallback={<PageLoading />}>
+            <Letters />
+          </Suspense>
         </ProtectedRoute>
       } />
-      <Route path="/letters/:id/preview" element={<LetterPrintPreview />} />
+      <Route path="/letters/:id/preview" element={
+        <Suspense fallback={<PageLoading />}>
+          <LetterPrintPreview />
+        </Suspense>
+      } />
       <Route path="/pengajuan" element={
         <ProtectedRoute>
-          <PengajuanIndex />
+          <Suspense fallback={<PageLoading />}>
+            <PengajuanIndex />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/pengajuan/select" element={
         <AdminOperatorRoute>
-          <PengajuanSelect />
+          <Suspense fallback={<PageLoading />}>
+            <PengajuanSelect />
+          </Suspense>
         </AdminOperatorRoute>
       } />
       <Route path="/pengajuan/:pengajuanId" element={
         <ProtectedRoute>
-          <PengajuanDetail />
+          <Suspense fallback={<PageLoading />}>
+            <PengajuanDetail />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/pengajuan/:pengajuanId/upload" element={
         <AdminOperatorRoute>
-          <PengajuanFileUpload />
+          <Suspense fallback={<PageLoading />}>
+            <PengajuanFileUpload />
+          </Suspense>
         </AdminOperatorRoute>
       } />
       <Route path="/pengajuan/:pengajuanId/edit" element={
         <AdminOperatorRoute>
-          <PengajuanEdit />
+          <Suspense fallback={<PageLoading />}>
+            <PengajuanEdit />
+          </Suspense>
         </AdminOperatorRoute>
       } />
       <Route path="/job-type-configuration" element={
         <AdminRoute>
-          <JobTypeConfiguration />
+          <Suspense fallback={<PageLoading />}>
+            <JobTypeConfiguration />
+          </Suspense>
         </AdminRoute>
       } />
-      <Route path="*" element={<NotFound />} />
+      
+      {/* Admin Wilayah Routes */}
+      <Route path="/admin-wilayah/dashboard" element={
+        <AdminWilayahRoute>
+          <Suspense fallback={<PageLoading />}>
+            <AdminWilayahDashboard />
+          </Suspense>
+        </AdminWilayahRoute>
+      } />
+      <Route path="/admin-wilayah/upload/:pengajuanId" element={
+        <AdminWilayahRoute>
+          <Suspense fallback={<PageLoading />}>
+            <AdminWilayahUploadPage />
+          </Suspense>
+        </AdminWilayahRoute>
+      } />
+      
+      
+      <Route path="*" element={
+        <Suspense fallback={<PageLoading />}>
+          <NotFound />
+        </Suspense>
+      } />
     </Routes>
   );
 };
@@ -146,6 +227,7 @@ const AppRoutes = () => {
 const AppInner = () => {
   const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth();
   
   // Setup global error handling and session expired modal
   useEffect(() => {
@@ -262,7 +344,7 @@ const AppInner = () => {
               <button
                 className="w-full py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white text-lg font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
                 onClick={() => {
-                  localStorage.removeItem('token');
+                  logout(); // Panggil logout dari AuthContext
                   setShowSessionExpiredModal(false);
                   navigate('/', { replace: true });
                 }}

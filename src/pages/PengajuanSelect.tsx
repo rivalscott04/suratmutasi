@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Users, Send, Loader2, AlertCircle, ChevronLeft, ChevronRight, Briefcase, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
-import JabatanSelectionModal from '@/components/JabatanSelectionModal';
+
 
 interface PegawaiData {
   nip: string;
@@ -44,7 +44,7 @@ const PengajuanSelect: React.FC = () => {
   const [itemsPerPage] = useState(5);
 
   // Jabatan selection state
-  const [showJabatanModal, setShowJabatanModal] = useState(false);
+  const [jobTypes, setJobTypes] = useState<JobTypeConfig[]>([]);
   const [selectedJabatan, setSelectedJabatan] = useState<JobTypeConfig | null>(null);
 
   useEffect(() => {
@@ -52,10 +52,23 @@ const PengajuanSelect: React.FC = () => {
       navigate('/');
       return;
     }
-    // Tidak perlu fetch data pegawai di awal, tunggu sampai jabatan dipilih
+    // Fetch job types saat komponen dimount
+    fetchJobTypes();
   }, [isAuthenticated, navigate]);
 
 
+
+  const fetchJobTypes = async () => {
+    try {
+      const response = await apiGet('/api/job-type-configurations?active_only=true', token);
+      if (response.success) {
+        setJobTypes(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching job types:', error);
+      setError('Gagal mengambil data jabatan');
+    }
+  };
 
   const handleJabatanSelected = (jabatan: JobTypeConfig) => {
     setSelectedJabatan(jabatan);
@@ -216,23 +229,57 @@ const PengajuanSelect: React.FC = () => {
             </div>
           )}
 
-                     {/* Jabatan Selection */}
+                     {/* Jabatan Selection Cards */}
            {!selectedJabatan && (
-             <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-lg text-center">
-               <Briefcase className="h-12 w-12 text-green-500 mx-auto mb-4" />
-               <h3 className="text-lg font-semibold text-green-800 mb-2">
-                 Pilih Jabatan Terlebih Dahulu
+             <div className="mb-6">
+               <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                 Pilih Jabatan untuk Pengajuan
                </h3>
-               <p className="text-green-600 mb-4">
-                 Untuk memulai pengajuan, Anda perlu memilih jenis jabatan yang akan diajukan.
-               </p>
-               <Button
-                 onClick={() => setShowJabatanModal(true)}
-                 className="bg-green-600 hover:bg-green-700 text-white"
-               >
-                 <Briefcase className="h-4 w-4 mr-2" />
-                 Pilih Jabatan
-               </Button>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {jobTypes.map((job) => (
+                   <Card
+                     key={job.id}
+                     className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-green-300"
+                     onClick={() => handleJabatanSelected(job)}
+                   >
+                     <CardHeader className="pb-3">
+                       <div className="flex justify-between items-start">
+                         <CardTitle className="text-lg font-semibold text-gray-800">
+                           {job.jenis_jabatan}
+                         </CardTitle>
+                         <Badge 
+                           variant="secondary" 
+                           className="bg-green-100 text-green-800 border-green-200"
+                         >
+                           Aktif
+                         </Badge>
+                       </div>
+                     </CardHeader>
+                     <CardContent className="pt-0">
+                       <div className="space-y-3">
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm text-gray-600">Total Dokumen:</span>
+                           <span className="font-semibold text-green-600">{job.max_dokumen}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm text-gray-600">Min Dokumen:</span>
+                           <span className="text-sm text-gray-500">{job.min_dokumen}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm text-gray-600">Jenis File:</span>
+                           <span className="text-sm text-gray-500">{job.required_files.length} jenis</span>
+                         </div>
+                       </div>
+                     </CardContent>
+                   </Card>
+                 ))}
+               </div>
+               {jobTypes.length === 0 && (
+                 <div className="text-center py-8">
+                   <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                   <p className="text-gray-500">Tidak ada jabatan yang tersedia</p>
+                 </div>
+               )}
              </div>
            )}
 
@@ -255,10 +302,10 @@ const PengajuanSelect: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowJabatanModal(true)}
+                    onClick={() => setSelectedJabatan(null)}
                     className="border-green-600 text-green-600 hover:bg-green-50"
                   >
-                    Ubah Jabatan
+                    Pilih Jabatan Lain
                   </Button>
                 </div>
               </div>
@@ -285,14 +332,7 @@ const PengajuanSelect: React.FC = () => {
 
           {/* DataTable */}
           <div className="border rounded-lg overflow-hidden">
-            {!selectedJabatan ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Pilih jabatan terlebih dahulu untuk melihat daftar pegawai</p>
-                </div>
-              </div>
-            ) : loading ? (
+            {!selectedJabatan ? null : loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin mr-2" />
                 <span>Memuat data pegawai...</span>
@@ -446,12 +486,7 @@ const PengajuanSelect: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Jabatan Selection Modal */}
-      <JabatanSelectionModal
-        open={showJabatanModal}
-        onOpenChange={setShowJabatanModal}
-        onJabatanSelected={handleJabatanSelected}
-      />
+
     </div>
   );
 };

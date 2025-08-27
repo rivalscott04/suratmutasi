@@ -93,10 +93,10 @@ const Dashboard = () => {
       showForRoles: ['admin', 'operator'] // Only show for admin and operator
     },
     {
-      title: 'Kelola Pegawai',
-      description: 'Tambah atau edit data pegawai',
+      title: 'Pengajuan',
+      description: 'Buat pengajuan jabatan untuk pegawai',
       icon: Users,
-      href: '/settings',
+      href: '/pengajuan/select',
       color: 'bg-green-500',
       showForRoles: ['admin', 'operator'] // Only show for admin and operator
     },
