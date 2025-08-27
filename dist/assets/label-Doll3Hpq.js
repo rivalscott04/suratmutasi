@@ -1,0 +1,2 @@
+import{j as r,ba as a,a as t}from"./ui-vendor-e65TVV2G.js";import{r as m}from"./react-vendor-C8WR5ETM.js";import{c as i}from"./index-On9BQ588.js";const l=t("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"),p=m.forwardRef(({className:s,...e},o)=>r.jsx(a,{ref:o,className:i(l(),s),...e}));p.displayName=a.displayName;export{p as L};
+//# sourceMappingURL=label-Doll3Hpq.js.map
