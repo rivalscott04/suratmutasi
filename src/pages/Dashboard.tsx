@@ -13,10 +13,10 @@ const Dashboard = () => {
   const { user, token, loading } = useAuth();
   const navigate = useNavigate();
   const [letters, setLetters] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [pengajuan, setPengajuan] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loadingLetters, setLoadingLetters] = useState(false);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [loadingPengajuan, setLoadingPengajuan] = useState(false);
   const [search, setSearch] = useState('');
   const filteredLetters = letters.filter(l =>
     l.letter_number?.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,43 +38,83 @@ const Dashboard = () => {
         .catch(err => setError(err.message || 'Gagal fetch surat'))
         .finally(() => setLoadingLetters(false));
 
-      setLoadingEmployees(true);
-      apiGet('/api/employees', token)
-        .then(res => setEmployees(res.employees || []))
-        .catch(() => setEmployees([]))
-        .finally(() => setLoadingEmployees(false));
+      setLoadingPengajuan(true);
+      apiGet('/api/pengajuan', token)
+        .then(res => setPengajuan(res.pengajuan || []))
+        .catch(() => setPengajuan([]))
+        .finally(() => setLoadingPengajuan(false));
     }
   }, [user, token]);
 
   if (loading) return <div className="flex flex-col items-center justify-center min-h-screen"><Skeleton className="h-8 w-1/2 mb-4" /><Skeleton className="h-10 w-1/3 mb-2" /><Skeleton className="h-10 w-1/3 mb-2" /><Skeleton className="h-10 w-1/3 mb-2" /></div>;
+
+  // Fungsi untuk menghitung perubahan persentase
+  const calculatePercentageChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? '+100%' : '0%';
+    const change = ((current - previous) / previous) * 100;
+    return `${change >= 0 ? '+' : ''}${Math.round(change)}%`;
+  };
+
+  // Fungsi untuk mendapatkan data bulan lalu
+  const getLastMonthData = (data: any[], dateField: string) => {
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    return data.filter(item => {
+      const itemDate = new Date(item[dateField]);
+      return itemDate.getMonth() === lastMonth.getMonth() && 
+             itemDate.getFullYear() === lastMonth.getFullYear();
+    });
+  };
+
+  // Fungsi untuk mendapatkan data bulan ini
+  const getCurrentMonthData = (data: any[], dateField: string) => {
+    const currentMonth = new Date();
+    return data.filter(item => {
+      const itemDate = new Date(item[dateField]);
+      return itemDate.getMonth() === currentMonth.getMonth() && 
+             itemDate.getFullYear() === currentMonth.getFullYear();
+    });
+  };
+
+  // Data untuk perhitungan
+  const currentMonthLetters = getCurrentMonthData(letters, 'createdAt');
+  const lastMonthLetters = getLastMonthData(letters, 'createdAt');
+  const currentMonthPengajuan = getCurrentMonthData(pengajuan, 'createdAt');
+  const lastMonthPengajuan = getLastMonthData(pengajuan, 'createdAt');
 
   // Statistik dinamis
   const stats = [
     {
       title: 'Total Surat',
       value: letters.length,
-      change: '+12%',
+      change: calculatePercentageChange(letters.length, lastMonthLetters.length),
       icon: FileText,
       color: 'text-blue-600'
     },
     {
       title: 'Surat Bulan Ini',
-      value: letters.filter(l => new Date(l.createdAt).getMonth() === new Date().getMonth()).length,
-      change: '+5%',
+      value: currentMonthLetters.length,
+      change: calculatePercentageChange(currentMonthLetters.length, lastMonthLetters.length),
       icon: TrendingUp,
       color: 'text-green-600'
     },
     {
-      title: 'Pegawai Terdaftar',
-      value: employees.length,
-      change: '+3%',
+      title: 'Pengajuan Aktif',
+      value: pengajuan.filter(p => p.status === 'active' || p.status === 'pending').length,
+      change: calculatePercentageChange(
+        pengajuan.filter(p => p.status === 'active' || p.status === 'pending').length,
+        lastMonthPengajuan.filter(p => p.status === 'active' || p.status === 'pending').length
+      ),
       icon: Users,
       color: 'text-purple-600'
     },
     {
       title: 'Surat Pending',
       value: letters.filter(l => l.status === 'draft').length,
-      change: '-1',
+      change: calculatePercentageChange(
+        letters.filter(l => l.status === 'draft').length,
+        lastMonthLetters.filter(l => l.status === 'draft').length
+      ),
       icon: Clock,
       color: 'text-orange-600'
     }
