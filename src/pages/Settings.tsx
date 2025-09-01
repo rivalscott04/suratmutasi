@@ -454,7 +454,8 @@ const Settings = () => {
     { id: 'surat_persetujuan_mutasi_asal', name: 'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki', category: 'Dokumen Persetujuan' },
     { id: 'surat_lolos_butuh_ppk', name: 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju', category: 'Dokumen Persetujuan' },
     { id: 'peta_jabatan', name: 'Peta Jabatan', category: 'Dokumen Pendukung' },
-    { id: 'hasil_assessment', name: 'Hasil Assessment', category: 'Dokumen Pendukung' },
+    { id: 'hasil_uji_kompetensi', name: 'Hasil Uji Kompetensi', category: 'Dokumen Pendukung' },
+    { id: 'hasil_evaluasi_pertimbangan_baperjakat', name: 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)', category: 'Dokumen Pendukung' },
     { id: 'anjab_abk_instansi_asal', name: 'Anjab/Abk Instansi Asal', category: 'Dokumen Pendukung' },
     { id: 'anjab_abk_instansi_penerima', name: 'Anjab/Abk Instansi Penerima', category: 'Dokumen Pendukung' },
     { id: 'surat_keterangan_tidak_tugas_belajar', name: 'Surat Keterangan Tidak Sedang Tugas Belajar', category: 'Dokumen Keterangan' },
@@ -918,6 +919,31 @@ const Settings = () => {
         required_files: newRequiredFiles,
         total_dokumen: newRequiredFiles.length
       };
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allFileTypeIds = availableFileTypes.map(fileType => fileType.id);
+    setJobConfigForm(prev => ({
+      ...prev,
+      required_files: allFileTypeIds,
+      total_dokumen: allFileTypeIds.length
+    }));
+    toast({
+      title: "Berhasil",
+      description: "Semua dokumen telah dipilih",
+    });
+  };
+
+  const handleDeselectAll = () => {
+    setJobConfigForm(prev => ({
+      ...prev,
+      required_files: [],
+      total_dokumen: 0
+    }));
+    toast({
+      title: "Berhasil",
+      description: "Semua dokumen telah dihapus dari pilihan",
     });
   };
 
@@ -1497,7 +1523,29 @@ const Settings = () => {
 
             {/* File Types Selection */}
             <div>
-              <Label>Dokumen yang Diperlukan</Label>
+              <div className="flex justify-between items-center mb-4">
+                <Label>Dokumen yang Diperlukan</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className="border-green-600 text-green-600 hover:bg-green-50"
+                  >
+                    Pilih Semua ({availableFileTypes.length})
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeselectAll}
+                    className="border-gray-600 text-gray-600 hover:bg-gray-50"
+                  >
+                    Hapus Semua
+                  </Button>
+                </div>
+              </div>
               <div className="mt-2 space-y-4">
                 {Object.entries(
                   availableFileTypes.reduce((acc, fileType) => {
@@ -1528,7 +1576,7 @@ const Settings = () => {
                 ))}
               </div>
               <div className="mt-3 text-sm text-gray-500">
-                Total dokumen yang dipilih: {jobConfigForm.required_files.length}
+                Total dokumen yang dipilih: {jobConfigForm.required_files.length} / {availableFileTypes.length}
               </div>
             </div>
           </div>

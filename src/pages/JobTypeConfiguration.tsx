@@ -64,7 +64,8 @@ const JobTypeConfiguration: React.FC = () => {
     { id: 'surat_persetujuan_mutasi_asal', name: 'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki', category: 'Dokumen Persetujuan' },
     { id: 'surat_lolos_butuh_ppk', name: 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju', category: 'Dokumen Persetujuan' },
     { id: 'peta_jabatan', name: 'Peta Jabatan', category: 'Dokumen Pendukung' },
-    { id: 'hasil_assessment', name: 'Hasil Assessment', category: 'Dokumen Pendukung' },
+    { id: 'hasil_uji_kompetensi', name: 'Hasil Uji Kompetensi', category: 'Dokumen Pendukung' },
+    { id: 'hasil_evaluasi_pertimbangan_baperjakat', name: 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)', category: 'Dokumen Pendukung' },
     { id: 'anjab_abk_instansi_asal', name: 'Anjab/Abk Instansi Asal', category: 'Dokumen Pendukung' },
     { id: 'anjab_abk_instansi_penerima', name: 'Anjab/Abk Instansi Penerima', category: 'Dokumen Pendukung' },
     { id: 'surat_keterangan_tidak_tugas_belajar', name: 'Surat Keterangan Tidak Sedang Tugas Belajar', category: 'Dokumen Keterangan' },
@@ -126,7 +127,9 @@ const JobTypeConfiguration: React.FC = () => {
         'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki': 'surat_persetujuan_mutasi_asal',
         'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju': 'surat_lolos_butuh_ppk',
         'Peta Jabatan': 'peta_jabatan',
-        'Hasil Assessment': 'hasil_assessment',
+        'Hasil Assessment': 'hasil_uji_kompetensi',
+        'Hasil Uji Kompetensi': 'hasil_uji_kompetensi',
+        'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)': 'hasil_evaluasi_pertimbangan_baperjakat',
         'Anjab/Abk Instansi Asal': 'anjab_abk_instansi_asal',
         'Anjab/Abk Instansi Penerima': 'anjab_abk_instansi_penerima',
         'Surat Keterangan Tidak Sedang Tugas Belajar': 'surat_keterangan_tidak_tugas_belajar',
@@ -188,7 +191,8 @@ const JobTypeConfiguration: React.FC = () => {
           'surat_persetujuan_mutasi_asal': 'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki',
           'surat_lolos_butuh_ppk': 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju',
           'peta_jabatan': 'Peta Jabatan',
-          'hasil_assessment': 'Hasil Assessment',
+          'hasil_uji_kompetensi': 'Hasil Uji Kompetensi',
+          'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
           'anjab_abk_instansi_asal': 'Anjab/Abk Instansi Asal',
           'anjab_abk_instansi_penerima': 'Anjab/Abk Instansi Penerima',
           'surat_keterangan_tidak_tugas_belajar': 'Surat Keterangan Tidak Sedang Tugas Belajar',
@@ -278,11 +282,11 @@ const JobTypeConfiguration: React.FC = () => {
         };
       }
       
-      // Jika file belum dipilih, cek apakah sudah mencapai maksimum (17)
-      if (prev.required_files.length >= 17) {
+      // Jika file belum dipilih, cek apakah sudah mencapai maksimum (22)
+      if (prev.required_files.length >= 22) {
         toast({
           title: "Batas Maksimum",
-          description: "Maksimum 17 dokumen yang dapat dipilih untuk mutasi PNS",
+          description: "Maksimum 22 dokumen yang dapat dipilih untuk mutasi PNS",
           variant: "destructive",
         });
         return prev;
@@ -295,6 +299,31 @@ const JobTypeConfiguration: React.FC = () => {
         required_files: newRequiredFiles,
         total_dokumen: newRequiredFiles.length
       };
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allFileTypeIds = availableFileTypes.map(fileType => fileType.id);
+    setFormData(prev => ({
+      ...prev,
+      required_files: allFileTypeIds,
+      total_dokumen: allFileTypeIds.length
+    }));
+    toast({
+      title: "Berhasil",
+      description: "Semua dokumen telah dipilih",
+    });
+  };
+
+  const handleDeselectAll = () => {
+    setFormData(prev => ({
+      ...prev,
+      required_files: [],
+      total_dokumen: 0
+    }));
+    toast({
+      title: "Berhasil",
+      description: "Semua dokumen telah dihapus dari pilihan",
     });
   };
 
@@ -439,10 +468,34 @@ const JobTypeConfiguration: React.FC = () => {
 
             {/* File Types Selection */}
             <div>
-              <Label className="text-base font-medium">Pilih File Types yang Diperlukan</Label>
-              <p className="text-sm text-gray-600 mb-4">
-                Centang file types yang diperlukan untuk jenis jabatan ini
-              </p>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <Label className="text-base font-medium">Pilih File Types yang Diperlukan</Label>
+                  <p className="text-sm text-gray-600">
+                    Centang file types yang diperlukan untuk jenis jabatan ini
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className="border-green-600 text-green-600 hover:bg-green-50"
+                  >
+                    Pilih Semua ({availableFileTypes.length})
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeselectAll}
+                    className="border-gray-600 text-gray-600 hover:bg-gray-50"
+                  >
+                    Hapus Semua
+                  </Button>
+                </div>
+              </div>
               
               <div className="space-y-4">
                 {Object.entries(groupedFileTypes).map(([category, fileTypes]) => (
@@ -472,14 +525,14 @@ const JobTypeConfiguration: React.FC = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium mb-2">Ringkasan</h4>
               <p className="text-sm text-gray-600">
-                Total file types yang dipilih: <strong>{formData.required_files.length}</strong> / 17
+                Total file types yang dipilih: <strong>{formData.required_files.length}</strong> / 22
               </p>
               <p className="text-sm text-gray-600">
                 Total dokumen: <strong>{formData.total_dokumen}</strong>
               </p>
-              {formData.required_files.length >= 17 && (
+              {formData.required_files.length >= 22 && (
                 <p className="text-sm text-orange-600 mt-2">
-                  ⚠️ Maksimum 17 dokumen untuk mutasi PNS
+                  ⚠️ Maksimum 22 dokumen untuk mutasi PNS
                 </p>
               )}
             </div>
