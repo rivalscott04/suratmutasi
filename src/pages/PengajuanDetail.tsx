@@ -32,7 +32,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiGet, apiPut, apiDelete } from '@/lib/api';
+import { apiGet, apiPut, apiDelete, apiPost } from '@/lib/api';
 
 interface PengajuanFile {
   id: string;
@@ -78,6 +78,8 @@ const PengajuanDetail: React.FC = () => {
   const navigate = useNavigate();
   const { user, token, isAuthenticated } = useAuth();
   const [pengajuan, setPengajuan] = useState<PengajuanData | null>(null);
+  const [requiredKabupaten, setRequiredKabupaten] = useState<string[]>([]);
+  const [requiredKanwil, setRequiredKanwil] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<PengajuanFile | null>(null);
@@ -126,6 +128,24 @@ const PengajuanDetail: React.FC = () => {
       const response = await apiGet(`/api/pengajuan/${pengajuanId}`, token);
       if (response.success) {
         setPengajuan(response.data.pengajuan);
+        // simpan daftar required kab/kota dari job type
+        if (Array.isArray(response.data.requiredFiles)) {
+          setRequiredKabupaten(response.data.requiredFiles as string[]);
+        } else {
+          setRequiredKabupaten([]);
+        }
+        // jika admin wilayah, ambil konfigurasi kanwil untuk daftar file wajib
+        if (user?.role === 'admin_wilayah') {
+          try {
+            const awRes = await apiGet(`/api/admin-wilayah/pengajuan/${pengajuanId}`, token);
+            const reqList = (awRes?.adminWilayahFileConfig?.required || awRes?.data?.adminWilayahFileConfig?.required || []) as Array<{ file_type: string }>;
+            setRequiredKanwil(reqList.map((r) => r.file_type));
+          } catch (e) {
+            setRequiredKanwil([]);
+          }
+        } else {
+          setRequiredKanwil([]);
+        }
       } else {
         setError(response.message || 'Gagal mengambil data pengajuan');
       }
@@ -140,9 +160,9 @@ const PengajuanDetail: React.FC = () => {
   const handleApprove = async () => {
     try {
       setSubmitting(true);
-      const response = await apiPut(`/api/pengajuan/${pengajuanId}/approve`, {
-        catatan: approvalNote
-      }, token);
+      const response = isAdminWilayah
+        ? await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/approve`, { notes: approvalNote }, token)
+        : await apiPut(`/api/pengajuan/${pengajuanId}/approve`, { catatan: approvalNote }, token);
       
       if (response.success) {
         setSuccessMessage('Pengajuan berhasil disetujui!');
@@ -164,9 +184,9 @@ const PengajuanDetail: React.FC = () => {
   const handleReject = async () => {
     try {
       setSubmitting(true);
-      const response = await apiPut(`/api/pengajuan/${pengajuanId}/reject`, {
-        rejection_reason: rejectionReason
-      }, token);
+      const response = isAdminWilayah
+        ? await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/reject`, { rejection_reason: rejectionReason }, token)
+        : await apiPut(`/api/pengajuan/${pengajuanId}/reject`, { rejection_reason: rejectionReason }, token);
       
       if (response.success) {
         setSuccessMessage('Pengajuan berhasil ditolak!');
@@ -237,10 +257,12 @@ const PengajuanDetail: React.FC = () => {
       submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800', icon: FileText },
       approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800', icon: CheckCircle },
       rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800', icon: XCircle },
+      admin_wilayah_approved: { label: 'Disetujui Admin Wilayah', className: 'bg-green-200 text-green-800', icon: CheckCircle },
+      admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800', icon: XCircle },
 
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+    const config = statusConfig[status as keyof typeof statusConfig] || { label: status, className: 'bg-gray-100 text-gray-800', icon: FileText };
     const Icon = config.icon;
 
     return (
@@ -488,27 +510,41 @@ const PengajuanDetail: React.FC = () => {
   };
 
   const isAdmin = user?.role === 'admin';
+  const isAdminWilayah = user?.role === 'admin_wilayah';
   const canEdit = (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected') && 
                   (isAdmin || pengajuan?.created_by === user?.id) && 
                   user?.role !== 'user'; // User dengan role 'user' tidak bisa edit
   const canDelete = pengajuan?.status === 'draft' && user?.role !== 'user'; // User dengan role 'user' tidak bisa hapus
-  const canApprove = isAdmin && pengajuan?.status === 'submitted';
-  const canReject = isAdmin && pengajuan?.status === 'submitted';
+  const canApprove = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
+  const canReject = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
   // Tampilkan tombol Ajukan Ulang saat status ditolak, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
   const canShowResubmit = pengajuan?.status === 'rejected' && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
   
 
   
-  // Check if all files are approved
-  // Untuk status 'submitted' setelah rejection, anggap file yang baru diupload sudah sesuai (karena user sudah memperbaiki)
-  const allFilesApproved = pengajuan?.files.every(file => 
-    pengajuan.status === 'submitted' 
-      ? (file.verification_status === 'approved' || file.verification_status === 'pending')
-      : file.verification_status === 'approved'
-  ) ?? false;
+  // Cek kelengkapan dan verifikasi: semua berkas wajib (kab/kota + kanwil) harus ada dan "approved"
+  const allFilesApproved = (() => {
+    if (!pengajuan) return false;
+    const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
+    if (requiredAll.size === 0) return false;
+    for (const t of requiredAll) {
+      const f = pengajuan.files.find((x) => x.file_type === t);
+      if (!f) return false; // wajib: harus ada
+      if (f.verification_status !== 'approved') return false; // harus sesuai
+    }
+    return true;
+  })();
   
-  const hasRejectedFiles = pengajuan?.files.some(file => file.verification_status === 'rejected') ?? false;
-  const resubmitEnabled = !hasRejectedFiles; // aktif jika tidak ada file yang masih ditolak
+  const hasRejectedFiles = (() => {
+    if (!pengajuan) return false;
+    const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
+    for (const t of requiredAll) {
+      const f = pengajuan.files.find((x) => x.file_type === t);
+      if (!f || f.verification_status === 'rejected' || f.verification_status === 'pending') return true;
+    }
+    return false;
+  })();
+  const resubmitEnabled = !hasRejectedFiles;
 
   if (loading) {
     return (
@@ -689,8 +725,8 @@ const PengajuanDetail: React.FC = () => {
                         </div>
                         
                                                  <div className="flex items-center gap-3">
-                           {/* Switch Toggle Verifikasi - Hanya untuk Admin */}
-                           {isAdmin && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected') && (
+                           {/* Switch Toggle Verifikasi - Admin & Admin Wilayah */}
+                          {(isAdmin && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected')) || (isAdminWilayah && (pengajuan.status === 'approved' || pengajuan.status === 'submitted')) ? (
                              <div className="flex items-center gap-3 mr-3">
                               {verifyingFile === file.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
@@ -732,7 +768,7 @@ const PengajuanDetail: React.FC = () => {
                                  </div>
                               )}
                             </div>
-                          )}
+                          ) : null}
                           
                                                      <Button
                              size="sm"
@@ -864,7 +900,7 @@ const PengajuanDetail: React.FC = () => {
                <CardTitle>Aksi</CardTitle>
              </CardHeader>
                            <CardContent className="space-y-3">
-                {canApprove && allFilesApproved && (
+                {canApprove && (isAdmin ? allFilesApproved : true) && (
                   <Button
                     onClick={() => setShowApproveDialog(true)}
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -874,7 +910,7 @@ const PengajuanDetail: React.FC = () => {
                   </Button>
                 )}
                 
-                {canReject && (hasRejectedFiles || !allFilesApproved) && (
+                {canReject && (isAdmin ? (hasRejectedFiles || !allFilesApproved) : true) && (
                   <Button
                     onClick={() => setShowRejectDialog(true)}
                     variant="destructive"
@@ -928,7 +964,7 @@ const PengajuanDetail: React.FC = () => {
                   </Button>
                 )}
                 
-                {pengajuan.status === 'approved' && (
+                {pengajuan.status === 'approved' && isAdmin && (
                   <Button
                     onClick={() => setShowPrintDialog(true)}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white"

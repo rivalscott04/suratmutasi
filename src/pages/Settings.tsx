@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown, FileText, Trash2, FolderOpen } from 'lucide-react';
+import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown, FileText, Trash2, FolderOpen, AlertTriangle } from 'lucide-react';
 import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
@@ -464,47 +463,76 @@ const Settings = () => {
     { id: 'surat_rekomendasi_instansi_pembina', name: 'Surat Rekomendasi Instansi Pembina', category: 'Dokumen Rekomendasi' }
   ];
 
+  // Load admin wilayah configs from database - hanya jika benar-benar diperlukan
   useEffect(() => {
-    if (token) {
-      setLoadingOffice(true);
-      apiGet('/api/offices', token)
-        .then(res => {
-          let office = null;
-          if (user?.office_id) {
-            office = res.offices?.find((o: any) => o.id === user.office_id);
-          }
-          if (!office && user?.kabkota) {
-            office = res.offices?.find((o: any) => o.kabkota === user.kabkota);
-          }
-          // Hapus fallback ke kantor lain, biarkan kosong jika tidak ada yang cocok
-          if (office) {
-            setOfficeId(office.id);
-            setOfficeSettings({
-              namakantor: office.namakantor || office.name || '',
-              kabkota: office.kabkota || '',
-              alamat: office.alamat || office.address || '',
-              telepon: office.telepon || office.phone || '',
-              fax: office.fax || '',
-              email: office.email || '',
-              website: office.website || ''
-            });
-          } else {
-            setOfficeId(null);
-            setOfficeSettings({
-              namakantor: '',
-              kabkota: '',
-              alamat: '',
-              telepon: '',
-              fax: '',
-              email: '',
-              website: ''
-            });
-          }
-        })
-        .catch(() => setErrorOffice('Gagal mengambil data kantor'))
-        .finally(() => setLoadingOffice(false));
+    // Hanya jalankan jika user dan token sudah tersedia
+    if (!user || !token) return;
+    
+    if (user.role === 'admin') {
+      // Superadmin can CRUD
+      fetchAdminWilayahConfigs();
+      fetchAvailableJobTypes();
+    } else if (user.role === 'admin_wilayah') {
+      // Admin wilayah can only view
+      fetchAdminWilayahConfigs();
     }
-  }, [token, user]);
+  }, [user?.role, token, user?.id]); // Tambah user.id untuk memastikan user sudah fully loaded
+
+  // Separate useEffect for job configs to avoid conflicts
+  useEffect(() => {
+    // Hanya jalankan jika user dan token sudah tersedia
+    if (!user || !token) return;
+    
+    if (user.role === 'admin') {
+      fetchJobConfigs();
+    }
+  }, [token, user?.role, user?.id]);
+
+  // Load office settings - hanya jika user dan token tersedia
+  useEffect(() => {
+    if (!user || !token) return;
+    
+    setLoadingOffice(true);
+    apiGet('/api/offices', token)
+      .then(res => {
+        let office = null;
+        if (user?.office_id) {
+          office = res.offices?.find((o: any) => o.id === user.office_id);
+        }
+        if (!office && user?.kabkota) {
+          office = res.offices?.find((o: any) => o.kabkota === user.kabkota);
+        }
+        // Hapus fallback ke kantor lain, biarkan kosong jika tidak ada yang cocok
+        if (office) {
+          setOfficeId(office.id);
+          setOfficeSettings({
+            namakantor: office.namakantor || office.name || '',
+            kabkota: office.kabkota || '',
+            alamat: office.alamat || office.address || '',
+            telepon: office.telepon || office.phone || '',
+            fax: office.fax || '',
+            email: office.email || '',
+            website: office.website || ''
+          });
+        } else {
+          setOfficeId(null);
+          setOfficeSettings({
+            namakantor: '',
+            kabkota: '',
+            alamat: '',
+            telepon: '',
+            fax: '',
+            email: '',
+            website: ''
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('Error loading office settings:', err);
+        setErrorOffice('Gagal mengambil data kantor');
+      })
+      .finally(() => setLoadingOffice(false));
+  }, [token, user?.id, user?.office_id, user?.kabkota]);
 
   // Load Kanwil settings from localStorage
   useEffect(() => {
@@ -528,80 +556,6 @@ const Settings = () => {
       }
     }
   }, []);
-
-  // Fetch job type configurations
-  useEffect(() => {
-    if (token && user?.role === 'admin') {
-      fetchJobConfigs();
-    }
-  }, [token, user?.role]);
-
-  // Load mock admin wilayah configs
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      const mockConfigs = [
-        {
-          id: 1,
-          name: 'Penghulu',
-          description: 'Konfigurasi file wajib untuk jabatan penghulu',
-          files: [
-            {
-              id: 1,
-              name: 'Surat Pernyataan Persetujuan dari Kepala Wilayah Kementerian Agama Provinsi',
-              description: 'Surat pernyataan persetujuan dari kepala wilayah',
-              is_required: true,
-              is_active: true
-            },
-            {
-              id: 2,
-              name: 'Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar atau Ikatan Dinas',
-              description: 'Surat pernyataan tidak sedang menjalani tugas belajar',
-              is_required: true,
-              is_active: true
-            },
-            {
-              id: 6,
-              name: 'Surat Pengantar Permohonan Rekomendasi Pindah Tugas',
-              description: 'Surat pengantar permohonan rekomendasi (pilih varian)',
-              is_required: true,
-              is_active: true,
-              variant: '6.3'
-            }
-          ],
-          is_active: true,
-          created_at: '2024-01-15T10:00:00Z',
-          updated_at: '2024-01-15T10:00:00Z'
-        },
-        {
-          id: 2,
-          name: 'Kepala Kantor',
-          description: 'Konfigurasi file wajib untuk jabatan kepala kantor',
-          files: [
-            {
-              id: 1,
-              name: 'Surat Pernyataan Persetujuan dari Kepala Wilayah Kementerian Agama Provinsi',
-              description: 'Surat pernyataan persetujuan dari kepala wilayah',
-              is_required: true,
-              is_active: true
-            },
-            {
-              id: 6,
-              name: 'Surat Pengantar Permohonan Rekomendasi Pindah Tugas',
-              description: 'Surat pengantar permohonan rekomendasi (pilih varian)',
-              is_required: true,
-              is_active: true,
-              variant: '6.1'
-            }
-          ],
-          is_active: true,
-          created_at: '2024-01-14T15:30:00Z',
-          updated_at: '2024-01-14T15:30:00Z'
-        }
-      ];
-      setAdminWilayahConfigs(mockConfigs);
-      setAdminWilayahConfigLoading(false);
-    }
-  }, [user?.role]);
 
   const fetchJobConfigs = async () => {
     try {
@@ -733,70 +687,36 @@ const Settings = () => {
   const [showAdminWilayahConfigDialog, setShowAdminWilayahConfigDialog] = useState(false);
   const [editingAdminWilayahConfig, setEditingAdminWilayahConfig] = useState<any | null>(null);
   const [adminWilayahConfigSaving, setAdminWilayahConfigSaving] = useState(false);
+  
+  // State untuk modal konfirmasi delete
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [configToDelete, setConfigToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   // Admin Wilayah config form state
   const [adminWilayahConfigForm, setAdminWilayahConfigForm] = useState({
+    jenis_jabatan_id: '',
     name: '',
-    selectedFiles: {} as { [key: number]: boolean },
+    description: '',
+    selectedFiles: {} as Record<string, boolean>,
     selectedVariant: '6.1',
     is_active: true
   });
 
-  // Available admin wilayah files
-  const adminWilayahFiles = [
-    {
-      id: 1,
-      name: 'Surat Pernyataan Persetujuan dari Kepala Wilayah Kementerian Agama Provinsi',
-      description: 'Surat pernyataan persetujuan dari kepala wilayah',
-      is_required: true,
-      is_active: true
-    },
-    {
-      id: 2,
-      name: 'Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar atau Ikatan Dinas',
-      description: 'Surat pernyataan tidak sedang menjalani tugas belajar',
-      is_required: true,
-      is_active: true
-    },
-    {
-      id: 3,
-      name: 'Surat Pernyataan Tidak Sedang Dijatuhi Hukuman Disiplin Tingkat Sedang atau Berat',
-      description: 'Surat pernyataan tidak sedang dijatuhi hukuman disiplin',
-      is_required: true,
-      is_active: true
-    },
-    {
-      id: 4,
-      name: 'Surat Pernyataan Tidak Sedang Menjalani Proses Pidana atau Pernah Dipidana Penjara',
-      description: 'Surat pernyataan tidak sedang menjalani proses pidana',
-      is_required: true,
-      is_active: true
-    },
-    {
-      id: 5,
-      name: 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
-      description: 'Surat pernyataan tanggung jawab mutlak',
-      is_required: true,
-      is_active: true
-    },
-    {
-      id: 6,
-      name: 'Surat Pengantar Permohonan Rekomendasi Pindah Tugas',
-      description: 'Surat pengantar permohonan rekomendasi (pilih varian)',
-      is_required: true,
-      is_active: true,
-      variant: '6.1'
-    },
-    {
-      id: 7,
-      name: 'Surat Pengantar Permohonan Penerbitan SK Pindah Tugas kepada Kepala Biro SDM Sekjen Kemenag RI',
-      description: 'Surat pengantar permohonan penerbitan SK (untuk JFT Madya)',
-      is_required: true,
-      is_active: true
-    }
+  // Available file types for admin wilayah (hardcoded like JobTypeConfiguration)
+  const adminWilayahAvailableFileTypes = [
+    { id: 'surat_rekomendasi_kanwil', name: 'Surat Rekomendasi Kanwil', category: 'Dokumen Kanwil', is_required: true, description: 'Surat rekomendasi dari Kanwil Provinsi' },
+    { id: 'surat_persetujuan_kepala_wilayah', name: 'Surat Persetujuan Kepala Wilayah', category: 'Dokumen Kanwil', is_required: true, description: 'Surat persetujuan dari Kepala Wilayah Kementerian Agama Provinsi' },
+    { id: 'surat_pengantar_permohonan_rekomendasi', name: 'Surat Pengantar Permohonan Rekomendasi', category: 'Dokumen Pengantar', is_required: true, description: 'Surat pengantar permohonan rekomendasi pindah tugas' },
+    { id: 'surat_pernyataan_tidak_tugas_belajar', name: 'Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar', category: 'Dokumen Pernyataan', is_required: true, description: 'Surat pernyataan tidak sedang menjalani tugas belajar' },
+    { id: 'surat_pernyataan_tidak_ikatan_dinas', name: 'Surat Pernyataan Tidak Sedang Menjalani Ikatan Dinas', category: 'Dokumen Pernyataan', is_required: true, description: 'Surat pernyataan tidak sedang menjalani ikatan dinas' },
+    { id: 'surat_keterangan_kanwil', name: 'Surat Keterangan dari Kanwil', category: 'Dokumen Keterangan', is_required: true, description: 'Surat keterangan resmi dari Kanwil Provinsi' },
+    { id: 'surat_rekomendasi_kanwil_khusus', name: 'Surat Rekomendasi Khusus dari Kanwil', category: 'Dokumen Keterangan', is_required: true, description: 'Surat rekomendasi khusus dari Kanwil Provinsi' }
   ];
+
+  // Available job types for admin wilayah config
+  const [availableJobTypes, setAvailableJobTypes] = useState<any[]>([]);
 
   const variantOptions = [
     { value: '6.1', label: '6.1 - Permohonan Persetujuan/Rekomendasi Pengangkatan ke Dalam Jabatan Pengawas (Untuk Eselon)' },
@@ -949,8 +869,20 @@ const Settings = () => {
 
   // Admin Wilayah Configuration functions
   const handleAddAdminWilayahConfig = () => {
+    // Only superadmin can add configs
+    if (user?.role !== 'admin') {
+      toast({
+        title: "Error",
+        description: "Hanya superadmin yang dapat menambah konfigurasi",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAdminWilayahConfigForm({
+      jenis_jabatan_id: '',
       name: '',
+      description: '',
       selectedFiles: {},
       selectedVariant: '6.1',
       is_active: true
@@ -960,35 +892,115 @@ const Settings = () => {
   };
 
   const handleEditAdminWilayahConfig = (config: any) => {
-    const selectedFilesMap: { [key: number]: boolean } = {};
-    config.files.forEach((file: any) => {
-      selectedFilesMap[file.id] = true;
-    });
+    // Only superadmin can edit configs
+    if (user?.role !== 'admin') {
+      toast({
+        title: "Error",
+        description: "Hanya superadmin yang dapat mengedit konfigurasi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedFilesMap: Record<string, boolean> = {};
+    // Gunakan identifier file_type (bukan id DB) untuk mencentang checkbox yang tepat
+    if (Array.isArray(config.files)) {
+      config.files.forEach((file: any) => {
+        const key = file.file_type || file.id; // fallback untuk kompatibilitas lama
+        if (key) selectedFilesMap[String(key)] = true;
+      });
+    }
     
     setAdminWilayahConfigForm({
+      jenis_jabatan_id: config.jenis_jabatan_id,
       name: config.name,
+      description: config.description,
       selectedFiles: selectedFilesMap,
-      selectedVariant: config.files.find((f: any) => f.id === 6)?.variant || '6.1',
+      selectedVariant: '6.1', // Default value
       is_active: config.is_active
     });
     setEditingAdminWilayahConfig(config);
     setShowAdminWilayahConfigDialog(true);
   };
 
-  const handleDeleteAdminWilayahConfig = (config: any) => {
+  const handleDeleteAdminWilayahConfig = async (config: any) => {
+    // Only superadmin can delete configs
+    if (user?.role !== 'admin') {
+      toast({
+        title: "Error",
+        description: "Hanya superadmin yang dapat menghapus konfigurasi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Set config yang akan dihapus dan buka modal konfirmasi
     setConfigToDelete(config);
     setShowDeleteConfirmDialog(true);
   };
 
-  const confirmDeleteAdminWilayahConfig = () => {
-    if (configToDelete) {
-      setAdminWilayahConfigs(prev => prev.filter(config => config.id !== configToDelete.id));
+  const confirmDeleteAdminWilayahConfig = async () => {
+    if (!configToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      console.log('🗑️ Deleting config:', configToDelete);
+      console.log('📁 Files to delete:', configToDelete.files);
+      
+      // Delete all file configs for this job type using Promise.all
+      const deletePromises = configToDelete.files.map(async (file: any) => {
+        console.log(`🗑️ Deleting file config ID: ${file.id}, Type: ${file.file_type}`);
+        return apiDelete(`/api/admin-wilayah-file-config/${file.id}`, token);
+      });
+      
+      await Promise.all(deletePromises);
+
+      toast({
+        title: "Berhasil",
+        description: "Konfigurasi admin wilayah berhasil dihapus",
+      });
+      
+      // Tutup modal dan refresh data
+      setShowDeleteConfirmDialog(false);
       setConfigToDelete(null);
+      fetchAdminWilayahConfigs(); // Refresh data from database
+    } catch (error: any) {
+      console.error('❌ Error deleting admin wilayah config:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus konfigurasi admin wilayah",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
-    setShowDeleteConfirmDialog(false);
   };
 
-  const handleAdminWilayahFileToggle = (fileId: number) => {
+  const cancelDeleteAdminWilayahConfig = () => {
+    if (isDeleting) return; // Mencegah cancel saat sedang menghapus
+    setShowDeleteConfirmDialog(false);
+    setConfigToDelete(null);
+  };
+
+  // Handle escape key untuk modal konfirmasi
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showDeleteConfirmDialog && !isDeleting) {
+        cancelDeleteAdminWilayahConfig();
+      }
+    };
+
+    if (showDeleteConfirmDialog) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showDeleteConfirmDialog, isDeleting]);
+
+
+  const handleAdminWilayahFileToggle = (fileId: string) => {
     setAdminWilayahConfigForm(prev => ({
       ...prev,
       selectedFiles: {
@@ -1005,59 +1017,190 @@ const Settings = () => {
     }));
   };
 
-  const handleSaveAdminWilayahConfig = () => {
-    if (!adminWilayahConfigForm.name.trim()) {
+  const handleSaveAdminWilayahConfig = async () => {
+    // Auto-fill name/description to reduce inputs
+    const selectedJob = availableJobTypes.find(j => j.id.toString() === adminWilayahConfigForm.jenis_jabatan_id);
+    const autoName = selectedJob ? `Konfigurasi ${selectedJob.jenis_jabatan}` : 'Konfigurasi Admin Wilayah';
+    const autoDesc = selectedJob ? `Konfigurasi file wajib untuk jabatan ${selectedJob.jenis_jabatan}` : 'Konfigurasi file wajib Admin Wilayah';
+
+    if (!adminWilayahConfigForm.jenis_jabatan_id) {
       toast({
         title: "Error",
-        description: "Nama konfigurasi harus diisi",
+        description: "Jenis jabatan wajib dipilih",
         variant: "destructive",
       });
       return;
     }
 
-    const selectedFileList = adminWilayahFiles.filter(file => adminWilayahConfigForm.selectedFiles[file.id]);
-    
-    // Update file 6 dengan varian yang dipilih
-    const updatedFileList = selectedFileList.map(file => {
-      if (file.id === 6) {
-        return { ...file, variant: adminWilayahConfigForm.selectedVariant };
-      }
-      return file;
-    });
-
-    if (editingAdminWilayahConfig) {
-      // Update existing config
-      setAdminWilayahConfigs(prev => prev.map(config => 
-        config.id === editingAdminWilayahConfig.id 
-          ? { 
-              ...config, 
-              name: adminWilayahConfigForm.name,
-              files: updatedFileList, 
-              is_active: adminWilayahConfigForm.is_active,
-              updated_at: new Date().toISOString() 
-            }
-          : config
-      ));
-    } else {
-      // Add new config
-      const newConfig = {
-        id: Date.now(),
-        name: adminWilayahConfigForm.name,
-        description: `Konfigurasi file wajib dengan ${updatedFileList.length} file`,
-        files: updatedFileList,
-        is_active: adminWilayahConfigForm.is_active,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      setAdminWilayahConfigs(prev => [...prev, newConfig]);
+    // Patch local state defaults (without forcing extra inputs)
+    if (!adminWilayahConfigForm.name?.trim()) {
+      setAdminWilayahConfigForm(prev => ({ ...prev, name: autoName }));
     }
+    if (!adminWilayahConfigForm.description?.trim()) {
+      setAdminWilayahConfigForm(prev => ({ ...prev, description: autoDesc }));
+    }
+
+    const selectedFileList = adminWilayahAvailableFileTypes.filter(file => adminWilayahConfigForm.selectedFiles[file.id]);
     
-    setShowAdminWilayahConfigDialog(false);
-    setEditingAdminWilayahConfig(null);
+    if (selectedFileList.length === 0) {
+      toast({
+        title: "Error",
+        description: "Pilih minimal satu file yang required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setAdminWilayahConfigSaving(true);
+
+      if (editingAdminWilayahConfig) {
+        // Update existing configs - delete old ones and create new ones
+        // First, delete all existing configs for this job type
+        const existingConfigs = adminWilayahConfigs.find(c => c.jenis_jabatan_id === parseInt(adminWilayahConfigForm.jenis_jabatan_id));
+        if (existingConfigs) {
+          console.log('🔄 Updating configs, deleting old ones:', existingConfigs.files);
+          
+          const deletePromises = existingConfigs.files.map(async (file: any) => {
+            console.log(`🗑️ Deleting old file config ID: ${file.id}, Type: ${file.file_type}`);
+            return apiDelete(`/api/admin-wilayah-file-config/${file.id}`, token);
+          });
+          
+          await Promise.all(deletePromises);
+        }
+
+        // Create new configs
+        for (const file of selectedFileList) {
+          await apiPost('/api/admin-wilayah-file-config', {
+            jenis_jabatan_id: parseInt(adminWilayahConfigForm.jenis_jabatan_id),
+            file_type: file.id,
+            display_name: file.name,
+            is_required: file.is_required,
+            description: file.description,
+            is_active: adminWilayahConfigForm.is_active
+          }, token);
+        }
+
+        toast({
+          title: "Berhasil",
+          description: "Konfigurasi admin wilayah berhasil diperbarui",
+        });
+      } else {
+        // Create new configs
+        for (const file of selectedFileList) {
+          await apiPost('/api/admin-wilayah-file-config', {
+            jenis_jabatan_id: parseInt(adminWilayahConfigForm.jenis_jabatan_id),
+            file_type: file.id,
+            display_name: file.name,
+            is_required: file.is_required,
+            description: file.description,
+            is_active: adminWilayahConfigForm.is_active
+          }, token);
+        }
+
+        toast({
+          title: "Berhasil",
+          description: "Konfigurasi admin wilayah berhasil dibuat",
+        });
+      }
+      
+      setShowAdminWilayahConfigDialog(false);
+      setEditingAdminWilayahConfig(null);
+      fetchAdminWilayahConfigs(); // Refresh data from database
+    } catch (error: any) {
+      console.error('Error saving admin wilayah config:', error);
+      toast({
+        title: "Error",
+        description: error?.message || "Gagal menyimpan konfigurasi admin wilayah",
+        variant: "destructive",
+      });
+    } finally {
+      setAdminWilayahConfigSaving(false);
+    }
+  };
+
+  const fetchAdminWilayahConfigs = async () => {
+    try {
+      setAdminWilayahConfigLoading(true);
+      const response = await apiGet('/api/admin-wilayah-file-config', token);
+      
+      console.log('📡 API Response:', response);
+      
+      if (response?.success && Array.isArray(response.data)) {
+        console.log('📊 Raw data from API:', response.data);
+        
+        // Transform API response to match frontend format
+        const transformedConfigs = response.data.map((config: any) => ({
+          id: config.id,
+          jenis_jabatan_id: config.jenis_jabatan_id,
+          name: config.jenis_jabatan?.jenis_jabatan || `Jabatan ${config.jenis_jabatan_id}`,
+          description: `Konfigurasi file wajib untuk jabatan ${config.jenis_jabatan?.jenis_jabatan || config.jenis_jabatan_id}`,
+          files: [{
+            id: config.id, // ✅ Gunakan config.id untuk delete
+            file_type: config.file_type, // ✅ Tambahkan field file_type
+            name: config.display_name,
+            description: config.description,
+            is_required: config.is_required,
+            is_active: config.is_active
+          }],
+          is_active: config.is_active,
+          created_at: config.created_at,
+          updated_at: config.updated_at
+        }));
+
+        console.log('🔄 Transformed configs:', transformedConfigs);
+
+        // Group by jenis_jabatan_id
+        const groupedConfigs = transformedConfigs.reduce((acc: any[], config: any) => {
+          const existingConfig = acc.find(c => c.jenis_jabatan_id === config.jenis_jabatan_id);
+          if (existingConfig) {
+            existingConfig.files.push(...config.files);
+          } else {
+            acc.push(config);
+          }
+          return acc;
+        }, []);
+
+        console.log('📦 Grouped configs:', groupedConfigs);
+        setAdminWilayahConfigs(groupedConfigs);
+      } else {
+        // If API fails, set empty array instead of crashing
+        console.warn('❌ Admin wilayah config API response invalid:', response);
+        setAdminWilayahConfigs([]);
+      }
+          } catch (error: any) {
+        console.error('❌ Error fetching admin wilayah configs:', error);
+        // Don't show error toast, just set empty array to prevent crash
+        setAdminWilayahConfigs([]);
+      } finally {
+        setAdminWilayahConfigLoading(false);
+      }
+  };
+
+  const fetchAvailableJobTypes = async () => {
+    try {
+      const response = await apiGet('/api/admin-wilayah-file-config/available-job-types', token);
+      if (response?.success && Array.isArray(response.data)) {
+        setAvailableJobTypes(response.data);
+      } else {
+        // If API fails, set empty array instead of crashing
+        console.warn('Available job types API response invalid:', response);
+        setAvailableJobTypes([]);
+      }
+    } catch (error: any) {
+      console.error('Error fetching available job types:', error);
+      // Don't show error toast, just set empty array to prevent crash
+      setAvailableJobTypes([]);
+    }
   };
 
   if (!user) {
     return <div className="py-8 text-center">Silakan login terlebih dahulu.</div>;
+  }
+
+  // Tambah loading state untuk mencegah render yang tidak perlu
+  if (!token) {
+    return <div className="py-8 text-center">Memuat pengaturan...</div>;
   }
 
   const isAdmin = user?.role === 'admin';
@@ -1322,79 +1465,88 @@ const Settings = () => {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Konfigurasi Berkas Admin Wilayah</CardTitle>
-                  <Button onClick={handleAddAdminWilayahConfig} className="bg-green-600 hover:bg-green-700 text-white">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Tambah Konfigurasi
-                  </Button>
+                  {user?.role === 'admin' && (
+                    <Button onClick={handleAddAdminWilayahConfig} className="bg-green-600 hover:bg-green-700 text-white">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Tambah Konfigurasi
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 {adminWilayahConfigLoading ? (
                   <div className="space-y-4">
                     <Skeleton className="h-6 w-1/3 mb-2" />
-                    <Skeleton className="h-10 w-full mb-2" />
-                    <Skeleton className="h-10 w-full mb-2" />
-                    <Skeleton className="h-10 w-full mb-2" />
+                    <Skeleton className="h-32 w-full mb-2" />
+                    <Skeleton className="h-32 w-full mb-2" />
                   </div>
                 ) : adminWilayahConfigs.length === 0 ? (
                   <div className="text-center py-8">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada konfigurasi berkas admin wilayah</h3>
-                    <p className="text-gray-500 mb-4">Mulai dengan menambahkan konfigurasi berkas admin wilayah pertama Anda.</p>
-                    <Button onClick={handleAddAdminWilayahConfig} className="bg-green-600 hover:bg-green-700 text-white">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Tambah Konfigurasi Pertama
-                    </Button>
+                    <FolderOpen className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada konfigurasi</h3>
+                    <p className="text-gray-600 mb-4">
+                      {user?.role === 'admin' 
+                        ? 'Buat konfigurasi pertama untuk admin wilayah'
+                        : 'Belum ada konfigurasi yang dibuat oleh superadmin'
+                      }
+                    </p>
+                    {user?.role === 'admin' && (
+                      <Button onClick={handleAddAdminWilayahConfig} className="bg-green-600 hover:bg-green-700 text-white">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah Konfigurasi
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {adminWilayahConfigs.map((config) => (
-                      <div key={config.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="font-medium text-gray-900">{config.name}</h3>
-                            <p className="text-sm text-gray-500">{config.description}</p>
-                            <p className="text-sm text-gray-500">
-                              {config.files?.length || 0} berkas diperlukan
-                            </p>
+                      <Card key={config.id} className="border-green-200">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-green-800">{config.name}</CardTitle>
+                              <p className="text-sm text-gray-600 mt-1">{config.description}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {config.files.length} berkas diperlukan
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={config.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                                {config.is_active ? "Aktif" : "Nonaktif"}
+                              </Badge>
+                              {user?.role === 'admin' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditAdminWilayahConfig(config)}
+                                    className="text-green-600 border-green-200 hover:bg-green-50"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeleteAdminWilayahConfig(config)}
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge 
-                              className={config.is_active 
-                                ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100" 
-                                : "bg-red-100 text-red-800 border-red-200 hover:bg-red-100"
-                              }
-                            >
-                              {config.is_active ? "Aktif" : "Nonaktif"}
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditAdminWilayahConfig(config)}
-                              className="border-green-600 text-green-600 hover:bg-green-50"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteAdminWilayahConfig(config)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        {config.files && config.files.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
                             {config.files.map((file: any) => (
                               <Badge key={file.id} variant="outline" className="text-xs">
-                                {file.id === 6 ? `${file.name} (${file.variant})` : file.name}
+                                {file.name}
                               </Badge>
                             ))}
                           </div>
-                        )}
-                      </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 )}
@@ -1649,7 +1801,7 @@ const Settings = () => {
               <Label>Pilih Berkas Wajib Admin Wilayah</Label>
               <div className="mt-2 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {adminWilayahFiles.map((file) => (
+                  {adminWilayahAvailableFileTypes.map((file) => (
                     <div
                       key={file.id}
                       className={`p-3 border rounded-lg transition-all duration-200 ${
@@ -1674,7 +1826,7 @@ const Settings = () => {
                           <p className="text-xs text-gray-600">{file.description}</p>
                           
                           {/* Varian selector untuk file 6 */}
-                          {file.id === 6 && adminWilayahConfigForm.selectedFiles[file.id] && (
+                          {file.id === 'surat_rekomendasi_kanwil' && adminWilayahConfigForm.selectedFiles[file.id] && (
                             <div className="mt-3">
                               <Label className="text-xs font-medium text-gray-700 mb-2 block">
                                 Pilih Varian File 6:
@@ -1709,14 +1861,57 @@ const Settings = () => {
               <h4 className="font-medium text-gray-900 mb-2">Ringkasan Konfigurasi</h4>
               <div className="space-y-2 text-sm text-gray-600">
                 <p>Total berkas yang dipilih: {Object.values(adminWilayahConfigForm.selectedFiles).filter(Boolean).length}</p>
-                <p>Berkas wajib: {adminWilayahFiles.filter(f => f.is_required && adminWilayahConfigForm.selectedFiles[f.id]).length}</p>
-                {adminWilayahConfigForm.selectedFiles[6] && (
+                <p>Berkas wajib: {adminWilayahAvailableFileTypes.filter(f => f.is_required && adminWilayahConfigForm.selectedFiles[f.id]).length}</p>
+                {adminWilayahConfigForm.selectedFiles['surat_rekomendasi_kanwil'] && (
                   <p>Varian berkas 6: {adminWilayahConfigForm.selectedVariant}</p>
                 )}
               </div>
             </div>
 
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="jenis-jabatan">Jenis Jabatan</Label>
+                <Select 
+                  value={adminWilayahConfigForm.jenis_jabatan_id} 
+                  onValueChange={(value) => setAdminWilayahConfigForm(prev => ({ ...prev, jenis_jabatan_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih jenis jabatan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableJobTypes.map((jobType) => (
+                      <SelectItem key={jobType.id} value={jobType.id.toString()}>
+                        {jobType.jenis_jabatan}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
+              {/* Nama Konfigurasi dan Deskripsi disembunyikan untuk menyederhanakan input */}
+              {/*
+              <div>
+                <Label htmlFor="config-name">Nama Konfigurasi</Label>
+                <Input
+                  id="config-name"
+                  value={adminWilayahConfigForm.name}
+                  onChange={(e) => setAdminWilayahConfigForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Contoh: Konfigurasi Guru"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="config-description">Deskripsi</Label>
+                <Textarea
+                  id="config-description"
+                  value={adminWilayahConfigForm.description}
+                  onChange={(e) => setAdminWilayahConfigForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Deskripsi konfigurasi file wajib"
+                  rows={3}
+                />
+              </div>
+              */}
+            </div>
           </div>
 
           <DialogFooter>
@@ -1738,32 +1933,82 @@ const Settings = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus konfigurasi "{configToDelete?.name}"? 
-              Tindakan ini tidak dapat dibatalkan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction 
-              onClick={() => setShowDeleteConfirmDialog(false)}
-              className="bg-gray-100 hover:bg-gray-300 text-gray-900 border border-gray-300"
+      {/* Modal Konfirmasi Delete */}
+      <Dialog 
+        open={showDeleteConfirmDialog} 
+        onOpenChange={(open) => {
+          // Mencegah modal tertutup saat sedang menghapus
+          if (!open && isDeleting) return;
+          setShowDeleteConfirmDialog(open);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Konfirmasi Penghapusan</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin menghapus konfigurasi berkas admin wilayah ini?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {configToDelete && (
+            <div className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h4 className="font-medium text-red-800 mb-2">{configToDelete.name}</h4>
+                <p className="text-sm text-red-700 mb-2">{configToDelete.description}</p>
+                <div className="flex flex-wrap gap-2">
+                  {configToDelete.files.map((file: any) => (
+                    <Badge key={file.id} variant="outline" className="text-xs border-red-200 text-red-700">
+                      {file.name}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-red-600 mt-2">
+                  Total {configToDelete.files.length} berkas akan dihapus
+                </p>
+              </div>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="flex items-start space-x-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                  <div className="text-sm text-yellow-800">
+                    <p className="font-medium">Peringatan!</p>
+                    <p>Tindakan ini tidak dapat dibatalkan. Semua konfigurasi berkas untuk jenis jabatan ini akan dihapus secara permanen.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={cancelDeleteAdminWilayahConfig}
+              disabled={isDeleting}
+              className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-200 hover:text-gray-900"
             >
               Batal
-            </AlertDialogAction>
-            <AlertDialogAction 
+            </Button>
+            <Button
               onClick={confirmDeleteAdminWilayahConfig}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={isDeleting}
+              variant="destructive"
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
             >
-              Hapus
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              {isDeleting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Menghapus...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Hapus Permanen
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

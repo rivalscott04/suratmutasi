@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiPost, apiGet } from '../lib/api';
 
@@ -8,6 +7,7 @@ interface User {
   full_name: string;
   role: 'admin' | 'operator' | 'user' | 'admin_wilayah';
   office_id?: string | null;
+  wilayah?: string | null;
   kabkota?: string;
   original_admin_id?: string; // For impersonation tracking
   impersonating?: boolean;
@@ -72,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
+      // Fetch user data with better error handling
       apiGet('/api/auth/me', storedToken)
         .then((res) => {
           setUser(res.user);
@@ -82,7 +83,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
         .catch((error) => {
           console.error('Error fetching user:', error);
-          logout();
+          // Don't logout immediately, let the global error handler deal with it
+          // Only logout if it's a clear authentication error
+          if (error.message?.includes('Sesi berakhir') || error.message?.includes('Unauthorized')) {
+            logout();
+          }
         })
         .finally(() => setLoading(false));
     } else {

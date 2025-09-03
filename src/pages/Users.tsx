@@ -55,7 +55,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'operator' | 'user';
+  role: 'admin' | 'operator' | 'user' | 'admin_wilayah';
   office_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -65,7 +65,7 @@ interface UserFormData {
   email: string;
   full_name: string;
   password: string;
-  role: 'admin' | 'operator' | 'user';
+  role: 'admin' | 'operator' | 'user' | 'admin_wilayah';
   office_id: string;
 }
 
@@ -381,7 +381,7 @@ const Users = () => {
 
       {/* Add User Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-md">
+         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Tambah User Baru</DialogTitle>
             <DialogDescription>
@@ -431,7 +431,7 @@ const Users = () => {
             </div>
             <div>
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value: 'admin' | 'operator' | 'user') => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value: 'admin' | 'operator' | 'user' | 'admin_wilayah') => setFormData({ ...formData, role: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih role" />
                 </SelectTrigger>
@@ -439,6 +439,7 @@ const Users = () => {
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="operator">Operator</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="admin_wilayah">Admin Wilayah</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -520,7 +521,7 @@ const Users = () => {
             </div>
             <div>
               <Label htmlFor="edit-role">Role</Label>
-              <Select value={formData.role} onValueChange={(value: 'admin' | 'operator' | 'user') => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value: 'admin' | 'operator' | 'user' | 'admin_wilayah') => setFormData({ ...formData, role: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih role" />
                 </SelectTrigger>
@@ -528,6 +529,7 @@ const Users = () => {
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="operator">Operator</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="admin_wilayah">Admin Wilayah</SelectItem>
                 </SelectContent>
               </Select>
             </div>

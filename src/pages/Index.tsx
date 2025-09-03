@@ -71,7 +71,7 @@ const Login = () => {
             />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Sistem Surat Mutasi
+            Si Imut — Sistem Informasi Mutasi
           </CardTitle>
           <CardDescription className="text-base text-gray-600">
             Kanwil Kemenag Provinsi NTB

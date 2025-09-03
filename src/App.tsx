@@ -344,9 +344,17 @@ const AppInner = () => {
               <button
                 className="w-full py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white text-lg font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
                 onClick={() => {
-                  logout(); // Panggil logout dari AuthContext
+                  try {
+                    // Hapus token storage secara paksa
+                    localStorage.removeItem('token');
+                  } catch {}
+                  // Panggil logout dari AuthContext (best-effort)
+                  try { logout(); } catch {}
                   setShowSessionExpiredModal(false);
-                  navigate('/', { replace: true });
+                  // Hard redirect untuk memastikan state bersih
+                  try { window.location.assign('/'); } catch {
+                    navigate('/', { replace: true });
+                  }
                 }}
               >
                 Login Ulang

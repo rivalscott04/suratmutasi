@@ -14,9 +14,12 @@ import {
   BarChart3,
   Activity,
   Calendar,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiGet, apiPost } from '@/lib/api';
 
 interface UploadActivity {
   id: string;
@@ -47,6 +50,8 @@ interface DashboardStats {
 }
 
 const AdminWilayahDashboard: React.FC = () => {
+  const { token } = useAuth();
+  const [activeTab, setActiveTab] = useState<'process' | 'archive'>('process');
   const [stats, setStats] = useState<DashboardStats>({
     totalPengajuan: 0,
     pendingUpload: 0,
@@ -57,104 +62,76 @@ const AdminWilayahDashboard: React.FC = () => {
   });
   const [recentUploads, setRecentUploads] = useState<UploadActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pengajuan, setPengajuan] = useState<any[]>([]);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [archive, setArchive] = useState<any[]>([]);
 
-  // Mock data untuk development
-  useEffect(() => {
-    const mockStats: DashboardStats = {
-      totalPengajuan: 24,
-      pendingUpload: 8,
-      completedUpload: 16,
-      totalFiles: 156,
-      verifiedFiles: 142,
-      rejectedFiles: 14
-    };
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiGet('/api/admin-wilayah/dashboard', token);
+      // Terima berbagai bentuk payload: {success, data:{stats,...}} atau {success, stats, ...}
+      const statsPayload = response?.data?.stats || response?.stats;
+      const uploadsPayload = response?.data?.recentUploads || response?.recentUploads || [];
+      const pengajuanPayload = response?.data?.pengajuan || response?.pengajuan || [];
 
-    const mockUploads: UploadActivity[] = [
-      {
-        id: '1',
-        pengajuan: {
-          id: 'p001',
-          pegawai: {
-            nama: 'Ahmad Supriadi',
-            nip: '198501152010011001'
-          },
-          jenis_jabatan: 'Guru',
-          status: 'admin_wilayah_upload'
-        },
-        file_type: 'surat_pernyataan_persetujuan',
-        file_name: 'Surat_Pernyataan_Persetujuan_Ahmad_Supriadi.pdf',
-        uploaded_by_name: 'Admin Wilayah',
-        uploaded_by_office: 'Kanwil Provinsi Jawa Barat',
-        uploaded_at: '2024-01-15T10:30:00Z',
-        status: 'verified'
-      },
-      {
-        id: '2',
-        pengajuan: {
-          id: 'p002',
-          pegawai: {
-            nama: 'Siti Nurhaliza',
-            nip: '198603202010012002'
-          },
-          jenis_jabatan: 'Eselon',
-          status: 'admin_wilayah_review'
-        },
-        file_type: 'surat_pernyataan_tidak_tugas_belajar',
-        file_name: 'Surat_Pernyataan_Tidak_Tugas_Belajar_Siti_Nurhaliza.pdf',
-        uploaded_by_name: 'Admin Wilayah',
-        uploaded_by_office: 'Kanwil Provinsi Jawa Barat',
-        uploaded_at: '2024-01-15T09:15:00Z',
-        status: 'pending'
-      },
-      {
-        id: '3',
-        pengajuan: {
-          id: 'p003',
-          pegawai: {
-            nama: 'Budi Santoso',
-            nip: '198712052010011003'
-          },
-          jenis_jabatan: 'Fungsional',
-          status: 'final_ready_for_sk'
-        },
-        file_type: 'surat_pernyataan_tanggung_jawab_mutlak',
-        file_name: 'SPTJM_Budi_Santoso.pdf',
-        uploaded_by_name: 'Admin Wilayah',
-        uploaded_by_office: 'Kanwil Provinsi Jawa Barat',
-        uploaded_at: '2024-01-14T16:45:00Z',
-        status: 'verified'
+      if (statsPayload) {
+        setStats({
+          totalPengajuan: Number(statsPayload.total_pengajuan || statsPayload.totalPengajuan || 0),
+          pendingUpload: Number(statsPayload.pending_upload || statsPayload.pendingUpload || 0),
+          completedUpload: Number(statsPayload.completed_upload || statsPayload.completedUpload || 0),
+          totalFiles: Number(statsPayload.total_files || statsPayload.totalFiles || 0),
+          verifiedFiles: Number(statsPayload.verified_files || statsPayload.verifiedFiles || 0),
+          rejectedFiles: Number(statsPayload.rejected_files || statsPayload.rejectedFiles || 0),
+        });
+        setRecentUploads(Array.isArray(uploadsPayload) ? uploadsPayload : []);
+        setPengajuan(Array.isArray(pengajuanPayload) ? pengajuanPayload : []);
+      } else {
+        setError('Failed to fetch dashboard data');
       }
-    ];
-
-    setStats(mockStats);
-    setRecentUploads(mockUploads);
-    setLoading(false);
-  }, []);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return <Badge className="bg-green-600 text-white">Verified</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-600 text-white">Rejected</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-600 text-white">Pending</Badge>;
-      default:
-        return <Badge className="bg-gray-600 text-white">Unknown</Badge>;
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setError('Error connecting to server');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'rejected':
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
-      case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      default:
-        return <FileText className="h-4 w-4 text-gray-400" />;
+  const fetchHistory = async () => {
+    try {
+      const res = await apiGet('/api/admin-wilayah/history', token);
+      const payload = res?.data?.pengajuan || res?.pengajuan || [];
+      setArchive(Array.isArray(payload) ? payload : []);
+    } catch (e) {
+      // ignore silently for history
+      setArchive([]);
     }
+  };
+
+  const handleSubmitToSuperadmin = async (id: string) => {
+    if (!token) return;
+    setSubmittingId(id);
+    try {
+      const res = await apiPost(`/api/admin-wilayah/pengajuan/${id}/submit-to-superadmin`, {}, token);
+      if (res?.success !== false) {
+        await fetchDashboardData();
+      }
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+    fetchHistory();
+  }, [token]);
+
+  const getProgressPercentage = () => {
+    if (stats.totalFiles === 0) return 0;
+    return (stats.verifiedFiles / stats.totalFiles) * 100;
   };
 
   const formatDate = (dateString: string) => {
@@ -165,11 +142,6 @@ const AdminWilayahDashboard: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const getProgressPercentage = () => {
-    if (stats.totalFiles === 0) return 0;
-    return (stats.verifiedFiles / stats.totalFiles) * 100;
   };
 
   if (loading) {
@@ -189,6 +161,24 @@ const AdminWilayahDashboard: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={fetchDashboardData} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white">
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -201,234 +191,275 @@ const AdminWilayahDashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button onClick={fetchDashboardData} variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
             <Activity className="h-6 w-6 text-green-600" />
             <Badge className="bg-green-100 text-green-800">Admin Wilayah</Badge>
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2">
+          <Button variant={activeTab === 'process' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('process')}>Dalam Proses</Button>
+          <Button variant={activeTab === 'archive' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('archive')}>Arsip</Button>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-800">Total Pengajuan</CardTitle>
-              <FileText className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-800">{stats.totalPengajuan}</div>
-              <p className="text-xs text-green-600">Pengajuan dalam sistem</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-yellow-800">Pending Upload</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-800">{stats.pendingUpload}</div>
-              <p className="text-xs text-yellow-600">Menunggu upload file</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-blue-200 bg-blue-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-800">Completed Upload</CardTitle>
-              <CheckCircle className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-800">{stats.completedUpload}</div>
-              <p className="text-xs text-blue-600">Upload selesai</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-purple-200 bg-purple-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-800">File Verified</CardTitle>
-              <TrendingUp className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-800">{stats.verifiedFiles}</div>
-              <p className="text-xs text-purple-600">Dari {stats.totalFiles} total file</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Progress Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* File Verification Progress */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-green-800 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Progress Verifikasi File
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">
-                    File Terverifikasi: {Math.round(getProgressPercentage())}%
-                  </span>
-                  <Badge className="bg-green-600 text-white">
-                    {stats.verifiedFiles}/{stats.totalFiles}
-                  </Badge>
-                </div>
-                <Progress value={getProgressPercentage()} className="h-3 [&>div]:bg-green-600" />
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-green-600">{stats.verifiedFiles}</div>
-                    <div className="text-xs text-gray-500">Verified</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-yellow-600">{stats.totalFiles - stats.verifiedFiles - stats.rejectedFiles}</div>
-                    <div className="text-xs text-gray-500">Pending</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-red-600">{stats.rejectedFiles}</div>
-                    <div className="text-xs text-gray-500">Rejected</div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-green-800">Quick Actions</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Pengajuan</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button asChild className="w-full bg-green-600 hover:bg-green-700 text-white">
-                <Link to="/admin-wilayah/upload">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload File Baru
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full border-green-200 text-green-700 hover:bg-green-50">
-                <Link to="/admin-wilayah/pengajuan">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Lihat Pengajuan
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50">
-                <Link to="/admin-wilayah/reports">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Laporan
-                </Link>
-              </Button>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalPengajuan}</div>
+              <p className="text-xs text-muted-foreground">
+                Pengajuan yang sudah approved
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Upload</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{stats.pendingUpload}</div>
+              <p className="text-xs text-muted-foreground">
+                Menunggu upload file admin wilayah
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed Upload</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.completedUpload}</div>
+              <p className="text-xs text-muted-foreground">
+                File admin wilayah sudah lengkap
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Files</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalFiles}</div>
+              <p className="text-xs text-muted-foreground">
+                File yang sudah diupload
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Recent Upload Activity */}
+        {/* Progress Overview */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-green-800 flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Aktivitas Upload Terbaru
-              </CardTitle>
-              <Button asChild variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
-                <Link to="/admin-wilayah/activity">
-                  Lihat Semua
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Link>
-              </Button>
-            </div>
+            <CardTitle>Progress Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentUploads.map((upload) => (
-                <div
-                  key={upload.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    {getStatusIcon(upload.status)}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900">{upload.pengajuan.pegawai.nama}</h3>
-                        <Badge className="bg-gray-100 text-gray-800 text-xs">
-                          {upload.pengajuan.jenis_jabatan}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600">{upload.file_name}</p>
-                      <p className="text-xs text-gray-500">
-                        Uploaded by {upload.uploaded_by_name} ({upload.uploaded_by_office})
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {getStatusBadge(upload.status)}
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">{formatDate(upload.uploaded_at)}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {recentUploads.length === 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">File Verification Progress</span>
+                <span className="text-sm text-muted-foreground">
+                  {stats.verifiedFiles} of {stats.totalFiles} files verified
+                </span>
+              </div>
+              <Progress value={getProgressPercentage()} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Pending: {stats.totalFiles - stats.verifiedFiles - stats.rejectedFiles}</span>
+                <span>Verified: {stats.verifiedFiles}</span>
+                <span>Rejected: {stats.rejectedFiles}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Table Pengajuan Approved Kab/Kota */}
+        {activeTab === 'process' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pengajuan dari Kab/Kota (Approved)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pengajuan.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">Tidak ada data</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b">
+                      <th className="py-2 pr-4">Pegawai</th>
+                      <th className="py-2 pr-4">NIP</th>
+                      <th className="py-2 pr-4">Jenis Jabatan</th>
+                      <th className="py-2 pr-4">Berkas Kab/Kota</th>
+                      <th className="py-2 pr-4">Progress Kanwil</th>
+                      <th className="py-2 pr-4">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pengajuan.map((row) => {
+                      const pegawai = row.pegawai || {};
+                      const progress = row.progress_admin_wilayah || { required: 0, approved: 0 };
+                      const progressText = `${progress.approved}/${progress.required}`;
+                      const canSubmit = row.status === 'admin_wilayah_approved' && (row.progress_admin_wilayah?.required || 0) > 0 && (row.progress_admin_wilayah?.approved || 0) >= (row.progress_admin_wilayah?.required || 0);
+                      return (
+                        <tr key={row.id} className="border-b">
+                          <td className="py-2 pr-4">{pegawai.nama || '-'}</td>
+                          <td className="py-2 pr-4">{pegawai.nip || '-'}</td>
+                          <td className="py-2 pr-4">{row.jenis_jabatan}</td>
+                          <td className="py-2 pr-4">{row.kabupaten_files_count}</td>
+                          <td className="py-2 pr-4">
+                            <div className="flex items-center gap-2">
+                              <span>{progressText}</span>
+                              <Progress value={progress.required ? (progress.approved / progress.required) * 100 : 0} className="h-2 w-32" />
+                            </div>
+                          </td>
+                          <td className="py-2 pr-4">
+                            <div className="flex gap-2">
+                              <Button asChild variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
+                                <Link to={`/pengajuan/${row.id}`}>Detail</Link>
+                              </Button>
+                              <Button asChild size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                                <Link to={`/admin-wilayah/upload/${row.id}`}>Upload Kanwil</Link>
+                              </Button>
+                              <Button size="sm" disabled={!canSubmit || submittingId === row.id} onClick={() => handleSubmitToSuperadmin(row.id)} className={`text-white ${canSubmit ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-300 cursor-not-allowed'}`}>
+                                {submittingId === row.id ? 'Mengajukan...' : 'Ajukan ke Superadmin'}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        )}
+
+        {activeTab === 'archive' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Arsip (Keputusan Superadmin)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {archive.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">Belum ada arsip</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b">
+                      <th className="py-2 pr-4">Pegawai</th>
+                      <th className="py-2 pr-4">NIP</th>
+                      <th className="py-2 pr-4">Jenis Jabatan</th>
+                      <th className="py-2 pr-4">Status</th>
+                      <th className="py-2 pr-4">Tanggal</th>
+                      <th className="py-2 pr-4">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {archive.map((row) => (
+                      <tr key={row.id} className="border-b">
+                        <td className="py-2 pr-4">{row.pegawai?.nama || '-'}</td>
+                        <td className="py-2 pr-4">{row.pegawai?.nip || '-'}</td>
+                        <td className="py-2 pr-4">{row.jenis_jabatan}</td>
+                        <td className="py-2 pr-4">
+                          <Badge className={row.status === 'approved' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
+                            {row.status === 'approved' ? 'Disetujui' : 'Ditolak'}
+                          </Badge>
+                        </td>
+                        <td className="py-2 pr-4">{formatDate(row.updated_at)}</td>
+                        <td className="py-2 pr-4">
+                          <Button asChild variant="outline" size="sm">
+                            <Link to={`/pengajuan/${row.id}`}>Detail</Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        )}
+
+        {/* Recent Uploads */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Uploads</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentUploads.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <Upload className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Belum ada aktivitas upload</p>
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>Belum ada file yang diupload</p>
                 </div>
+              ) : (
+                recentUploads.map((upload) => (
+                  <div key={upload.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{upload.pengajuan.pegawai.nama}</div>
+                        <div className="text-sm text-gray-500">
+                          {upload.pengajuan.jenis_jabatan} • {upload.file_type}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={upload.status === 'approved' ? 'default' : 'secondary'}>
+                          {upload.status}
+                        </Badge>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/admin-wilayah/upload/${upload.pengajuan.id}`}>
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      Uploaded by: <strong>{upload.uploaded_by_name}</strong> 
+                      ({upload.uploaded_by_office}) - {formatDate(upload.uploaded_at)}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Performance Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-green-800 flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Performance Admin Wilayah
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Rata-rata waktu upload</span>
-                  <span className="font-medium text-green-600">2.5 jam</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">File per hari</span>
-                  <span className="font-medium text-green-600">12 file</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Success rate</span>
-                  <span className="font-medium text-green-600">95%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-green-800 flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Aktivitas Hari Ini
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">File diupload</span>
-                  <span className="font-medium text-green-600">8 file</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Pengajuan diproses</span>
-                  <span className="font-medium text-green-600">3 pengajuan</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">File diverifikasi</span>
-                  <span className="font-medium text-green-600">15 file</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <Button asChild className="flex-1">
+                <Link to="/admin-wilayah/pengajuan">
+                  <FileText className="h-4 w-4 mr-2" />
+                  View All Pengajuan
+                </Link>
+              </Button>
+              <Button variant="outline" className="flex-1">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Generate Report
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

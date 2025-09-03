@@ -3,48 +3,98 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, FileText, User, Calendar, MapPin } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, FileText, User, Calendar, MapPin, CheckCircle, XCircle, Send, ChevronDown } from 'lucide-react';
 import AdminWilayahFileUpload from '@/components/AdminWilayahFileUpload';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiGet, apiPost } from '@/lib/api';
 
-interface Pengajuan {
+interface PengajuanDetail {
   id: string;
-  pegawai: {
-    nama: string;
-    nip: string;
-    jabatan: string;
-    kantor: string;
-  };
-  jenis_jabatan: string;
+  jenis_jabatan: number;
   status: string;
   created_at: string;
   updated_at: string;
+  pegawai?: { nama: string; nip: string };
+  office?: { id: string; name: string; kabkota: string };
 }
 
 const AdminWilayahUploadPage: React.FC = () => {
   const { pengajuanId } = useParams<{ pengajuanId: string }>();
   const navigate = useNavigate();
-  const [pengajuan, setPengajuan] = useState<Pengajuan | null>(null);
+  const { token } = useAuth();
+  const [pengajuan, setPengajuan] = useState<PengajuanDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [availableJobTypes, setAvailableJobTypes] = useState<string[]>([]);
+  const [selectedJobType, setSelectedJobType] = useState<string>('');
+  const [uploadProgress, setUploadProgress] = useState<{ required: number; total: number; isComplete: boolean }>({ required: 0, total: 0, isComplete: false });
 
-  // Mock data untuk development
+  const fetchDetail = async () => {
+    if (!token || !pengajuanId) return;
+    setLoading(true);
+    try {
+      const res = await apiGet(`/api/admin-wilayah/pengajuan/${pengajuanId}`, token);
+      if (res && res.success !== false) {
+        // backend returns { success, pengajuan, adminWilayahFileConfig, uploadProgress, ... }
+        setPengajuan(res.pengajuan || res.data?.pengajuan || res);
+        const progress = res.uploadProgress || res.data?.uploadProgress;
+        if (progress) {
+          const uploadedCount = Number(progress.required ?? 0); // backend uses 'required' as uploaded count
+          const totalRequired = Number(progress.total ?? 0);
+          const complete = typeof progress.isComplete === 'boolean' ? progress.isComplete : uploadedCount >= totalRequired;
+          setUploadProgress({
+            required: uploadedCount,
+            total: totalRequired,
+            isComplete: complete
+          });
+        } else {
+          setUploadProgress({ required: 0, total: 0, isComplete: false });
+        }
+      } else {
+        setPengajuan(null);
+        setUploadProgress({ required: 0, total: 0, isComplete: false });
+      }
+    } catch (e) {
+      console.error('Failed to fetch pengajuan detail', e);
+      setPengajuan(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch available job types from admin wilayah config
+  const fetchAvailableJobTypes = async () => {
+    try {
+      const res = await apiGet('/api/admin-wilayah-file-config', token);
+      if (res?.success && Array.isArray(res.data)) {
+        // Extract unique job type names with their IDs
+        const jobTypeMap = new Map();
+        res.data.forEach((c: any) => {
+          const jobTypeId = c.jenis_jabatan_id;
+          const jobTypeName = c.jenis_jabatan?.jenis_jabatan || `Jabatan ${jobTypeId}`;
+          if (jobTypeId && !jobTypeMap.has(jobTypeId)) {
+            jobTypeMap.set(jobTypeId, jobTypeName);
+          }
+        });
+        
+        const names = Array.from(jobTypeMap.values());
+        setAvailableJobTypes(names);
+        
+        // Set default selection if available
+        if (names.length > 0 && !selectedJobType) {
+          setSelectedJobType(names[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch job types:', error);
+    }
+  };
+
   useEffect(() => {
-    const mockPengajuan: Pengajuan = {
-      id: pengajuanId || 'p001',
-      pegawai: {
-        nama: 'Ahmad Supriadi',
-        nip: '198501152010011001',
-        jabatan: 'Guru Madrasah Aliyah',
-        kantor: 'Kantor Kementerian Agama Kabupaten Bandung'
-      },
-      jenis_jabatan: 'Guru',
-      status: 'approved',
-      created_at: '2024-01-10T08:00:00Z',
-      updated_at: '2024-01-15T10:30:00Z'
-    };
-
-    setPengajuan(mockPengajuan);
-    setLoading(false);
-  }, [pengajuanId]);
+    fetchDetail();
+    fetchAvailableJobTypes();
+  }, [pengajuanId, token]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
@@ -59,15 +109,48 @@ const AdminWilayahUploadPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-600 text-white">Disetujui</Badge>;
-      case 'admin_wilayah_upload':
-        return <Badge className="bg-blue-600 text-white">Upload Admin Wilayah</Badge>;
-      case 'admin_wilayah_review':
-        return <Badge className="bg-yellow-600 text-white">Review Admin Wilayah</Badge>;
-      case 'final_ready_for_sk':
-        return <Badge className="bg-purple-600 text-white">Siap SK</Badge>;
+        return <Badge className="bg-green-600 text-white">Disetujui Kab/Kota</Badge>;
+      case 'admin_wilayah_approved':
+        return <Badge className="bg-green-700 text-white">Disetujui Admin Wilayah</Badge>;
+      case 'admin_wilayah_rejected':
+        return <Badge className="bg-red-600 text-white">Ditolak Admin Wilayah</Badge>;
+      case 'submitted':
+        return <Badge className="bg-blue-600 text-white">Dikirim ke Superadmin</Badge>;
       default:
         return <Badge className="bg-gray-600 text-white">{status}</Badge>;
+    }
+  };
+
+  const approve = async () => {
+    if (!token || !pengajuanId) return;
+    setSubmitting(true);
+    try {
+      await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/approve`, {}, token);
+      await fetchDetail();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const reject = async () => {
+    if (!token || !pengajuanId) return;
+    setSubmitting(true);
+    try {
+      await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/reject`, { rejection_reason: 'Ditolak oleh Admin Wilayah' }, token);
+      await fetchDetail();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitToSuperadmin = async () => {
+    if (!token || !pengajuanId) return;
+    setSubmitting(true);
+    try {
+      await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/submit-to-superadmin`, {}, token);
+      await fetchDetail();
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -146,15 +229,15 @@ const AdminWilayahUploadPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <User className="h-5 w-5 text-green-600" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">{pengajuan.pegawai.nama}</h3>
-                    <p className="text-sm text-gray-600">NIP: {pengajuan.pegawai.nip}</p>
+                    <h3 className="font-semibold text-gray-900">{pengajuan.pegawai?.nama || '-'}</h3>
+                    <p className="text-sm text-gray-600">NIP: {pengajuan.pegawai?.nip || '-'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="font-medium text-gray-900">{pengajuan.pegawai.jabatan}</p>
-                    <p className="text-sm text-gray-600">{pengajuan.pegawai.kantor}</p>
+                    <p className="font-medium text-gray-900">{pengajuan.office?.kabkota || '-'}</p>
+                    <p className="text-sm text-gray-600">{pengajuan.office?.name || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -184,89 +267,52 @@ const AdminWilayahUploadPage: React.FC = () => {
             <CardTitle className="text-green-800">Upload File Admin Wilayah</CardTitle>
           </CardHeader>
           <CardContent>
-            <AdminWilayahFileUpload
-              pengajuanId={pengajuan.id}
-              jenisJabatanId={1} // Mock ID, should come from pengajuan
-              onFilesUploaded={(files) => {
-                console.log('Files uploaded:', files);
-                // Handle files uploaded
-              }}
-            />
+            {/* Job Type Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Pilih Jenis Berkas Admin Wilayah
+              </label>
+              <Select value={selectedJobType} onValueChange={setSelectedJobType}>
+                <SelectTrigger className="w-full max-w-md">
+                  <SelectValue placeholder="Pilih jenis berkas..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableJobTypes.map((jobType) => (
+                    <SelectItem key={jobType} value={jobType}>
+                      {jobType}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Pilih jenis berkas yang sudah dikonfigurasi oleh superadmin
+              </p>
+            </div>
+
+            {/* File Upload Component */}
+            {selectedJobType && (
+              <AdminWilayahFileUpload
+                pengajuanId={pengajuan.id}
+                jenisJabatanId={selectedJobType}
+                onFilesUploaded={() => fetchDetail()}
+                onProgressChange={(uploaded, total) => setUploadProgress({ required: uploaded, total, isComplete: uploaded >= total && total > 0 })}
+              />
+            )}
           </CardContent>
         </Card>
 
-        {/* Instructions */}
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="text-blue-800">Panduan Upload File</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 text-sm text-blue-800">
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>
-                  <strong>Section A:</strong> Berkas Kab/Kota - File yang sudah diupload oleh kabupaten/kota (read-only)
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>
-                  <strong>Section B:</strong> File Wajib Kanwil - File wajib yang harus diupload (1-5, 7)
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>
-                  <strong>Section C:</strong> File Khusus - Pilih varian 6.x sesuai jenis jabatan
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>
-                  <strong>Catatan:</strong> Semua file wajib harus diupload dan diverifikasi sebelum dapat mengirim untuk review
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* File Requirements */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-green-800">Daftar File Wajib</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-gray-900">File Wajib (1-5, 7):</h4>
-                  <ul className="space-y-1 text-sm text-gray-600">
-                    <li>1. Surat Pernyataan Persetujuan dari Kepala Wilayah</li>
-                    <li>2. Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar</li>
-                    <li>3. Surat Pernyataan Tidak Sedang Dijatuhi Hukuman Disiplin</li>
-                    <li>4. Surat Pernyataan Tidak Sedang Menjalani Proses Pidana</li>
-                    <li>5. Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)</li>
-                    <li>7. Surat Pengantar Permohonan Penerbitan SK</li>
-                  </ul>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium text-gray-900">File Khusus (6.x):</h4>
-                  <ul className="space-y-1 text-sm text-gray-600">
-                    <li>6.1 - Untuk Eselon (Jabatan Pengawas)</li>
-                    <li>6.2 - Untuk Penyuluh Agama Islam</li>
-                    <li>6.3 - Untuk Guru, Pengawas, Kepala Madrasah</li>
-                    <li>6.4 - Untuk Analis SDM dan Asesor</li>
-                    <li>6.5 - Untuk Arsiparis, BARJAS</li>
-                    <li>6.6 - Untuk Analis Pengelolaan Keuangan APBN</li>
-                    <li>6.7 - Untuk Perencana</li>
-                    <li>6.8 - Untuk Pranata Humas</li>
-                    <li>6.9 - Untuk Analis Kebijakan</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3">
+          {(pengajuan.status === 'approved' || pengajuan.status === 'submitted') && (
+            <>
+              <span className="text-sm text-gray-600 mr-2">{uploadProgress.required}/{uploadProgress.total} berkas wajib</span>
+              <Button onClick={submitToSuperadmin} disabled={submitting || pengajuan.status === 'submitted' || (uploadProgress.required < uploadProgress.total)} className="bg-green-600 hover:bg-green-700 text-white">
+              <Send className="h-4 w-4 mr-2" />
+              {pengajuan.status === 'submitted' ? 'Sudah Dikirim' : 'Submit ke Superadmin'}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

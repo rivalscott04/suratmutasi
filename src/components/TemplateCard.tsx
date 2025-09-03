@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Shield, Users, CheckCircle, AlertCircle, UserCheck, ArrowRightLeft, Handshake, FileCheck } from 'lucide-react';
+import { FileText, Shield, Users, CheckCircle, AlertCircle, UserCheck, ArrowRightLeft, Users2, FileCheck } from 'lucide-react';
 
 interface TemplateCardProps {
   id: string;
@@ -22,7 +22,7 @@ const getTemplateIcon = (id: string) => {
     '5': AlertCircle,
     '6': UserCheck,
     '7': ArrowRightLeft,
-    '8': Handshake,
+    '8': Users2,
     '9': FileCheck,
     '10': FileCheck,
   };

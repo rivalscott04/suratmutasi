@@ -35,17 +35,23 @@ const getCurrentEnvironment = () => {
 
 export async function apiFetch(method: string, url: string, options: { data?: any; token?: string; headers?: any } = {}) {
   const { data, token, headers = {} } = options;
-  const BASE_URL = getBaseUrl();
-  const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
   
+  const fullUrl = getBaseUrl() + url;
   const fetchOptions: RequestInit = {
     method,
     headers: {
       ...headers,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: 'include', // penting agar cookie refresh token dikirim
   };
+
+  if (token) {
+    fetchOptions.headers = {
+      ...fetchOptions.headers,
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
   if (data) {
     // Jika data adalah FormData, biarkan browser set Content-Type boundary otomatis
     if (typeof FormData !== 'undefined' && data instanceof FormData) {
@@ -58,9 +64,11 @@ export async function apiFetch(method: string, url: string, options: { data?: an
       fetchOptions.body = JSON.stringify(data);
     }
   }
+
   let res = await fetch(fullUrl, fetchOptions);
   let contentType = res.headers.get('content-type');
   let responseData;
+
   if (contentType && contentType.includes('application/json')) {
     responseData = await res.json();
   } else {
@@ -68,13 +76,22 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   }
   
   // Handle authentication errors (401) and authorization errors (403) that might indicate session expiry
-  if ((res.status === 401 || res.status === 403) && url !== '/api/auth/refresh') {
+  // Hanya handle jika bukan endpoint auth dan bukan request yang sudah di-retry
+  if ((res.status === 401 || res.status === 403) && 
+      url !== '/api/auth/refresh' && 
+      url !== '/api/auth/me' && // Jangan retry /api/auth/me untuk mencegah infinite loop
+      !url.includes('/api/auth/')) {
+    
     try {
+      // Tambah delay kecil untuk mencegah race condition
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const refreshRes = await fetch(getBaseUrl() + '/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       });
+      
       if (refreshRes.ok) {
         const refreshData = await refreshRes.json();
         if (refreshData.token) {
@@ -105,10 +122,12 @@ export async function apiFetch(method: string, url: string, options: { data?: an
       }
       throw new Error('Sesi berakhir, silakan login kembali');
     } catch (err) {
+      // Pastikan error message konsisten
+      const errorMessage = err instanceof Error ? err.message : 'Sesi berakhir, silakan login kembali';
       if (window.showSessionExpiredModal) {
         window.showSessionExpiredModal();
       }
-      throw new Error('Sesi berakhir, silakan login kembali');
+      throw new Error(errorMessage);
     }
   }
   

@@ -37,7 +37,7 @@ interface PengajuanData {
   };
   jenis_jabatan: string;
   total_dokumen: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected';
   catatan?: string;
   rejection_reason?: string;
   created_at: string;
@@ -192,11 +192,13 @@ const PengajuanIndex: React.FC = () => {
       submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800 hover:bg-blue-200', icon: FileText },
       approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800 hover:bg-green-200', icon: CheckCircle },
       rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800 hover:bg-red-200', icon: XCircle },
-      resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock }
-    };
+      resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock },
+      admin_wilayah_approved: { label: 'Disetujui Admin Wilayah', className: 'bg-green-200 text-green-800 hover:bg-green-300', icon: CheckCircle },
+      admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800 hover:bg-red-300', icon: XCircle }
+    } as const;
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
-    const Icon = config.icon;
+    const config = (statusConfig as any)[status] || { label: status, className: 'bg-gray-100 text-gray-800', icon: FileText };
+    const Icon = config.icon as any;
 
     return (
       <Badge className={config.className}>
@@ -295,6 +297,8 @@ const PengajuanIndex: React.FC = () => {
                      <SelectItem value="approved">Disetujui</SelectItem>
                      <SelectItem value="rejected">Ditolak</SelectItem>
                      <SelectItem value="resubmitted">Diajukan Ulang</SelectItem>
+                     <SelectItem value="admin_wilayah_approved">Disetujui Admin Wilayah</SelectItem>
+                     <SelectItem value="admin_wilayah_rejected">Ditolak Admin Wilayah</SelectItem>
                    </SelectContent>
                  </Select>
                </div>

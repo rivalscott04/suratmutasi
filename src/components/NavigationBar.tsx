@@ -76,34 +76,32 @@ const NavigationBar = () => {
 
   // Navigation items berdasarkan role
   const getNavigationItems = () => {
-    const baseItems = [
+    const isAdmin = isImpersonating ? originalUser?.role === 'admin' : user?.role === 'admin';
+    // Saat impersonate, gunakan role user yang sedang diimpersonate untuk menentukan menu yang tampil
+    const isAdminWilayah = user?.role === 'admin_wilayah';
+
+    // Base menu untuk semua role selain user biasa
+    const items = [
       { name: 'Dashboard', href: '/dashboard', icon: Home },
       { name: 'Template Generator', href: '/generator', icon: FileText },
       { name: 'Riwayat Surat', href: '/letters', icon: FileText },
       { name: 'Data Pengajuan', href: '/pengajuan', icon: Upload },
     ];
 
-    // Tambahkan Management User untuk admin
-    // Gunakan originalUser?.role jika sedang impersonate, atau user?.role jika tidak
-    const isAdmin = isImpersonating ? originalUser?.role === 'admin' : user?.role === 'admin';
     if (isAdmin) {
-      baseItems.push({ name: 'Management User', href: '/users', icon: UserCog });
+      items.push({ name: 'Management User', href: '/users', icon: UserCog });
     }
 
-    // Tambahkan menu khusus untuk admin wilayah
-    const isAdminWilayah = isImpersonating ? originalUser?.role === 'admin_wilayah' : user?.role === 'admin_wilayah';
+    // Tambahkan menu khusus admin wilayah DI ATAS base menu (biarkan ada 2 dashboard bila dibutuhkan)
     if (isAdminWilayah) {
-      baseItems.push(
-        { name: 'Dashboard Admin Wilayah', href: '/admin-wilayah/dashboard', icon: Home },
-        { name: 'Upload File', href: '/admin-wilayah/upload', icon: Upload }
-      );
+      items.unshift({ name: 'Dashboard Admin Wilayah', href: '/admin-wilayah/dashboard', icon: Home });
+      // Menu Upload File diarahkan ke dashboard untuk memilih pengajuan terlebih dahulu
+      items.push({ name: 'Upload File', href: '/admin-wilayah/dashboard', icon: Upload });
     }
 
+    items.push({ name: 'Settings', href: '/settings', icon: Settings });
 
-
-    baseItems.push({ name: 'Settings', href: '/settings', icon: Settings });
-
-    return baseItems;
+    return items;
   };
 
   const navigationItems = getNavigationItems();
@@ -228,10 +226,10 @@ const NavigationBar = () => {
                 />
                 <div className="hidden sm:block">
                   <h1 className="text-lg font-semibold text-green-700">
-                    Surat Generator
+                    Si Imut
                   </h1>
                   <p className="text-xs text-gray-600">
-                    Kementerian Agama RI
+                    Sistem Informasi Mutasi
                   </p>
                 </div>
               </Link>
