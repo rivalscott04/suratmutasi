@@ -45,6 +45,10 @@ interface PengajuanFile {
   verified_by?: string;
   verified_at?: string;
   blobUrl?: string;
+  file_category?: 'kabupaten' | 'admin_wilayah';
+  uploaded_by_role?: string;
+  uploaded_by_name?: string;
+  uploaded_by_office?: string;
 }
 
 interface PengajuanData {
@@ -59,7 +63,7 @@ interface PengajuanData {
   jenis_jabatan: string;
   jabatan_id?: number;
   total_dokumen: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected';
+status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'final_approved' | 'final_rejected';
   catatan?: string;
   rejection_reason?: string;
   rejected_by?: string;
@@ -68,6 +72,11 @@ interface PengajuanData {
   approved_at?: string;
   resubmitted_by?: string;
   resubmitted_at?: string;
+  final_approved_by?: string;
+  final_approved_at?: string;
+  final_rejected_by?: string;
+  final_rejected_at?: string;
+  final_rejection_reason?: string;
   created_at: string;
   updated_at: string;
   files: PengajuanFile[];
@@ -76,7 +85,7 @@ interface PengajuanData {
 const PengajuanDetail: React.FC = () => {
   const { pengajuanId } = useParams();
   const navigate = useNavigate();
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated, originalUser, isImpersonating } = useAuth();
   const [pengajuan, setPengajuan] = useState<PengajuanData | null>(null);
   const [requiredKabupaten, setRequiredKabupaten] = useState<string[]>([]);
   const [requiredKanwil, setRequiredKanwil] = useState<string[]>([]);
@@ -89,12 +98,19 @@ const PengajuanDetail: React.FC = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showFinalApproveDialog, setShowFinalApproveDialog] = useState(false);
+  const [showFinalRejectDialog, setShowFinalRejectDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [approvalNote, setApprovalNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [finalApprovalNote, setFinalApprovalNote] = useState('');
+  const [finalRejectionReason, setFinalRejectionReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [verifyingFile, setVerifyingFile] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  
+  // Check if there are admin wilayah files
+  const hasAdminWilayahFiles = pengajuan?.files?.some(file => file.file_category === 'admin_wilayah') || false;
   
 
 
@@ -205,6 +221,50 @@ const PengajuanDetail: React.FC = () => {
     }
   };
 
+  const handleFinalApprove = async () => {
+    try {
+      setSubmitting(true);
+      const response = await apiPost(`/api/pengajuan/${pengajuanId}/final-approve`, { notes: approvalNote }, token);
+      
+      if (response.success) {
+        setSuccessMessage('Pengajuan berhasil disetujui final!');
+        setShowSuccessDialog(true);
+        setShowFinalApproveDialog(false);
+        setApprovalNote('');
+        await fetchPengajuanData();
+      } else {
+        setError(response.message || 'Gagal approve final pengajuan');
+      }
+    } catch (error) {
+      console.error('Error final approving pengajuan:', error);
+      setError('Terjadi kesalahan saat approve final pengajuan');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleFinalReject = async () => {
+    try {
+      setSubmitting(true);
+      const response = await apiPost(`/api/pengajuan/${pengajuanId}/final-reject`, { rejection_reason: rejectionReason }, token);
+      
+      if (response.success) {
+        setSuccessMessage('Pengajuan berhasil ditolak final!');
+        setShowSuccessDialog(true);
+        setShowFinalRejectDialog(false);
+        setRejectionReason('');
+        await fetchPengajuanData();
+      } else {
+        setError(response.message || 'Gagal reject final pengajuan');
+      }
+    } catch (error) {
+      console.error('Error final rejecting pengajuan:', error);
+      setError('Terjadi kesalahan saat reject final pengajuan');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleResubmit = async () => {
     try {
       setSubmitting(true);
@@ -253,21 +313,21 @@ const PengajuanDetail: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800', icon: Clock },
-      submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800', icon: FileText },
-      approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800', icon: CheckCircle },
-      rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800', icon: XCircle },
-      admin_wilayah_approved: { label: 'Disetujui Admin Wilayah', className: 'bg-green-200 text-green-800', icon: CheckCircle },
-      admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800', icon: XCircle },
-
+      draft: { label: 'DRAFT', className: 'bg-gray-100 text-gray-800' },
+      submitted: { label: 'SUBMITTED', className: 'bg-blue-100 text-blue-800' },
+      approved: { label: 'APPROVED', className: 'bg-green-100 text-green-800' },
+      rejected: { label: 'REJECTED', className: 'bg-red-100 text-red-800' },
+      resubmitted: { label: 'RESUBMITTED', className: 'bg-yellow-100 text-yellow-800' },
+      admin_wilayah_approved: { label: 'ADMIN_WILAYAH_APPROVED', className: 'bg-green-200 text-green-800' },
+      admin_wilayah_rejected: { label: 'ADMIN_WILAYAH_REJECTED', className: 'bg-red-200 text-red-800' },
+      final_approved: { label: 'FINAL_APPROVED', className: 'bg-green-600 text-white' },
+      final_rejected: { label: 'FINAL_REJECTED', className: 'bg-red-600 text-white' },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || { label: status, className: 'bg-gray-100 text-gray-800', icon: FileText };
-    const Icon = config.icon;
+    const config = statusConfig[status as keyof typeof statusConfig] || { label: status.toUpperCase(), className: 'bg-gray-100 text-gray-800' };
 
     return (
       <Badge className={config.className}>
-        <Icon className="h-3 w-3 mr-1" />
         {config.label}
       </Badge>
     );
@@ -286,6 +346,7 @@ const PengajuanDetail: React.FC = () => {
 
   const getFileDisplayName = (fileType: string): string => {
     const fileTypeMap: Record<string, string> = {
+      // Berkas Kabupaten/Kota
       'surat_pengantar': 'Surat Pengantar',
       'surat_permohonan_dari_yang_bersangkutan': 'Surat Permohonan Dari Yang Bersangkutan',
       'surat_keputusan_cpns': 'Surat Keputusan CPNS',
@@ -301,13 +362,22 @@ const PengajuanDetail: React.FC = () => {
       'surat_lolos_butuh_ppk': 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju',
       'peta_jabatan': 'Peta Jabatan',
       'hasil_uji_kompetensi': 'Hasil Uji Kompetensi',
-    'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+      'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
       'anjab_abk_instansi_asal': 'Anjab/Abk Instansi Asal',
       'anjab_abk_instansi_penerima': 'Anjab/Abk Instansi Penerima',
       'surat_keterangan_tidak_tugas_belajar': 'Surat Keterangan Tidak Sedang Tugas Belajar',
       'sptjm_pimpinan_satker_asal': 'SPTJM Pimpinan Satker dari Asal',
       'sptjm_pimpinan_satker_penerima': 'SPTJM Pimpinan Satker dari Penerima',
-      'surat_rekomendasi_instansi_pembina': 'Surat Rekomendasi Instansi Pembina'
+      'surat_rekomendasi_instansi_pembina': 'Surat Rekomendasi Instansi Pembina',
+      
+      // Berkas Admin Wilayah (sesuai narasi)
+      'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar Permohonan Rekomendasi',
+      'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Kanwil Khusus',
+      'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah',
+      'surat_pernyataan_tidak_ikatan_dinas': 'Surat Pernyataan Tidak Ikatan Dinas',
+      'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan Tidak Tugas Belajar',
+      'surat_keterangan_kanwil': 'Surat Keterangan Kanwil',
+      'surat_rekomendasi_kanwil': 'Surat Rekomendasi Kanwil'
     };
     
     return fileTypeMap[fileType] || fileType.replace(/_/g, ' ').toUpperCase();
@@ -378,6 +448,19 @@ const PengajuanDetail: React.FC = () => {
     }
   };
 
+  // Handler untuk cetak laporan final
+  const handleFinalPrintReport = () => {
+    try {
+      generateFinalPrintReport();
+      setShowPrintDialog(false);
+    } catch (error) {
+      console.error('Error generating final print report:', error);
+      setError('Terjadi kesalahan saat generate laporan final');
+    }
+  };
+
+
+
   // Generate HTML untuk cetak
   const generatePrintReport = (data: any) => {
     const printWindow = window.open('', '_blank');
@@ -447,7 +530,180 @@ const PengajuanDetail: React.FC = () => {
             Tanggal Approval: ${data.approved_at ? new Date(data.approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}
           </div>
           <div style="font-size: 8pt; margin-top: 5px;">
-            Sistem Informasi Generator Surat - Kementerian Agama
+            Si Imut Kanwil Kemenag NTB
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  // Generate HTML untuk cetak laporan FINAL (setelah final approval)
+  const generateFinalPrintReport = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    // Pisahkan file berdasarkan kategori
+    const kabupatenFiles = pengajuan.files.filter(f => f.file_category === 'kabupaten');
+    const adminWilayahFiles = pengajuan.files.filter(f => f.file_category === 'admin_wilayah');
+    
+    // Filter berkas admin wilayah yang seharusnya ditampilkan (sesuai narasi)
+    const validAdminWilayahFiles = adminWilayahFiles.filter(file => {
+      const validTypes = [
+        'surat_pengantar_permohonan_rekomendasi',
+        'surat_rekomendasi_kanwil_khusus', 
+        'surat_persetujuan_kepala_wilayah',
+        'surat_pernyataan_tidak_ikatan_dinas',
+        'surat_pernyataan_tidak_tugas_belajar',
+        'surat_keterangan_kanwil',
+        'surat_rekomendasi_kanwil'
+      ];
+      return validTypes.includes(file.file_type);
+    });
+    
+    // Gabungkan semua file yang sudah diverifikasi
+    const allVerifiedFiles = [...kabupatenFiles, ...validAdminWilayahFiles];
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan Final Pengajuan - ${pengajuan.pegawai?.nama}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .info { margin-bottom: 20px; }
+          .info table { width: 100%; border-collapse: collapse; }
+          .info td { padding: 5px; }
+          .info td:first-child { font-weight: bold; width: 150px; }
+          .section { margin-bottom: 30px; }
+          .section-title { font-size: 14pt; font-weight: bold; margin-bottom: 15px; color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 5px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: Arial, sans-serif; font-size: 10pt; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          .checkbox { width: 20px; height: 20px; }
+          .status-approved { color: #059669; font-weight: bold; }
+          .status-rejected { color: #dc2626; font-weight: bold; }
+          .status-pending { color: #d97706; font-weight: bold; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1 style="color: #1e40af; margin-bottom: 10px;">LAPORAN FINAL PENGAJUAN JABATAN</h1>
+          <h3 style="color: #374151; margin: 0;">Si Imut Kanwil Kemenag NTB</h3>
+        </div>
+        
+        <div class="info">
+          <table>
+            <tr><td>Nama Pegawai</td><td>: ${pengajuan.pegawai?.nama}</td></tr>
+            <tr><td>NIP</td><td>: ${pengajuan.pegawai?.nip}</td></tr>
+            <tr><td>Jabatan</td><td>: ${pengajuan.pegawai?.jabatan}</td></tr>
+            <tr><td>Jenis Jabatan</td><td>: ${pengajuan.jenis_jabatan}</td></tr>
+            <tr><td>Status Pengajuan</td><td>: <span class="status-approved">FINAL APPROVED</span></td></tr>
+            <tr><td>Tanggal Final Approval</td><td>: ${pengajuan.final_approved_at ? new Date(pengajuan.final_approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}</td></tr>
+            <tr><td>Disetujui Oleh</td><td>: ${pengajuan.final_approved_by || 'Superadmin'}</td></tr>
+          </table>
+        </div>
+
+        <!-- Berkas Kabupaten/Kota -->
+        <div class="section">
+          <div class="section-title">📋 Berkas Kabupaten/Kota (${kabupatenFiles.length} dokumen)</div>
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama Berkas</th>
+                <th>Status Verifikasi</th>
+                <th>Verifikator</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${kabupatenFiles.map((file: any, index: number) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${getFileDisplayName(file.file_type)}</td>
+                  <td>
+                    <span class="status-${file.verification_status}">
+                      ${file.verification_status === 'approved' ? '✅ Sesuai' : 
+                        file.verification_status === 'rejected' ? '❌ Tidak Sesuai' : 
+                        '⏳ Belum Diverifikasi'}
+                    </span>
+                  </td>
+                  <td>${file.verified_by || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Berkas Admin Wilayah -->
+        <div class="section">
+          <div class="section-title">🏛️ Berkas Admin Wilayah (${validAdminWilayahFiles.length} dokumen)</div>
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama Berkas</th>
+                <th>Status Verifikasi</th>
+                <th>Verifikator</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${validAdminWilayahFiles.map((file: any, index: number) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${getFileDisplayName(file.file_type)}</td>
+                  <td>
+                    <span class="status-${file.verification_status}">
+                      ${file.verification_status === 'approved' ? '✅ Sesuai' : 
+                        file.verification_status === 'rejected' ? '❌ Tidak Sesuai' : 
+                        '⏳ Belum Diverifikasi'}
+                    </span>
+                  </td>
+                  <td>${file.verified_by || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Ringkasan -->
+        <div class="section">
+          <div class="section-title">📊 Ringkasan Dokumen</div>
+          <table>
+            <tr>
+              <td><strong>Total Berkas Kabupaten/Kota:</strong></td>
+              <td>${kabupatenFiles.length} dokumen</td>
+            </tr>
+            <tr>
+              <td><strong>Total Berkas Admin Wilayah:</strong></td>
+              <td>${validAdminWilayahFiles.length} dokumen</td>
+            </tr>
+            <tr>
+              <td><strong>Total Semua Berkas:</strong></td>
+              <td><strong>${allVerifiedFiles.length} dokumen</strong></td>
+            </tr>
+          </table>
+        </div>
+        
+        <!-- Final Verification Footer -->
+        <div style="margin-top: 40px; padding: 20px; border: 3px solid #059669; border-radius: 10px; text-align: center; font-size: 11pt; background-color: #f0fdf4;">
+          <div style="margin-bottom: 10px; font-weight: bold; color: #059669; font-size: 14pt;">
+            🎉 PENGAJUAN JABATAN TELAH DISETUJUI FINAL
+          </div>
+          <div style="margin-bottom: 8px; font-weight: bold; color: #374151;">
+            ✓ Semua dokumen telah diverifikasi dan disetujui oleh Admin Wilayah dan Superadmin
+          </div>
+          <div style="font-size: 10pt; color: #059669; margin-bottom: 5px;">
+            Tanggal Final Approval: ${pengajuan.final_approved_at ? new Date(pengajuan.final_approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}
+          </div>
+          <div style="font-size: 9pt; color: #6b7280; margin-top: 10px;">
+            Si Imut Kanwil Kemenag NTB
           </div>
         </div>
       </body>
@@ -511,14 +767,30 @@ const PengajuanDetail: React.FC = () => {
 
   const isAdmin = user?.role === 'admin';
   const isAdminWilayah = user?.role === 'admin_wilayah';
+  
+  // File yang pending = file yang sudah diperbaiki dan siap diajukan ulang
+  const hasPendingFiles = (() => {
+    if (!pengajuan) return false;
+    const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
+    for (const t of requiredAll) {
+      const f = pengajuan.files.find((x) => x.file_type === t);
+      if (f && f.verification_status === 'pending') return true;
+    }
+    return false;
+  })();
+  
+  // Operator yang sudah upload perbaikan tidak boleh edit/delete lagi, hanya bisa ajukan ulang
   const canEdit = (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected') && 
                   (isAdmin || pengajuan?.created_by === user?.id) && 
-                  user?.role !== 'user'; // User dengan role 'user' tidak bisa edit
-  const canDelete = pengajuan?.status === 'draft' && user?.role !== 'user'; // User dengan role 'user' tidak bisa hapus
+                  user?.role !== 'user' && 
+                  !hasPendingFiles; // Tidak bisa edit jika ada file pending
+  const canDelete = pengajuan?.status === 'draft' && 
+                   user?.role !== 'user' && 
+                   !hasPendingFiles; // Tidak bisa delete jika ada file pending
   const canApprove = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
   const canReject = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
-  // Tampilkan tombol Ajukan Ulang saat status ditolak, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
-  const canShowResubmit = pengajuan?.status === 'rejected' && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
+  // Tampilkan tombol Ajukan Ulang saat status ditolak atau draft, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
+  const canShowResubmit = (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft') && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
   
 
   
@@ -535,16 +807,44 @@ const PengajuanDetail: React.FC = () => {
     return true;
   })();
   
+  // File yang rejected = file yang masih bermasalah dan tidak bisa diajukan ulang
   const hasRejectedFiles = (() => {
     if (!pengajuan) return false;
     const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
     for (const t of requiredAll) {
       const f = pengajuan.files.find((x) => x.file_type === t);
-      if (!f || f.verification_status === 'rejected' || f.verification_status === 'pending') return true;
+      if (!f || f.verification_status === 'rejected') return true; // Hanya rejected, bukan pending
     }
     return false;
   })();
+  
+  // Bisa ajukan ulang jika tidak ada file rejected (semua file sudah diperbaiki)
   const resubmitEnabled = !hasRejectedFiles;
+
+  // Cek status berkas admin wilayah untuk final approval
+  const allAdminWilayahFilesApproved = (() => {
+    if (!pengajuan) return false;
+    const adminWilayahFiles = pengajuan.files.filter(f => f.file_category === 'admin_wilayah');
+    if (adminWilayahFiles.length === 0) return false;
+    
+    // Semua berkas admin wilayah harus ada dan status "approved"
+    for (const file of adminWilayahFiles) {
+      if (file.verification_status !== 'approved') return false;
+    }
+    return true;
+  })();
+
+  const hasRejectedAdminWilayahFiles = (() => {
+    if (!pengajuan) return false;
+    const adminWilayahFiles = pengajuan.files.filter(f => f.file_category === 'admin_wilayah');
+    if (adminWilayahFiles.length === 0) return false;
+    
+    // Ada minimal satu berkas admin wilayah yang "rejected"
+    for (const file of adminWilayahFiles) {
+      if (file.verification_status === 'rejected') return true;
+    }
+    return false;
+  })();
 
   if (loading) {
     return (
@@ -654,43 +954,43 @@ const PengajuanDetail: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Dokumen yang Diupload */}
+          {/* Berkas Kabupaten/Kota */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                                 Dokumen yang Diupload
-                 <Badge variant="outline" className="ml-2">
-                   {pengajuan.files.length} / {pengajuan.total_dokumen}
-                 </Badge>
-                 {isAdmin && pengajuan.status === 'submitted' && (
-                   <Badge 
-                     variant={allFilesApproved ? 'default' : 'destructive'}
-                     className={`ml-2 ${allFilesApproved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                   >
-                     {allFilesApproved ? 'Semua Dokumen Sesuai' : 'Ada Dokumen Tidak Sesuai'}
-                   </Badge>
-                 )}
+                Berkas Kabupaten/Kota
+                <Badge variant="outline" className="ml-2">
+                  {pengajuan.files.filter(f => !f.file_category || f.file_category === 'kabupaten').length} / {requiredKabupaten.length}
+                </Badge>
+                {isAdmin && pengajuan.status === 'submitted' && (
+                  <Badge 
+                    variant={allFilesApproved ? 'default' : 'destructive'}
+                    className={`ml-2 ${allFilesApproved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                  >
+                    {allFilesApproved ? 'Semua Dokumen Sesuai' : 'Ada Dokumen Tidak Sesuai'}
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {pengajuan.files.length === 0 ? (
+              {pengajuan.files.filter(f => !f.file_category || f.file_category === 'kabupaten').length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Belum ada dokumen yang diupload</p>
-                                     {canEdit && (
-                     <Button
-                       onClick={() => navigate(pengajuan.status === 'draft' ? `/pengajuan/${pengajuan.id}/upload` : `/pengajuan/${pengajuan.id}/edit`)}
-                       className="mt-4 bg-green-600 hover:bg-green-700 text-white"
-                     >
-                       <Edit className="h-4 w-4 mr-2" />
-                       {pengajuan.status === 'draft' ? 'Upload Dokumen' : 'Perbaiki Dokumen'}
-                     </Button>
-                   )}
+                  <p className="text-gray-500">Belum ada dokumen kabupaten yang diupload</p>
+                  {canEdit && (
+                    <Button
+                      onClick={() => navigate(pengajuan.status === 'draft' ? `/pengajuan/${pengajuan.id}/upload` : `/pengajuan/${pengajuan.id}/edit`)}
+                      className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      {pengajuan.status === 'draft' ? 'Upload Dokumen' : 'Perbaiki Dokumen'}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pengajuan.files.map((file) => (
+                  {pengajuan.files.filter(f => !f.file_category || f.file_category === 'kabupaten').map((file) => (
                                          <div key={file.id} className="p-6 border rounded-lg">
                        <div className="flex items-center justify-between">
                          <div className="flex-1 space-y-2">
@@ -726,7 +1026,11 @@ const PengajuanDetail: React.FC = () => {
                         
                                                  <div className="flex items-center gap-3">
                            {/* Switch Toggle Verifikasi - Admin & Admin Wilayah */}
-                          {(isAdmin && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected')) || (isAdminWilayah && (pengajuan.status === 'approved' || pengajuan.status === 'submitted')) ? (
+                          {/* Debug Info */}
+                          <div className="text-xs text-gray-500 mb-2">
+                            Debug: user.role={user?.role}, isAdmin={isAdmin ? 'true' : 'false'}, isAdminWilayah={isAdminWilayah ? 'true' : 'false'}, status={pengajuan.status}
+                          </div>
+                          {(isAdmin || isAdminWilayah) && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected') ? (
                              <div className="flex items-center gap-3 mr-3">
                               {verifyingFile === file.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
@@ -788,6 +1092,152 @@ const PengajuanDetail: React.FC = () => {
                              <Download className="h-4 w-4 mr-2" />
                              Download
                            </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+
+
+          {/* Berkas Admin Wilayah */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Berkas Admin Wilayah
+                <Badge variant="outline" className="ml-2">
+                  {pengajuan.files.filter(f => f.file_category === 'admin_wilayah').length} / {requiredKanwil.length}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pengajuan.files.filter(f => f.file_category === 'admin_wilayah').length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Belum ada dokumen admin wilayah yang diupload</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pengajuan.files.filter(f => f.file_category === 'admin_wilayah').map((file) => (
+                    <div key={file.id} className="p-6 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 space-y-2">
+                          <h4 className="font-medium text-base">{getFileDisplayName(file.file_type)}</h4>
+                          <p className="text-sm text-gray-600">{file.file_name}</p>
+                          <p className="text-xs text-gray-500">{getFileSize(file.file_size)}</p>
+                          
+                          {/* Info uploader */}
+                          {file.uploaded_by_name && (
+                            <div className="text-xs text-gray-500">
+                              Upload oleh: {file.uploaded_by_name} ({file.uploaded_by_office || 'Admin Wilayah'})
+                            </div>
+                          )}
+                          
+                          {/* Status Verifikasi - Selalu tampilkan status */}
+                          <div className="mt-3 space-y-2">
+                            <Badge 
+                              variant={file.verification_status === 'approved' ? 'default' : 'destructive'}
+                              className={`transition-all duration-500 ease-in-out transform ${
+                                file.verification_status === 'approved' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : file.verification_status === 'rejected'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {file.verification_status === 'approved' 
+                                ? 'Sesuai' 
+                                : file.verification_status === 'rejected'
+                                ? 'Tidak Sesuai'
+                                : 'Belum Diverifikasi'
+                              }
+                              {file.verified_by && ` - ${file.verified_by}`}
+                            </Badge>
+                            {file.verification_notes && (
+                              <p className="text-xs text-gray-600">{file.verification_notes}</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          {/* Switch Toggle Verifikasi - Superadmin & Admin Wilayah */}
+                          {/* 
+                            Superadmin bisa verifikasi:
+                            - submitted: verifikasi berkas operator
+                            - rejected: verifikasi berkas operator yang ditolak
+                            - admin_wilayah_approved: verifikasi berkas admin wilayah untuk final approval
+                            
+                            Admin Wilayah bisa verifikasi:
+                            - submitted: verifikasi berkas operator
+                            - approved: verifikasi berkas operator yang sudah diapprove
+                            - rejected: verifikasi berkas operator yang ditolak
+                          */}
+                          {(isAdmin && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved')) || (isAdminWilayah && (pengajuan.status === 'submitted' || pengajuan.status === 'approved' || pengajuan.status === 'rejected')) ? (
+                            <div className="flex items-center gap-3 mr-3">
+                              {verifyingFile === file.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                              ) : (
+                                <div className="flex items-center gap-3 transition-all duration-500 ease-in-out">
+                                  <div className="relative transform transition-all duration-500 ease-in-out hover:scale-105 active:scale-95">
+                                    <Switch
+                                      id={`verify-${file.id}`}
+                                      checked={file.verification_status === 'approved'}
+                                      onCheckedChange={(checked) => {
+                                        const status = checked ? 'approved' : 'rejected';
+                                        handleVerifyFile(file.id, status);
+                                      }}
+                                      disabled={verifyingFile === file.id}
+                                      className={`transition-all duration-500 ease-in-out transform ${
+                                        file.verification_status === 'approved' 
+                                          ? 'data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600' 
+                                          : 'data-[state=unchecked]:bg-red-600 data-[state=unchecked]:border-red-600'
+                                      }`}
+                                    />
+                                  </div>
+                                  <Label 
+                                    htmlFor={`verify-${file.id}`} 
+                                    className={`text-sm font-medium cursor-pointer transition-all duration-500 ease-in-out transform hover:scale-105 ${
+                                      file.verification_status === 'approved' 
+                                        ? 'text-green-700' 
+                                        : file.verification_status === 'rejected'
+                                        ? 'text-red-700'
+                                        : 'text-gray-700'
+                                    }`}
+                                  >
+                                    {file.verification_status === 'approved' 
+                                      ? 'Sesuai' 
+                                      : file.verification_status === 'rejected'
+                                      ? 'Tidak Sesuai'
+                                      : 'Belum Diverifikasi'
+                                    }
+                                  </Label>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePreviewFile(file)}
+                            className="px-3 py-2"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Preview
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDownloadFile(file)}
+                            className="px-3 py-2"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -866,6 +1316,63 @@ const PengajuanDetail: React.FC = () => {
                    </div>
                  )}
 
+                 {/* Admin Wilayah Review */}
+                 {pengajuan.status === 'admin_wilayah_approved' && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Disetujui Admin Wilayah</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
+                       <p className="text-xs text-gray-500">Admin Wilayah menyetujui pengajuan</p>
+                     </div>
+                   </div>
+                 )}
+
+                 {pengajuan.status === 'admin_wilayah_rejected' && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Ditolak Admin Wilayah</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
+                       <p className="text-xs text-gray-500">Admin Wilayah menolak pengajuan</p>
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Submit ke Superadmin */}
+                 {pengajuan.status === 'submitted' && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Diajukan ke Superadmin</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
+                       <p className="text-xs text-gray-500">Admin Wilayah mengajukan ke Superadmin untuk review final</p>
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Final Approval */}
+                 {pengajuan.status === 'final_approved' && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-green-600 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Disetujui Final</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
+                       <p className="text-xs text-gray-500">Superadmin menyetujui final pengajuan</p>
+                     </div>
+                   </div>
+                 )}
+
+                 {pengajuan.status === 'final_rejected' && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-red-600 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Ditolak Final</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
+                       <p className="text-xs text-gray-500">Superadmin menolak final pengajuan</p>
+                     </div>
+                   </div>
+                 )}
                  
               </div>
             </CardContent>
@@ -900,7 +1407,7 @@ const PengajuanDetail: React.FC = () => {
                <CardTitle>Aksi</CardTitle>
              </CardHeader>
                            <CardContent className="space-y-3">
-                {canApprove && (isAdmin ? allFilesApproved : true) && (
+                {canApprove && allFilesApproved && (
                   <Button
                     onClick={() => setShowApproveDialog(true)}
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -910,7 +1417,7 @@ const PengajuanDetail: React.FC = () => {
                   </Button>
                 )}
                 
-                {canReject && (isAdmin ? (hasRejectedFiles || !allFilesApproved) : true) && (
+                {canReject && (hasRejectedFiles || !allFilesApproved) && (
                   <Button
                     onClick={() => setShowRejectDialog(true)}
                     variant="destructive"
@@ -971,6 +1478,52 @@ const PengajuanDetail: React.FC = () => {
                   >
                     <Printer className="h-4 w-4 mr-2" />
                     Cetak Laporan
+                  </Button>
+                )}
+
+                {/* Approval Final - Superadmin */}
+                {/* 
+                  Logika Button Final Approval:
+                  - Setujui Final: muncul jika SEMUA berkas admin wilayah sudah "Sesuai" (approved)
+                  - Tolak Final: muncul jika ada SATU SAJA berkas admin wilayah "Tidak Sesuai" (rejected)
+                  
+                  Status pengajuan harus 'admin_wilayah_approved' untuk button ini muncul
+                */}
+                {isAdmin && pengajuan.status === 'admin_wilayah_approved' && (
+                  <>
+                    {/* Setujui Final - hanya muncul jika semua berkas admin wilayah sudah "Sesuai" */}
+                    {allAdminWilayahFilesApproved && (
+                      <Button
+                        onClick={() => setShowFinalApproveDialog(true)}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Setujui Final
+                      </Button>
+                    )}
+                    
+                    {/* Tolak Final - muncul jika ada minimal satu berkas admin wilayah "Tidak Sesuai" */}
+                    {hasRejectedAdminWilayahFiles && (
+                      <Button
+                        onClick={() => setShowFinalRejectDialog(true)}
+                        variant="destructive"
+                        className="w-full"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Tolak Final
+                      </Button>
+                      )}
+                  </>
+                )}
+
+                {/* Cetak Laporan Final */}
+                {pengajuan.status === 'final_approved' && isAdmin && (
+                  <Button
+                    onClick={handleFinalPrintReport}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Cetak Laporan Final
                   </Button>
                 )}
               </CardContent>
@@ -1125,6 +1678,98 @@ const PengajuanDetail: React.FC = () => {
                  ) : (
                    'Tolak'
                  )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Final Approve Dialog */}
+      <Dialog open={showFinalApproveDialog} onOpenChange={setShowFinalApproveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Setujui Final Pengajuan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Catatan (Opsional)</label>
+              <Textarea
+                value={finalApprovalNote}
+                onChange={(e) => setFinalApprovalNote(e.target.value)}
+                placeholder="Masukkan catatan persetujuan final..."
+                rows={3}
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowFinalApproveDialog(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={submitting}
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={handleFinalApprove}
+                disabled={submitting}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  'Setujui Final'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Final Reject Dialog */}
+      <Dialog open={showFinalRejectDialog} onOpenChange={setShowFinalRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tolak Final Pengajuan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Alasan Penolakan Final *</label>
+              <Textarea
+                value={finalRejectionReason}
+                onChange={(e) => setFinalRejectionReason(e.target.value)}
+                placeholder="Masukkan alasan penolakan final..."
+                rows={3}
+                required
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowFinalRejectDialog(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={submitting}
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={handleFinalReject}
+                disabled={submitting || !finalRejectionReason.trim()}
+                variant="destructive"
+                className="flex-1"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  'Tolak Final'
+                )}
               </Button>
             </div>
           </div>

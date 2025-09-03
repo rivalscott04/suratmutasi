@@ -216,7 +216,7 @@ const SuratGenerator: React.FC = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8">
-          Generator Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar atau Ikatan Dinas
+          Si Imut - Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar atau Ikatan Dinas
         </h1>
         
         <Tabs defaultValue="form" className="w-full">

@@ -77,7 +77,7 @@ const TemplateSelection = () => {
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Generator Surat Kementerian Agama</h1>
+          <h1 className="text-3xl font-bold">Si Imut Kanwil Kemenag NTB</h1>
           <p className="text-muted-foreground mt-2">
             Pilih jenis surat yang ingin dibuat
           </p>
