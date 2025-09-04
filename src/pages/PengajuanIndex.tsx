@@ -37,7 +37,7 @@ interface PengajuanData {
   };
   jenis_jabatan: string;
   total_dokumen: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'final_approved' | 'final_rejected';
   catatan?: string;
   rejection_reason?: string;
   created_at: string;
@@ -70,10 +70,12 @@ const PengajuanIndex: React.FC = () => {
 
   const itemsPerPage = 10;
   const isAdmin = user?.role === 'admin';
+  const isReadOnlyUser = user?.role === 'user';
+  const isGroupingRole = isAdmin || isReadOnlyUser;
 
   // Fallback grouping on client for admin when server doesn't provide grouping
   const clientGroupedByKabkota: Record<string, PengajuanData[]> = React.useMemo(() => {
-    if (!isAdmin) return {};
+    if (!isGroupingRole) return {};
     if (Object.keys(groupedByKabkota).length > 0) return groupedByKabkota;
     if (!pengajuanList || pengajuanList.length === 0) return {};
     return pengajuanList.reduce((acc: Record<string, PengajuanData[]>, item: any) => {
@@ -82,7 +84,7 @@ const PengajuanIndex: React.FC = () => {
       acc[kab].push(item);
       return acc;
     }, {});
-  }, [isAdmin, groupedByKabkota, pengajuanList]);
+  }, [isGroupingRole, groupedByKabkota, pengajuanList]);
 
   
 
@@ -91,8 +93,12 @@ const PengajuanIndex: React.FC = () => {
       navigate('/');
       return;
     }
+    // Lock status filter to final_approved for read-only user (admin pusat)
+    if (isReadOnlyUser && statusFilter !== 'final_approved') {
+      setStatusFilter('final_approved');
+    }
     fetchPengajuanData();
-  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter]);
+  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter, isReadOnlyUser]);
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
@@ -153,6 +159,7 @@ const PengajuanIndex: React.FC = () => {
   };
 
   const handleStatusFilter = (value: string) => {
+    if (isReadOnlyUser) return; // locked to final_approved
     setStatusFilter(value);
     setCurrentPage(1);
   };
@@ -194,7 +201,9 @@ const PengajuanIndex: React.FC = () => {
       rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800 hover:bg-red-200', icon: XCircle },
       resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock },
       admin_wilayah_approved: { label: 'Disetujui Admin Wilayah', className: 'bg-green-200 text-green-800 hover:bg-green-300', icon: CheckCircle },
-      admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800 hover:bg-red-300', icon: XCircle }
+      admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800 hover:bg-red-300', icon: XCircle },
+      final_approved: { label: 'Final Approved', className: 'bg-green-600 text-white', icon: CheckCircle },
+      final_rejected: { label: 'Final Rejected', className: 'bg-red-600 text-white', icon: XCircle }
     } as const;
 
     const config = (statusConfig as any)[status] || { label: status, className: 'bg-gray-100 text-gray-800', icon: FileText };
@@ -228,6 +237,174 @@ const PengajuanIndex: React.FC = () => {
       minute: '2-digit'
     });
   };
+
+  // Rekap dan export (khusus read-only user)
+  const buildRekapPerKabkota = () => {
+    const source = Object.keys(clientGroupedByKabkota).length > 0
+      ? clientGroupedByKabkota
+      : pengajuanList.reduce((acc: Record<string, PengajuanData[]>, item: any) => {
+          const kab = (item.office && (item.office.kabkota || item.office.name)) || (item.pegawai && (item.pegawai as any).induk_unit) || (item.pegawai as any)?.unit_kerja || 'Lainnya';
+          if (!acc[kab]) acc[kab] = [];
+          acc[kab].push(item);
+          return acc;
+        }, {});
+    return Object.entries(source).map(([kab, items]) => ({ kabkota: kab, total: items.length }));
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportExcel = () => {
+    const rows = buildRekapPerKabkota();
+    const today = new Date();
+    const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+    const filename = `Rekap-final_approved-per-kabkota-${ymd}.xls`;
+    const tableHtml = `
+      <html>
+      <head><meta charset="UTF-8" /></head>
+      <body>
+        <table border="1">
+          <thead>
+            <tr><th>Kab/Kota</th><th>Jumlah Pengajuan Final Approved</th></tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `<tr><td>${r.kabkota}</td><td>${r.total}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>`;
+    const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel' });
+    downloadBlob(blob, filename);
+  };
+
+  const exportPDF = () => {
+    const rows = buildRekapPerKabkota().sort((a, b) => b.total - a.total);
+    const total = rows.reduce((acc, r) => acc + r.total, 0);
+    const max = Math.max(1, ...rows.map(r => r.total));
+    const kabCount = rows.length;
+    const now = new Date();
+    const dateStr = now.toLocaleString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    const filename = `Rekap-disetujui-kanwil-per-kabkota-${ymd}.pdf`;
+
+    const createdBy = (user?.full_name || user?.email || 'Admin Pusat');
+    const top5 = rows.slice(0, 5);
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`
+      <html>
+        <head>
+          <meta charset=\"UTF-8\" />
+          <title>${filename}</title>
+          <style>
+            @page { size: A4; margin: 18mm 14mm; }
+            * { box-sizing: border-box; }
+            body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
+            .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+            .title { font-size: 18px; font-weight: 700; }
+            .meta { font-size: 12px; color: #4b5563; }
+            .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0 16px; }
+            .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; }
+            .card h3 { font-size: 12px; color: #6b7280; margin: 0 0 4px; font-weight: 600; }
+            .card .value { font-size: 20px; font-weight: 700; color: #111827; }
+            table { border-collapse: collapse; width: 100%; margin-top: 4px; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px 10px; font-size: 12px; }
+            th { background: #f9fafb; text-align: left; }
+            tfoot td { font-weight: 700; background: #f3f4f6; }
+            .row { display: flex; align-items: center; gap: 10px; }
+            .bar { height: 8px; background: #d1fae5; border-radius: 4px; overflow: hidden; }
+            .bar > span { display: block; height: 100%; background: #10b981; }
+            .note { margin-top: 12px; font-size: 11px; color: #6b7280; }
+            .section-title { margin-top: 16px; font-size: 14px; font-weight: 700; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="title">Rekap Pengajuan Telah Disetujui Kanwil per Kab/Kota</div>
+              <div class="meta">Dihasilkan: ${dateStr} • Dibuat oleh: ${createdBy}</div>
+            </div>
+          </div>
+
+          <div class="summary">
+            <div class="card">
+              <h3>Total Telah Disetujui Kanwil</h3>
+              <div class="value">${total}</div>
+            </div>
+            <div class="card">
+              <h3>Jumlah Kab/Kota</h3>
+              <div class="value">${kabCount}</div>
+            </div>
+            <div class="card">
+              <h3>Top Kab/Kota</h3>
+              <div style="font-size:12px; color:#111827; line-height:1.4;">
+                ${top5.map((r, i) => `${i + 1}. ${r.kabkota} (${r.total})`).join('<br/>') || '-'}
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title">Tabel Rekap</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px;">No</th>
+                <th>Kab/Kota</th>
+                <th style="width:110px;">Jumlah</th>
+                <th style="width:80px;">Persen</th>
+                <th>Visual</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((r, idx) => {
+                const pct = total > 0 ? Math.round((r.total / total) * 1000) / 10 : 0;
+                const rel = Math.round((r.total / max) * 100);
+                const barWidth = 140;
+                const filled = Math.max(1, Math.round((rel / 100) * barWidth));
+                return `
+                  <tr>
+                    <td>${idx + 1}</td>
+                    <td>${r.kabkota}</td>
+                    <td style="text-align:right; font-variant-numeric: tabular-nums;">${r.total}</td>
+                    <td style="text-align:right; font-variant-numeric: tabular-nums;">${pct.toFixed(1)}%</td>
+                    <td>
+                      <svg width="${barWidth}" height="10" viewBox="0 0 ${barWidth} 10" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0" y="0" width="${barWidth}" height="10" fill="#E5F6F1" stroke="#D1D5DB" />
+                        <rect x="0" y="0" width="${filled}" height="10" fill="#10B981" />
+                      </svg>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2">Total</td>
+                <td style="text-align:right; font-variant-numeric: tabular-nums;">${total}</td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="note">Catatan: Laporan ini menampilkan pengajuan yang <strong>telah disetujui Kanwil</strong>.</div>
+
+          <script>
+            window.onload = function() { window.print(); };
+          <\/script>
+        </body>
+      </html>
+    `);
+    win.document.close();
+  };
   
   // Debug info
   console.log('🔍 Debug PengajuanIndex:', {
@@ -247,19 +424,27 @@ const PengajuanIndex: React.FC = () => {
                 Daftar Pengajuan Mutasi PNS
               </CardTitle>
               <p className="text-sm text-gray-600 mt-1">
-                {isAdmin ? 'Semua pengajuan mutasi PNS' : 'Pengajuan mutasi PNS Anda'}
+                {isAdmin ? 'Semua pengajuan mutasi PNS' : (isReadOnlyUser ? 'Semua pengajuan berstatus final_approved (read-only)' : 'Pengajuan mutasi PNS Anda')}
               </p>
             </div>
-            {/* Only show Add button for admin and operator, not for user role */}
-            {user?.role !== 'user' && (
-              <Button
-                onClick={() => navigate('/pengajuan/select')}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Pengajuan
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {isReadOnlyUser && (
+                <>
+                  <Button onClick={exportExcel} className="bg-green-600 hover:bg-green-700 text-white">Export Excel</Button>
+                  <Button onClick={exportPDF} className="bg-blue-600 hover:bg-blue-700 text-white">Export PDF</Button>
+                </>
+              )}
+              {/* Only show Add button for admin and operator, not for user role */}
+              {user?.role !== 'user' && (
+                <Button
+                  onClick={() => navigate('/pengajuan/select')}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Pengajuan
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -325,8 +510,8 @@ const PengajuanIndex: React.FC = () => {
              </div>
            </div>
 
-          {/* Admin grouped view */}
-          {isAdmin && Object.keys(clientGroupedByKabkota).length > 0 ? (
+          {/* Grouped view for admin and read-only user */}
+          {isGroupingRole && Object.keys(clientGroupedByKabkota).length > 0 ? (
             <div className="space-y-4">
               <div className="text-sm text-gray-600">Tergabung berdasarkan kabupaten/kota</div>
               <Accordion type="multiple" className="w-full">
@@ -347,7 +532,7 @@ const PengajuanIndex: React.FC = () => {
                               <TableHead>Jenis Jabatan</TableHead>
                               <TableHead>Status</TableHead>
                               <TableHead>Dokumen</TableHead>
-                              <TableHead>Pembuat</TableHead>
+                              {isAdmin && <TableHead>Pembuat</TableHead>}
                               <TableHead>Tanggal Dibuat</TableHead>
                               <TableHead className="text-right">Aksi</TableHead>
                             </TableRow>
@@ -372,15 +557,17 @@ const PengajuanIndex: React.FC = () => {
                                     <span className="text-sm">{pengajuan.total_dokumen}</span>
                                   </div>
                                 </TableCell>
-                                <TableCell>
-                                  <div className="text-sm text-gray-600">
-                                    {(() => {
-                                      const u = filterOptions.users.find(u => u.id === pengajuan.created_by);
-                                      if (u) return u.full_name || u.email || 'Unknown User';
-                                      return pengajuan.created_by?.includes('@') ? pengajuan.created_by : 'Unknown User';
-                                    })()}
-                                  </div>
-                                </TableCell>
+                                {isAdmin && (
+                                  <TableCell>
+                                    <div className="text-sm text-gray-600">
+                                      {(() => {
+                                        const u = filterOptions.users.find(u => u.id === pengajuan.created_by);
+                                        if (u) return u.full_name || u.email || 'Unknown User';
+                                        return pengajuan.created_by?.includes('@') ? pengajuan.created_by : 'Unknown User';
+                                      })()}
+                                    </div>
+                                  </TableCell>
+                                )}
                                 <TableCell>
                                   <div className="text-sm text-gray-600">{formatDate(pengajuan.created_at)}</div>
                                 </TableCell>
@@ -396,7 +583,7 @@ const PengajuanIndex: React.FC = () => {
                                         <Eye className="h-4 w-4 mr-2" />
                                         Lihat Detail
                                       </DropdownMenuItem>
-                                      {pengajuan.status === 'submitted' && (
+                                      {isAdmin && pengajuan.status === 'submitted' && (
                                         <>
                                           <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
                                             <CheckCircle className="h-4 w-4 mr-2" />
@@ -408,16 +595,18 @@ const PengajuanIndex: React.FC = () => {
                                           </DropdownMenuItem>
                                         </>
                                       )}
-                                      <DropdownMenuItem 
-                                        onClick={() => {
-                                          setPengajuanToDelete(pengajuan.id);
-                                          setDeleteDialogOpen(true);
-                                        }}
-                                        className="text-red-600"
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Hapus
-                                      </DropdownMenuItem>
+                                      {isAdmin && (
+                                        <DropdownMenuItem 
+                                          onClick={() => {
+                                            setPengajuanToDelete(pengajuan.id);
+                                            setDeleteDialogOpen(true);
+                                          }}
+                                          className="text-red-600"
+                                        >
+                                          <Trash2 className="h-4 w-4 mr-2" />
+                                          Hapus
+                                        </DropdownMenuItem>
+                                      )}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </TableCell>

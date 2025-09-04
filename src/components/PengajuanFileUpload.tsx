@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -129,6 +129,9 @@ const PengajuanFileUpload: React.FC = () => {
   const [previewFile, setPreviewFile] = useState<PengajuanFile | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [replacingFile, setReplacingFile] = useState<string | null>(null);
+  
+  // Ref untuk file inputs
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Ambil data jabatan dari state navigation jika ada
   const jabatanData = location.state?.jabatan;
@@ -142,6 +145,20 @@ const PengajuanFileUpload: React.FC = () => {
       fetchPengajuanData();
     }
   }, [pengajuanId]);
+
+  // Reset semua file input setiap kali komponen di-render
+  useEffect(() => {
+    const resetFileInputs = () => {
+      Object.values(fileInputRefs.current).forEach(input => {
+        if (input) {
+          input.value = '';
+        }
+      });
+    };
+    
+    // Reset setelah render
+    resetFileInputs();
+  });
 
   const fetchPengajuanData = async () => {
     try {
@@ -247,10 +264,11 @@ const PengajuanFileUpload: React.FC = () => {
   };
 
   const handleFileUpload = async (fileType: string, file: File) => {
-    // Validasi ukuran file (500KB)
-    const maxSize = 500 * 1024; // 500KB dalam bytes
+    // Validasi ukuran file: default 500KB, khusus SKP 2 Tahun Terakhir 1MB
+    const maxSize = fileType === 'skp_2_tahun_terakhir' ? 1024 * 1024 : 500 * 1024;
     if (file.size > maxSize) {
-      setError(`File terlalu besar. Maksimal 500KB. Ukuran file: ${(file.size / 1024).toFixed(1)}KB`);
+      const humanMax = maxSize === 1024 * 1024 ? '1MB' : '500KB';
+      setError(`File terlalu besar. Maksimal ${humanMax}. Ukuran file: ${(file.size / 1024).toFixed(1)}KB`);
       return;
     }
 
@@ -287,6 +305,11 @@ const PengajuanFileUpload: React.FC = () => {
           // Refresh data setelah upload berhasil
           await fetchPengajuanData();
           setError(null);
+          // Reset file input setelah upload berhasil menggunakan ref
+          const fileInput = fileInputRefs.current[fileType];
+          if (fileInput) {
+            fileInput.value = '';
+          }
         } else {
           setError(result.message || 'Gagal upload file');
         }
@@ -299,6 +322,11 @@ const PengajuanFileUpload: React.FC = () => {
     } finally {
       setUploadingStates(prev => ({ ...prev, [fileType]: false }));
       setReplacingFile(null);
+      // Reset file input di finally untuk memastikan selalu ter-reset menggunakan ref
+      const fileInput = fileInputRefs.current[fileType];
+      if (fileInput) {
+        fileInput.value = '';
+      }
     }
   };
 
@@ -458,7 +486,9 @@ const PengajuanFileUpload: React.FC = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex-1">
                           <h4 className="font-medium text-sm leading-tight">{getFileDisplayName(fileType)}</h4>
-                          <p className="text-xs text-gray-600 mt-1">Upload file PDF (maks. 500KB)</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            Upload file PDF (maks. {fileType === 'skp_2_tahun_terakhir' ? '1MB' : '500KB'})
+                          </p>
                         </div>
                         <Badge 
                           variant={status === 'uploaded' ? 'secondary' : 'secondary'}
@@ -515,11 +545,16 @@ const PengajuanFileUpload: React.FC = () => {
                       ) : (
                         <div>
                           <input
+                            ref={(el) => fileInputRefs.current[fileType] = el}
                             type="file"
                             accept=".pdf"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
-                              if (file) handleFileUpload(fileType, file);
+                              if (file) {
+                                handleFileUpload(fileType, file);
+                                // Reset file input setelah file dipilih
+                                e.target.value = '';
+                              }
                             }}
                             disabled={isUploading}
                             className="hidden"
@@ -527,13 +562,6 @@ const PengajuanFileUpload: React.FC = () => {
                           />
                           <label
                             htmlFor={`file-${toSafeId(fileType)}`}
-                            onClick={(e) => {
-                              const input = document.getElementById(`file-${toSafeId(fileType)}`) as HTMLInputElement | null;
-                              // Fallback trigger to ensure file dialog opens
-                              if (input && !input.disabled) {
-                                input.click();
-                              }
-                            }}
                             className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                           >
                             <Upload className="h-4 w-4 mr-2" />

@@ -71,6 +71,8 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
     const file = event.target.files?.[0];
     if (file) {
       onUpload(file);
+      // Reset file input setelah file dipilih
+      event.target.value = '';
     }
   };
 

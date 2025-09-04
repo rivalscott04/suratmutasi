@@ -720,7 +720,7 @@ const Settings = () => {
 
   const variantOptions = [
     { value: '6.1', label: '6.1 - Permohonan Persetujuan/Rekomendasi Pengangkatan ke Dalam Jabatan Pengawas (Untuk Eselon)' },
-    { value: '6.2', label: '6.2 - Permohonan Pindah Tugas ke Dirjen Bimas Islam (Untuk Penyuluh Agama Islam)' },
+    { value: '6.2', label: '6.2 - Permohonan Pindah Tugas ke Dirjen Bimas Islam (Untuk Penghulu)' },
     { value: '6.3', label: '6.3 - Permohonan Pindah Tugas ke Dirjen PENDIS (Untuk Guru, Pengawas, Kepala Madrasah)' },
     { value: '6.4', label: '6.4 - Permohonan Pindah Tugas ke Kepala Biro SDM Sekjen Kemenag RI (Untuk Analis SDM dan Asesor)' },
     { value: '6.5', label: '6.5 - Permohonan Pindah Tugas ke Kepala Biro Umum Sekjen Kemenag RI (Arsiparis, BARJAS)' },

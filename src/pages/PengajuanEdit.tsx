@@ -388,6 +388,8 @@ const PengajuanEdit: React.FC = () => {
                               const file = e.target.files?.[0];
                               if (file) {
                                 handleFileChange(upload.file_type, file);
+                                // Reset file input setelah file dipilih
+                                e.target.value = '';
                               }
                             }}
                             className="hidden"

@@ -432,7 +432,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                           )}
                         </div>
                       <p className="text-sm text-gray-600 mb-2">
-                        Upload file PDF (maks. 500KB)
+                        Upload file PDF (maks. {fileConfig.file_type === 'skp_2_tahun_terakhir' ? '1MB' : '500KB'})
                       </p>
                       
                       {status === 'uploaded' && uploadedFile && (
@@ -463,7 +463,11 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                               accept=".pdf,.doc,.docx"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (file) handleFileUpload(fileConfig.file_type, file);
+                                if (file) {
+                                  handleFileUpload(fileConfig.file_type, file);
+                                  // Reset file input setelah file dipilih
+                                  e.target.value = '';
+                                }
                               }}
                             />
                           </div>
@@ -491,6 +495,8 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                                 const file = e.target.files?.[0];
                                 if (file) {
                                   handleFileUpload(fileConfig.file_type, file);
+                                  // Reset file input setelah file dipilih
+                                  e.target.value = '';
                                 }
                               }}
                               className="hidden"

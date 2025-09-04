@@ -60,6 +60,11 @@ interface PengajuanData {
     jabatan: string;
     nip: string;
   };
+  office?: {
+    name: string;
+    kabkota: string;
+    address?: string;
+  };
   jenis_jabatan: string;
   jabatan_id?: number;
   total_dokumen: number;
@@ -495,6 +500,7 @@ const PengajuanDetail: React.FC = () => {
             <tr><td>Nama</td><td>: ${data.pegawai.nama}</td></tr>
             <tr><td>NIP</td><td>: ${data.pegawai.nip}</td></tr>
             <tr><td>Jabatan</td><td>: ${data.pegawai.jabatan}</td></tr>
+                         <tr><td>Kabupaten/Kota</td><td>: ${data.office?.kabkota || 'Tidak tersedia'}</td></tr>
             <tr><td>Status</td><td>: ${data.pengajuan.status}</td></tr>
             <tr><td>Tanggal Approval</td><td>: ${new Date(data.pengajuan.approved_at).toLocaleDateString('id-ID')}</td></tr>
           </table>
@@ -581,34 +587,35 @@ const PengajuanDetail: React.FC = () => {
           .info td { padding: 5px; }
           .info td:first-child { font-weight: bold; width: 150px; }
           .section { margin-bottom: 30px; }
-          .section-title { font-size: 14pt; font-weight: bold; margin-bottom: 15px; color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 5px; }
+          .section-title { font-size: 14pt; font-weight: bold; margin-bottom: 15px; color: #000000; border-bottom: 2px solid #000000; padding-bottom: 5px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: Arial, sans-serif; font-size: 10pt; }
           th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
           th { background-color: #f2f2f2; font-weight: bold; }
           .checkbox { width: 20px; height: 20px; }
-          .status-approved { color: #059669; font-weight: bold; }
-          .status-rejected { color: #dc2626; font-weight: bold; }
-          .status-pending { color: #d97706; font-weight: bold; }
+          .status-approved { color: #000000; font-weight: bold; }
+          .status-rejected { color: #000000; font-weight: bold; }
+          .status-pending { color: #000000; font-weight: bold; }
           @media print { body { margin: 0; } }
         </style>
       </head>
       <body>
         <div class="header">
-          <h1 style="color: #1e40af; margin-bottom: 10px;">LAPORAN FINAL PENGAJUAN JABATAN</h1>
+          <h1 style="color: #000000; margin-bottom: 10px;">LAPORAN FINAL PENGAJUAN JABATAN</h1>
           <h3 style="color: #374151; margin: 0;">Si Imut Kanwil Kemenag NTB</h3>
         </div>
         
-        <div class="info">
-          <table>
-            <tr><td>Nama Pegawai</td><td>: ${pengajuan.pegawai?.nama}</td></tr>
-            <tr><td>NIP</td><td>: ${pengajuan.pegawai?.nip}</td></tr>
-            <tr><td>Jabatan</td><td>: ${pengajuan.pegawai?.jabatan}</td></tr>
-            <tr><td>Jenis Jabatan</td><td>: ${pengajuan.jenis_jabatan}</td></tr>
-            <tr><td>Status Pengajuan</td><td>: <span class="status-approved">FINAL APPROVED</span></td></tr>
-            <tr><td>Tanggal Final Approval</td><td>: ${pengajuan.final_approved_at ? new Date(pengajuan.final_approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}</td></tr>
-            <tr><td>Disetujui Oleh</td><td>: ${pengajuan.final_approved_by || 'Superadmin'}</td></tr>
-          </table>
-        </div>
+                          <div class="info">
+           <table>
+             <tr><td>Nama Pegawai</td><td>: ${pengajuan.pegawai?.nama}</td></tr>
+             <tr><td>NIP</td><td>: ${pengajuan.pegawai?.nip}</td></tr>
+             <tr><td>Jabatan</td><td>: ${pengajuan.pegawai?.jabatan}</td></tr>
+             <tr><td>Jenis Jabatan</td><td>: ${pengajuan.jenis_jabatan}</td></tr>
+                           <tr><td>Kabupaten/Kota Asal</td><td>: ${pengajuan.office?.kabkota || 'Tidak tersedia'}</td></tr>
+             <tr><td>Status Pengajuan</td><td>: <span class="status-approved">FINAL APPROVED</span></td></tr>
+             <tr><td>Tanggal Final Approval</td><td>: ${pengajuan.final_approved_at ? new Date(pengajuan.final_approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}</td></tr>
+             <tr><td>Disetujui Oleh</td><td>: ${pengajuan.final_approved_at ? new Date(pengajuan.final_approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}</td></tr>
+           </table>
+         </div>
 
         <!-- Berkas Kabupaten/Kota -->
         <div class="section">
@@ -629,9 +636,9 @@ const PengajuanDetail: React.FC = () => {
                   <td>${getFileDisplayName(file.file_type)}</td>
                   <td>
                     <span class="status-${file.verification_status}">
-                      ${file.verification_status === 'approved' ? '✅ Sesuai' : 
-                        file.verification_status === 'rejected' ? '❌ Tidak Sesuai' : 
-                        '⏳ Belum Diverifikasi'}
+                      ${file.verification_status === 'approved' ? '✓ Sesuai' : 
+                        file.verification_status === 'rejected' ? '✗ Tidak Sesuai' : 
+                        '○ Belum Diverifikasi'}
                     </span>
                   </td>
                   <td>${file.verified_by || '-'}</td>
@@ -660,9 +667,9 @@ const PengajuanDetail: React.FC = () => {
                   <td>${getFileDisplayName(file.file_type)}</td>
                   <td>
                     <span class="status-${file.verification_status}">
-                      ${file.verification_status === 'approved' ? '✅ Sesuai' : 
-                        file.verification_status === 'rejected' ? '❌ Tidak Sesuai' : 
-                        '⏳ Belum Diverifikasi'}
+                      ${file.verification_status === 'approved' ? '✓ Sesuai' : 
+                        file.verification_status === 'rejected' ? '✗ Tidak Sesuai' : 
+                        '○ Belum Diverifikasi'}
                     </span>
                   </td>
                   <td>${file.verified_by || '-'}</td>
@@ -691,21 +698,21 @@ const PengajuanDetail: React.FC = () => {
           </table>
         </div>
         
-        <!-- Final Verification Footer -->
-        <div style="margin-top: 40px; padding: 20px; border: 3px solid #059669; border-radius: 10px; text-align: center; font-size: 11pt; background-color: #f0fdf4;">
-          <div style="margin-bottom: 10px; font-weight: bold; color: #059669; font-size: 14pt;">
-            🎉 PENGAJUAN JABATAN TELAH DISETUJUI FINAL
-          </div>
-          <div style="margin-bottom: 8px; font-weight: bold; color: #374151;">
-            ✓ Semua dokumen telah diverifikasi dan disetujui oleh Admin Wilayah dan Superadmin
-          </div>
-          <div style="font-size: 10pt; color: #059669; margin-bottom: 5px;">
-            Tanggal Final Approval: ${pengajuan.final_approved_at ? new Date(pengajuan.final_approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}
-          </div>
-          <div style="font-size: 9pt; color: #6b7280; margin-top: 10px;">
-            Si Imut Kanwil Kemenag NTB
-          </div>
-        </div>
+                 <!-- Final Verification Footer -->
+         <div style="margin-top: 40px; padding: 20px; border: 3px solid #000000; border-radius: 10px; text-align: center; font-size: 11pt; background-color: #ffffff;">
+           <div style="margin-bottom: 10px; font-weight: bold; color: #000000; font-size: 14pt;">
+             PENGAJUAN JABATAN TELAH DISETUJUI FINAL
+           </div>
+           <div style="margin-bottom: 8px; font-weight: bold; color: #000000;">
+             ✓ Semua dokumen telah diverifikasi dan disetujui oleh Admin Wilayah dan Superadmin
+           </div>
+           <div style="font-size: 10pt; color: #000000; margin-bottom: 5px;">
+             Tanggal Final Approval: ${pengajuan.final_approved_at ? new Date(pengajuan.final_approved_at).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID')}
+           </div>
+           <div style="font-size: 9pt; color: #000000; margin-top: 10px;">
+             Si Imut Kanwil Kemenag NTB
+           </div>
+         </div>
       </body>
       </html>
     `;
@@ -782,10 +789,9 @@ const PengajuanDetail: React.FC = () => {
   // Operator yang sudah upload perbaikan tidak boleh edit/delete lagi, hanya bisa ajukan ulang
   const canEdit = (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected') && 
                   (isAdmin || pengajuan?.created_by === user?.id) && 
-                  user?.role !== 'user' && 
                   !hasPendingFiles; // Tidak bisa edit jika ada file pending
   const canDelete = pengajuan?.status === 'draft' && 
-                   user?.role !== 'user' && 
+                   (isAdmin || pengajuan?.created_by === user?.id) && 
                    !hasPendingFiles; // Tidak bisa delete jika ada file pending
   const canApprove = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
   const canReject = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
@@ -950,6 +956,10 @@ const PengajuanDetail: React.FC = () => {
                      {getJabatanDisplayName(pengajuan.jenis_jabatan)}
                    </Badge>
                  </div>
+                                   <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Kabupaten/Kota Asal</label>
+                    <p className="text-gray-900 text-base">{pengajuan.office?.kabkota || 'Tidak tersedia'}</p>
+                  </div>
                </div>
             </CardContent>
           </Card>
@@ -978,13 +988,23 @@ const PengajuanDetail: React.FC = () => {
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">Belum ada dokumen kabupaten yang diupload</p>
-                  {canEdit && (
+                  {canEdit && pengajuan.status !== 'draft' && (
                     <Button
-                      onClick={() => navigate(pengajuan.status === 'draft' ? `/pengajuan/${pengajuan.id}/upload` : `/pengajuan/${pengajuan.id}/edit`)}
+                      onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}
                       className="mt-4 bg-green-600 hover:bg-green-700 text-white"
                     >
                       <Edit className="h-4 w-4 mr-2" />
-                      {pengajuan.status === 'draft' ? 'Upload Dokumen' : 'Perbaiki Dokumen'}
+                      Perbaiki Dokumen
+                    </Button>
+                  )}
+
+                  {canEdit && pengajuan.status === 'draft' && (
+                    <Button
+                      onClick={() => window.open(`http://localhost:8080/pengajuan/${pengajuan.id}/upload`, '_blank')}
+                      className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Upload Dokumen
                     </Button>
                   )}
                 </div>
@@ -1447,14 +1467,46 @@ const PengajuanDetail: React.FC = () => {
                     )}
                   </Button>
                 )}
+
+                {/* Tombol untuk status draft - tambahkan di bawah Ajukan Ulang */}
+                {pengajuan?.status === 'draft' && canEdit && (
+                  <Button
+                    onClick={() => window.open(`http://localhost:8080/pengajuan/${pengajuan.id}/upload`, '_blank')}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Upload Dokumen
+                  </Button>
+                )}
+
+                {pengajuan?.status === 'draft' && canDelete && (
+                  <Button
+                    onClick={() => setShowDeleteDialog(true)}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Hapus Pengajuan
+                  </Button>
+                )}
                 
-                                 {canEdit && (
+                                 {canEdit && pengajuan.status !== 'draft' && (
                    <Button
-                     onClick={() => navigate(pengajuan.status === 'draft' ? `/pengajuan/${pengajuan.id}/upload` : `/pengajuan/${pengajuan.id}/edit`)}
+                     onClick={() => navigate(`/pengajuan/${pengajuan.id}/edit`)}
                      className="w-full bg-green-600 hover:bg-green-700 text-white"
                    >
                      <Edit className="h-4 w-4 mr-2" />
-                     {pengajuan.status === 'draft' ? 'Upload Dokumen' : 'Perbaiki Dokumen'}
+                     Perbaiki Dokumen
+                   </Button>
+                 )}
+
+                {canEdit && pengajuan.status === 'draft' && (
+                   <Button
+                     onClick={() => window.open(`http://localhost:8080/pengajuan/${pengajuan.id}/upload`, '_blank')}
+                     className="w-full bg-green-600 hover:bg-green-700 text-white"
+                   >
+                     <Edit className="h-4 w-4 mr-2" />
+                     Upload Dokumen
                    </Button>
                  )}
                  
