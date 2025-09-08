@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Template1 } from '@/components/templates/Template1';
 import { Template2 } from '@/components/templates/Template2';
 import { Template3 } from '@/components/templates/Template3';
@@ -13,30 +14,36 @@ import { apiGet } from '@/lib/api';
 
 const LetterPrintPreview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { token, isAuthenticated, loading: authLoading } = useAuth();
   const [letter, setLetter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLetter = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token');
-        let res;
-        if (token) {
-          res = await apiGet(`/api/letters/${id}`, token);
-        } else {
-          res = await apiGet(`/api/letters/${id}`);
+    if (!authLoading && !isAuthenticated) {
+      navigate('/');
+      return;
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && token && id) {
+      const fetchLetter = async () => {
+        setLoading(true);
+        try {
+          const res = await apiGet(`/api/letters/${id}`, token);
+          setLetter(res.letter || res);
+        } catch (err: any) {
+          console.error('Error fetching letter:', err);
+          setError('Gagal mengambil data surat');
+        } finally {
+          setLoading(false);
         }
-        setLetter(res.letter || res);
-      } catch (err: any) {
-        setError('Gagal mengambil data surat');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLetter();
-  }, [id]);
+      };
+      fetchLetter();
+    }
+  }, [id, token, isAuthenticated, authLoading]);
 
   const renderPreviewByTemplate = (letter: any) => {
     let data = letter.form_data;
@@ -70,7 +77,7 @@ const LetterPrintPreview: React.FC = () => {
     return <div>Template tidak dikenali</div>;
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (authLoading || loading) return <div>Loading...</div>;
   if (error) return <div className="text-error">{error}</div>;
   if (!letter) return <div>Surat tidak ditemukan</div>;
 
