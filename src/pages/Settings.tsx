@@ -272,7 +272,7 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
               };
 
               if (editData) {
-                await apiPut(`/api/employees/${editData.id}`, data, token);
+                await apiPut(`/api/employees/${editData.nip}`, data, token);
                 toast({
                   title: 'Berhasil',
                   description: 'Data pegawai berhasil diperbarui',
@@ -319,6 +319,8 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
                   required
                   pattern="[0-9]{18}"
                   title="NIP harus 18 digit angka"
+                  disabled={!!editData}
+                  readOnly={!!editData}
                 />
               </div>
               <div>
