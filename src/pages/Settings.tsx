@@ -265,20 +265,32 @@ const EmployeesTable: React.FC<{ token: string | null }> = ({ token }) => {
               const formData = new FormData(e.currentTarget);
               const data = {
                 nama: formData.get('nama') as string,
-                nip: formData.get('nip') as string,
                 unit_kerja: formData.get('unit_kerja') as string,
                 jabatan: formData.get('jabatan') as string,
                 golongan: formData.get('golongan') as string,
               };
 
-              if (editData) {
-                await apiPut(`/api/employees/${editData.nip}`, data, token);
+              const isEdit = !!editData;
+              // Saat edit, nip input disabled sehingga tidak ikut di FormData
+              const nipForPath = isEdit
+                ? (editData?.nip as string | undefined)
+                : (formData.get('nip') as string | null) || undefined;
+
+              if (isEdit) {
+                // Pastikan ada NIP untuk path
+                if (!nipForPath) {
+                  throw new Error('NIP tidak ditemukan untuk update');
+                }
+                // Jangan kirim nip pada update (backend tidak mengubah nip)
+                await apiPut(`/api/employees/${nipForPath}`, data, token);
                 toast({
                   title: 'Berhasil',
                   description: 'Data pegawai berhasil diperbarui',
                 });
               } else {
-                await apiPost('/api/employees', data, token);
+                // Saat create, pastikan NIP ada
+                const nipCreate = (formData.get('nip') as string | null) || undefined;
+                await apiPost('/api/employees', { ...data, nip: nipCreate }, token);
                 toast({
                   title: 'Berhasil',
                   description: 'Pegawai baru berhasil ditambahkan',
