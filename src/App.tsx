@@ -151,11 +151,9 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       <Route path="/letters/:id/preview" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageLoading />}>
-            <LetterPrintPreview />
-          </Suspense>
-        </ProtectedRoute>
+        <Suspense fallback={<PageLoading />}>
+          <LetterPrintPreview />
+        </Suspense>
       } />
       <Route path="/pengajuan" element={
         <ProtectedRoute>
