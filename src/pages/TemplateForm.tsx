@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { generateUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1184,21 +1185,7 @@ const TemplateForm: React.FC = () => {
 
   const selectedTemplate = TEMPLATES.find(t => t.id === templateId);
 
-  // Check admin-only access
-  if (selectedTemplate?.adminOnly && user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Akses Ditolak</h1>
-          <p className="text-muted-foreground mb-4">Template ini hanya dapat diakses oleh admin.</p>
-          <Button onClick={() => navigate('/generator')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Kembali ke Pilihan Template
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Template access is handled by route protection
 
   if (!selectedTemplate) {
     return (
@@ -1454,7 +1441,7 @@ const TemplateForm: React.FC = () => {
                   className="bg-teal-700 hover:bg-teal-800 text-white flex items-center gap-2"
                   onClick={() => {
                     if (suratId) {
-                      window.open(`/letters/${suratId}/preview`, '_blank');
+                      window.open(generateUrl(`/letters/${suratId}/preview`), '_blank');
                     } else {
                       alert('Surat belum disimpan. Simpan surat terlebih dahulu untuk membuka preview di tab baru.');
                     }
@@ -1538,7 +1525,7 @@ const TemplateForm: React.FC = () => {
           </div>
           <div className="flex gap-2 mt-4">
             <Button onClick={() => setShowSuccessModal(false)}>Tutup</Button>
-            <Button onClick={() => window.open(`/letters/${suratId}/preview`, '_blank')} variant="outline">Open in New Tab</Button>
+            <Button onClick={() => window.open(generateUrl(`/letters/${suratId}/preview`), '_blank')} variant="outline">Open in New Tab</Button>
           </div>
         </DialogContent>
       </Dialog>

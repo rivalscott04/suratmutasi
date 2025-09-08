@@ -5,6 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Helper function to generate URLs that respect the basename
+export function generateUrl(path: string) {
+  const basename = import.meta.env.MODE === 'production' ? '/FE' : '';
+  return `${basename}${path}`;
+}
+
 // Fungsi untuk mengkonversi tanggal ke format Indonesia dengan nama bulan
 export function formatTanggalIndonesia(tanggal: string) {
   if (!tanggal) return '';

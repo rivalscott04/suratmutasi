@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiDelete, apiPut } from '@/lib/api';
+import { generateUrl } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw, Users, ClipboardList, Info, Edit3, X } from 'lucide-react';
@@ -1158,7 +1159,7 @@ const Letters: React.FC = () => {
               <Button
                 size="sm"
                 className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => window.open(`/letters/${selectedLetterForPreview.id}/preview`, '_blank')}
+                onClick={() => window.open(generateUrl(`/letters/${selectedLetterForPreview.id}/preview`), '_blank')}
               >
                 Open in New Tab
               </Button>
