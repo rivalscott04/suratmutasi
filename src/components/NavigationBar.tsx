@@ -79,15 +79,21 @@ const NavigationBar = () => {
     const isAdmin = isImpersonating ? originalUser?.role === 'admin' : user?.role === 'admin';
     // Saat impersonate, gunakan role user yang sedang diimpersonate untuk menentukan menu yang tampil
     const isAdminWilayah = user?.role === 'admin_wilayah';
+    const isUser = user?.role === 'user';
+    const isOperator = user?.role === 'operator';
 
     // Base menu untuk semua role selain user biasa
     const items = [
       { name: 'Dashboard', href: '/dashboard', icon: Home },
       { name: 'Template Generator', href: '/generator', icon: FileText },
-      { name: 'SK Generator', href: '/generator/sk', icon: FileText },
       { name: 'Riwayat Surat', href: '/letters', icon: FileText },
       { name: 'Data Pengajuan', href: '/pengajuan', icon: Upload },
     ];
+
+    // SK Generator hanya untuk user dan admin (bukan operator dan admin_wilayah)
+    if (isUser || isAdmin) {
+      items.splice(2, 0, { name: 'SK Generator', href: '/generator/sk', icon: FileText });
+    }
 
     if (isAdmin) {
       items.push({ name: 'Management User', href: '/users', icon: UserCog });
