@@ -19,7 +19,12 @@ export const usePegawaiSearch = () => {
     const timeoutId = setTimeout(() => {
       const token = localStorage.getItem('token');
       apiGet(`/api/employees/search?q=${encodeURIComponent(searchTerm)}`, token)
-        .then(data => setResults(data.pegawai || data.employees || []))
+        .then(data => {
+          const results = data.pegawai || data.employees || [];
+          console.log(`🔍 Frontend search "${searchTerm}": received ${results.length} results`);
+          console.log(`📋 First 5 results:`, results.slice(0, 5).map((p: any) => ({ nip: p.nip, nama: p.nama })));
+          setResults(results);
+        })
         .catch(() => setError('Gagal mencari pegawai'))
         .finally(() => setIsLoading(false));
     }, 300);

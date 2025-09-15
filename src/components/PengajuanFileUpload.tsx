@@ -188,17 +188,19 @@ const PengajuanFileUpload: React.FC = () => {
               setRequiredFiles(jobTypeResponse.data.required_files);
               setJobTypeConfig(jobTypeResponse.data);
             } else {
-              // Fallback: gunakan required files default berdasarkan jenis jabatan
-              setRequiredFiles(getDefaultRequiredFiles(response.data.pengajuan.jenis_jabatan));
+              // Jika tidak ada konfigurasi, tampilkan pesan error
+              setError('Konfigurasi dokumen untuk jabatan ini belum tersedia. Silakan hubungi admin untuk mengkonfigurasi dokumen yang diperlukan.');
+              setRequiredFiles([]);
             }
           } catch (jobTypeError) {
             console.error('Error fetching job type configuration:', jobTypeError);
-            // Fallback: gunakan required files default berdasarkan jenis jabatan
-            setRequiredFiles(getDefaultRequiredFiles(response.data.pengajuan.jenis_jabatan));
+            setError('Gagal mengambil konfigurasi dokumen. Silakan hubungi admin.');
+            setRequiredFiles([]);
           }
         } else {
-          // Fallback: gunakan required files default berdasarkan jenis jabatan
-          setRequiredFiles(getDefaultRequiredFiles(response.data.pengajuan.jenis_jabatan));
+          // Jika tidak ada jabatan_id, tampilkan pesan error
+          setError('Jabatan belum dikonfigurasi. Silakan hubungi admin untuk mengkonfigurasi dokumen yang diperlukan.');
+          setRequiredFiles([]);
         }
       } else {
         setError(response.message || 'Gagal mengambil data pengajuan');
@@ -211,57 +213,6 @@ const PengajuanFileUpload: React.FC = () => {
     }
   };
 
-  // Helper function untuk mendapatkan required files default berdasarkan jenis jabatan
-  const getDefaultRequiredFiles = (jenisJabatan: string): string[] => {
-    // Fallback ke fungsional umum jika tidak ada konfigurasi spesifik
-    const fungsionalUmum = [
-      'surat_pengantar',
-      'surat_permohonan_dari_yang_bersangkutan',
-      'surat_keputusan_cpns',
-      'surat_keputusan_pns',
-      'surat_keputusan_kenaikan_pangkat_terakhir',
-      'surat_keputusan_jabatan_terakhir',
-      'skp_2_tahun_terakhir',
-      'surat_keterangan_bebas_temuan_inspektorat'
-    ];
-    
-    const defaultFiles: Record<string, string[]> = {
-      'guru': [
-        'surat_pengantar',
-        'surat_permohonan_dari_yang_bersangkutan',
-        'surat_keputusan_cpns',
-        'surat_keputusan_pns',
-        'surat_keputusan_kenaikan_pangkat_terakhir',
-        'surat_keputusan_jabatan_terakhir',
-        'skp_2_tahun_terakhir',
-        'surat_keterangan_bebas_temuan_inspektorat'
-      ],
-      'eselon_iv': [
-        'surat_pengantar',
-        'surat_permohonan_dari_yang_bersangkutan',
-        'surat_keputusan_cpns',
-        'surat_keputusan_pns',
-        'surat_keputusan_kenaikan_pangkat_terakhir',
-        'surat_keputusan_jabatan_terakhir',
-        'skp_2_tahun_terakhir',
-        'surat_keterangan_bebas_temuan_inspektorat',
-        'surat_keterangan_anjab_abk_instansi_asal',
-        'surat_keterangan_anjab_abk_instansi_penerima'
-      ],
-      'fungsional': fungsionalUmum,
-      'pelaksana': [
-        'surat_pengantar',
-        'surat_permohonan_dari_yang_bersangkutan',
-        'surat_keputusan_cpns',
-        'surat_keputusan_pns',
-        'surat_keputusan_kenaikan_pangkat_terakhir',
-        'surat_keputusan_jabatan_terakhir',
-        'skp_2_tahun_terakhir'
-      ]
-    };
-    
-    return defaultFiles[jenisJabatan] || fungsionalUmum;
-  };
 
   const handleFileUpload = async (fileType: string, file: File) => {
     // Validasi ukuran file: default 500KB, khusus SKP 2 Tahun Terakhir 1MB

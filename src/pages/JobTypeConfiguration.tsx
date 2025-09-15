@@ -64,7 +64,7 @@ const JobTypeConfiguration: React.FC = () => {
     { id: 'surat_persetujuan_mutasi_asal', name: 'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki', category: 'Dokumen Persetujuan' },
     { id: 'surat_lolos_butuh_ppk', name: 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju', category: 'Dokumen Persetujuan' },
     { id: 'peta_jabatan', name: 'Peta Jabatan', category: 'Dokumen Pendukung' },
-    { id: 'hasil_uji_kompetensi', name: 'Hasil Uji Kompetensi', category: 'Dokumen Pendukung' },
+    // Dipindahkan ke konfigurasi Admin Wilayah, bukan bagian dari required_files user
     { id: 'hasil_evaluasi_pertimbangan_baperjakat', name: 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)', category: 'Dokumen Pendukung' },
     { id: 'anjab_abk_instansi_asal', name: 'Anjab/Abk Instansi Asal', category: 'Dokumen Pendukung' },
     { id: 'anjab_abk_instansi_penerima', name: 'Anjab/Abk Instansi Penerima', category: 'Dokumen Pendukung' },
@@ -127,8 +127,7 @@ const JobTypeConfiguration: React.FC = () => {
         'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki': 'surat_persetujuan_mutasi_asal',
         'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju': 'surat_lolos_butuh_ppk',
         'Peta Jabatan': 'peta_jabatan',
-        'Hasil Assessment': 'hasil_uji_kompetensi',
-        'Hasil Uji Kompetensi': 'hasil_uji_kompetensi',
+        // 'Hasil Assessment' / 'Hasil Uji Kompetensi' dipindahkan ke Admin Wilayah File Config
         'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)': 'hasil_evaluasi_pertimbangan_baperjakat',
         'Anjab/Abk Instansi Asal': 'anjab_abk_instansi_asal',
         'Anjab/Abk Instansi Penerima': 'anjab_abk_instansi_penerima',
@@ -191,7 +190,7 @@ const JobTypeConfiguration: React.FC = () => {
           'surat_persetujuan_mutasi_asal': 'Surat Persetujuan Mutasi dari ASAL dengan menyebutkan jabatan yang akan diduduki',
           'surat_lolos_butuh_ppk': 'Surat Lolos Butuh dari Pejabat Pembina Kepegawaian instansi yang dituju',
           'peta_jabatan': 'Peta Jabatan',
-          'hasil_uji_kompetensi': 'Hasil Uji Kompetensi',
+          // hasil_uji_kompetensi dipindahkan ke Admin Wilayah File Config
           'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
           'anjab_abk_instansi_asal': 'Anjab/Abk Instansi Asal',
           'anjab_abk_instansi_penerima': 'Anjab/Abk Instansi Penerima',

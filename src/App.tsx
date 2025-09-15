@@ -27,6 +27,7 @@ const PengajuanEdit = lazy(() => import("./pages/PengajuanEdit"));
 const JobTypeConfiguration = lazy(() => import("./pages/JobTypeConfiguration"));
 const AdminWilayahDashboard = lazy(() => import("./pages/AdminWilayahDashboard"));
 const AdminWilayahUploadPage = lazy(() => import("./pages/AdminWilayahUploadPage"));
+const SKForm = lazy(() => import("./components/SKForm"));
 
 // Loading component for Suspense fallback
 const PageLoading = () => (
@@ -79,6 +80,20 @@ const AdminOperatorRoute = ({ children }: { children: React.ReactNode }) => {
   return <AppLayout>{children}</AppLayout>;
 };
 
+const AdminOrUserRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!user || (user.role !== 'admin' && user.role !== 'user')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <AppLayout>{children}</AppLayout>;
+};
+
 const AdminWilayahRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
@@ -121,6 +136,13 @@ const AppRoutes = () => {
             <TemplateForm />
           </Suspense>
         </AdminOperatorRoute>
+      } />
+      <Route path="/generator/sk" element={
+        <AdminOrUserRoute>
+          <Suspense fallback={<PageLoading />}>
+            <SKForm />
+          </Suspense>
+        </AdminOrUserRoute>
       } />
       <Route path="/users" element={
         <AdminRoute>

@@ -106,6 +106,17 @@ const PengajuanIndex: React.FC = () => {
     }
   }, [isAuthenticated, isAdmin]);
 
+  // Debug useEffect untuk melihat perubahan state
+  useEffect(() => {
+    console.log('🔍 Debug State Change - Pagination values updated:', {
+      totalPages,
+      totalItems,
+      currentPage,
+      itemsPerPage,
+      pengajuanListLength: pengajuanList.length
+    });
+  }, [totalPages, totalItems, currentPage, itemsPerPage, pengajuanList.length]);
+
     const fetchPengajuanData = async () => {
     try {
       setLoading(true);
@@ -117,22 +128,59 @@ const PengajuanIndex: React.FC = () => {
         ...(isAdmin && createdByFilter !== 'all' && { created_by: createdByFilter })
       });
 
-             const response = await apiGet(`/api/pengajuan?${params}`, token);
-        if (response.success) {
-          setPengajuanList(response.data.data || response.data);
-          if (isAdmin) {
-            const grouped = (response.data && response.data.grouped_by_kabkota) || (response.grouped_by_kabkota);
-            if (grouped) {
-              setGroupedByKabkota(grouped as Record<string, PengajuanData[]>);
-            } else {
-              setGroupedByKabkota({});
-            }
+      console.log('🔍 Debug fetchPengajuanData - Request params (for debugging pagination issue):', {
+        page: currentPage,
+        limit: itemsPerPage,
+        statusFilter,
+        searchTerm,
+        createdByFilter
+      });
+
+      const response = await apiGet(`/api/pengajuan?${params}`, token);
+      
+      console.log('🔍 Debug fetchPengajuanData - Full response:', response);
+      console.log('🔍 Debug fetchPengajuanData - Response data:', response.data);
+      console.log('🔍 Debug fetchPengajuanData - Pagination data:', response.data?.pagination);
+      console.log('🔍 Debug fetchPengajuanData - Response structure check:', {
+        hasData: !!response.data,
+        hasDataData: !!response.data?.data,
+        hasPagination: !!response.data?.pagination,
+        dataType: typeof response.data,
+        dataKeys: response.data ? Object.keys(response.data) : 'no data'
+      });
+      
+      if (response.success) {
+        setPengajuanList(response.data);
+        if (isAdmin) {
+          const grouped = response.grouped_by_kabkota;
+          if (grouped) {
+            setGroupedByKabkota(grouped as Record<string, PengajuanData[]>);
+          } else {
+            setGroupedByKabkota({});
           }
-          setTotalPages(response.data.pagination?.totalPages || 1);
-          setTotalItems(response.data.pagination?.total || 0);
-        } else {
-          setError(response.message || 'Gagal mengambil data pengajuan');
         }
+        
+        const totalPagesValue = response.pagination?.totalPages || 1;
+        const totalItemsValue = response.pagination?.total || 0;
+        
+        console.log('🔍 Debug fetchPengajuanData - Setting pagination:', {
+          totalPages: totalPagesValue,
+          totalItems: totalItemsValue,
+          currentPage,
+          itemsPerPage
+        });
+        
+        setTotalPages(totalPagesValue);
+        setTotalItems(totalItemsValue);
+        
+        console.log('🔍 Debug fetchPengajuanData - After setting state:', {
+          pengajuanListLength: response.data?.length,
+          totalPagesSet: totalPagesValue,
+          totalItemsSet: totalItemsValue
+        });
+      } else {
+        setError(response.message || 'Gagal mengambil data pengajuan');
+      }
      } catch (error) {
        console.error('Error fetching pengajuan data:', error);
        setError('Terjadi kesalahan saat mengambil data pengajuan');
@@ -669,7 +717,7 @@ const PengajuanIndex: React.FC = () => {
                 <Loader2 className="h-8 w-8 animate-spin mr-2" />
                 <span>Memuat data pengajuan...</span>
               </div>
-            ) : pengajuanList.length === 0 ? (
+            ) : pengajuanList.length === 0 && totalItems === 0 ? (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 mb-2">
@@ -688,9 +736,80 @@ const PengajuanIndex: React.FC = () => {
                   </Button>
                 )}
               </div>
+            ) : pengajuanList.length === 0 && totalItems > 0 ? (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pegawai</TableHead>
+                      <TableHead>Jenis Jabatan</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Dokumen</TableHead>
+                      <TableHead>Tanggal Dibuat</TableHead>
+                      <TableHead>Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        Tidak ada data di halaman ini
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+
+                {/* Debug Info - Always show for debugging pagination issue */}
+                <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200 text-xs text-yellow-800">
+                  🔍 Debug Info: Total Items: {totalItems} | Total Pages: {totalPages} | Current Page: {currentPage} | Items Per Page: {itemsPerPage} | Data Length: {pengajuanList.length}
+                </div>
+
+                {/* Pagination Info - Always show for debugging */}
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                  <div className="text-sm text-gray-700">
+                    Menampilkan {((currentPage - 1) * itemsPerPage) + 1} sampai {Math.min(currentPage * itemsPerPage, totalItems)} dari {totalItems} pengajuan
+                  </div>
+                  {true && ( // Always show for debugging - change back to (totalPages > 1 || totalItems > itemsPerPage) later
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Sebelumnya
+                      </Button>
+                      
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        Selanjutnya
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <>
-                                 <Table>
+                <Table>
                    <TableHeader>
                      <TableRow>
                        <TableHead>Pegawai</TableHead>
@@ -815,12 +934,17 @@ const PengajuanIndex: React.FC = () => {
                   </TableBody>
                 </Table>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                    <div className="text-sm text-gray-700">
-                      Menampilkan {((currentPage - 1) * itemsPerPage) + 1} sampai {Math.min(currentPage * itemsPerPage, totalItems)} dari {totalItems} pengajuan
-                    </div>
+                {/* Debug Info - Always show for debugging pagination issue */}
+                <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200 text-xs text-yellow-800">
+                  🔍 Debug Info: Total Items: {totalItems} | Total Pages: {totalPages} | Current Page: {currentPage} | Items Per Page: {itemsPerPage} | Data Length: {pengajuanList.length}
+                </div>
+
+                {/* Pagination Info - Always show for debugging */}
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                  <div className="text-sm text-gray-700">
+                    Menampilkan {((currentPage - 1) * itemsPerPage) + 1} sampai {Math.min(currentPage * itemsPerPage, totalItems)} dari {totalItems} pengajuan
+                  </div>
+                  {true && ( // Always show for debugging - change back to (totalPages > 1 || totalItems > itemsPerPage) later
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -856,8 +980,8 @@ const PengajuanIndex: React.FC = () => {
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </>
             )}
           </div>

@@ -84,6 +84,7 @@ const NavigationBar = () => {
     const items = [
       { name: 'Dashboard', href: '/dashboard', icon: Home },
       { name: 'Template Generator', href: '/generator', icon: FileText },
+      { name: 'SK Generator', href: '/generator/sk', icon: FileText },
       { name: 'Riwayat Surat', href: '/letters', icon: FileText },
       { name: 'Data Pengajuan', href: '/pengajuan', icon: Upload },
     ];
