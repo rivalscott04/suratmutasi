@@ -1046,10 +1046,6 @@ const PengajuanDetail: React.FC = () => {
                         
                                                  <div className="flex items-center gap-3">
                            {/* Switch Toggle Verifikasi - Admin & Admin Wilayah */}
-                          {/* Debug Info */}
-                          <div className="text-xs text-gray-500 mb-2">
-                            Debug: user.role={user?.role}, isAdmin={isAdmin ? 'true' : 'false'}, isAdminWilayah={isAdminWilayah ? 'true' : 'false'}, status={pengajuan.status}
-                          </div>
                           {(isAdmin || isAdminWilayah) && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected') ? (
                              <div className="flex items-center gap-3 mr-3">
                               {verifyingFile === file.id ? (

@@ -106,16 +106,6 @@ const PengajuanIndex: React.FC = () => {
     }
   }, [isAuthenticated, isAdmin]);
 
-  // Debug useEffect untuk melihat perubahan state
-  useEffect(() => {
-    console.log('🔍 Debug State Change - Pagination values updated:', {
-      totalPages,
-      totalItems,
-      currentPage,
-      itemsPerPage,
-      pengajuanListLength: pengajuanList.length
-    });
-  }, [totalPages, totalItems, currentPage, itemsPerPage, pengajuanList.length]);
 
     const fetchPengajuanData = async () => {
     try {
@@ -128,26 +118,9 @@ const PengajuanIndex: React.FC = () => {
         ...(isAdmin && createdByFilter !== 'all' && { created_by: createdByFilter })
       });
 
-      console.log('🔍 Debug fetchPengajuanData - Request params (for debugging pagination issue):', {
-        page: currentPage,
-        limit: itemsPerPage,
-        statusFilter,
-        searchTerm,
-        createdByFilter
-      });
 
       const response = await apiGet(`/api/pengajuan?${params}`, token);
       
-      console.log('🔍 Debug fetchPengajuanData - Full response:', response);
-      console.log('🔍 Debug fetchPengajuanData - Response data:', response.data);
-      console.log('🔍 Debug fetchPengajuanData - Pagination data:', response.data?.pagination);
-      console.log('🔍 Debug fetchPengajuanData - Response structure check:', {
-        hasData: !!response.data,
-        hasDataData: !!response.data?.data,
-        hasPagination: !!response.data?.pagination,
-        dataType: typeof response.data,
-        dataKeys: response.data ? Object.keys(response.data) : 'no data'
-      });
       
       if (response.success) {
         setPengajuanList(response.data);
@@ -163,21 +136,10 @@ const PengajuanIndex: React.FC = () => {
         const totalPagesValue = response.pagination?.totalPages || 1;
         const totalItemsValue = response.pagination?.total || 0;
         
-        console.log('🔍 Debug fetchPengajuanData - Setting pagination:', {
-          totalPages: totalPagesValue,
-          totalItems: totalItemsValue,
-          currentPage,
-          itemsPerPage
-        });
         
         setTotalPages(totalPagesValue);
         setTotalItems(totalItemsValue);
         
-        console.log('🔍 Debug fetchPengajuanData - After setting state:', {
-          pengajuanListLength: response.data?.length,
-          totalPagesSet: totalPagesValue,
-          totalItemsSet: totalItemsValue
-        });
       } else {
         setError(response.message || 'Gagal mengambil data pengajuan');
       }
@@ -193,7 +155,6 @@ const PengajuanIndex: React.FC = () => {
       try {
         const response = await apiGet('/api/pengajuan/filter-options', token);
         if (response.success) {
-          console.log('🔍 Debug fetchFilterOptions - Response:', response.data);
           setFilterOptions(response.data);
         }
       } catch (error) {
@@ -758,10 +719,6 @@ const PengajuanIndex: React.FC = () => {
                   </TableBody>
                 </Table>
 
-                {/* Debug Info - Always show for debugging pagination issue */}
-                <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200 text-xs text-yellow-800">
-                  🔍 Debug Info: Total Items: {totalItems} | Total Pages: {totalPages} | Current Page: {currentPage} | Items Per Page: {itemsPerPage} | Data Length: {pengajuanList.length}
-                </div>
 
                 {/* Pagination Info - Always show for debugging */}
                 <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
@@ -934,10 +891,6 @@ const PengajuanIndex: React.FC = () => {
                   </TableBody>
                 </Table>
 
-                {/* Debug Info - Always show for debugging pagination issue */}
-                <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200 text-xs text-yellow-800">
-                  🔍 Debug Info: Total Items: {totalItems} | Total Pages: {totalPages} | Current Page: {currentPage} | Items Per Page: {itemsPerPage} | Data Length: {pengajuanList.length}
-                </div>
 
                 {/* Pagination Info - Always show for debugging */}
                 <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
