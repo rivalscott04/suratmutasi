@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { z } from "zod";
+import logoKemenag from "@/assets/logo-kemenag.png";
 
 const personSchema = z.object({
   nama: z.string().min(1, "Nama harus diisi"),
@@ -67,7 +68,7 @@ function SKMutasiContent({ formData }: any) {
       <div className="text-center mb-1" style={{lineHeight: '1.0'}}>
         <div className="flex justify-center items-center mb-1">
           <img
-            src="/logo-kemenag.png"
+            src={logoKemenag}
             alt="Logo Kemenag"
             style={{ width: '130px', height: '130px', objectFit: 'contain', display: 'block' }}
           />
