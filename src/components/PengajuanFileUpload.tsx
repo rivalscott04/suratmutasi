@@ -215,10 +215,10 @@ const PengajuanFileUpload: React.FC = () => {
 
 
   const handleFileUpload = async (fileType: string, file: File) => {
-    // Validasi ukuran file: default 500KB, khusus SKP 2 Tahun Terakhir 1MB
-    const maxSize = fileType === 'skp_2_tahun_terakhir' ? 1024 * 1024 : 500 * 1024;
+    // Validasi ukuran file: default 500KB, khusus SKP 2 Tahun Terakhir 1.6MB
+    const maxSize = fileType === 'skp_2_tahun_terakhir' ? Math.floor(1.6 * 1024 * 1024) : 500 * 1024;
     if (file.size > maxSize) {
-      const humanMax = maxSize === 1024 * 1024 ? '1MB' : '500KB';
+      const humanMax = fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB';
       setError(`File terlalu besar. Maksimal ${humanMax}. Ukuran file: ${(file.size / 1024).toFixed(1)}KB`);
       return;
     }
@@ -438,7 +438,7 @@ const PengajuanFileUpload: React.FC = () => {
                         <div className="flex-1">
                           <h4 className="font-medium text-sm leading-tight">{getFileDisplayName(fileType)}</h4>
                           <p className="text-xs text-gray-600 mt-1">
-                            Upload file PDF (maks. {fileType === 'skp_2_tahun_terakhir' ? '1MB' : '500KB'})
+                            Upload file PDF (maks. {fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
                           </p>
                         </div>
                         <Badge 

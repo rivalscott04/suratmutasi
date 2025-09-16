@@ -57,7 +57,7 @@ const JobTypeConfiguration: React.FC = () => {
     { id: 'surat_keputusan_kenaikan_pangkat_terakhir', name: 'Surat Keputusan Kenaikan Pangkat Terakhir', category: 'Dokumen Kepegawaian' },
     { id: 'surat_keputusan_jabatan_terakhir', name: 'Surat Keputusan Jabatan Terakhir', category: 'Dokumen Kepegawaian' },
     { id: 'skp_2_tahun_terakhir', name: 'SKP 2 Tahun Terakhir', category: 'Dokumen Kepegawaian' },
-    { id: 'surat_keterangan_bebas_temuan_inspektorat', name: 'Surat Keterangan Bebas Temuan Yang Diterbitkan Inspektorat Jenderal Kementerian Agama', category: 'Dokumen Keterangan' },
+    
     { id: 'surat_keterangan_anjab_abk_instansi_asal', name: 'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi asal', category: 'Dokumen Keterangan' },
     { id: 'surat_keterangan_anjab_abk_instansi_penerima', name: 'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi penerima', category: 'Dokumen Keterangan' },
     { id: 'surat_pernyataan_tidak_hukuman_disiplin', name: 'Surat Pernyataan Tidak Pernah Dijatuhi Hukuman Disiplin Tingkat Sedang atau Berat Dalam 1 (satu) Tahun Terakhir Dari PPK', category: 'Dokumen Pernyataan' },
@@ -120,7 +120,7 @@ const JobTypeConfiguration: React.FC = () => {
         'Surat Keputusan Kenaikan Pangkat Terakhir': 'surat_keputusan_kenaikan_pangkat_terakhir',
         'Surat Keputusan Jabatan Terakhir': 'surat_keputusan_jabatan_terakhir',
         'SKP 2 Tahun Terakhir': 'skp_2_tahun_terakhir',
-        'Surat Keterangan Bebas Temuan Yang Diterbitkan Inspektorat Jenderal Kementerian Agama': 'surat_keterangan_bebas_temuan_inspektorat',
+        
         'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi asal': 'surat_keterangan_anjab_abk_instansi_asal',
         'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi penerima': 'surat_keterangan_anjab_abk_instansi_penerima',
         'Surat Pernyataan Tidak Pernah Dijatuhi Hukuman Disiplin Tingkat Sedang atau Berat Dalam 1 (satu) Tahun Terakhir Dari PPK': 'surat_pernyataan_tidak_hukuman_disiplin',
@@ -183,7 +183,7 @@ const JobTypeConfiguration: React.FC = () => {
           'surat_keputusan_kenaikan_pangkat_terakhir': 'Surat Keputusan Kenaikan Pangkat Terakhir',
           'surat_keputusan_jabatan_terakhir': 'Surat Keputusan Jabatan Terakhir',
           'skp_2_tahun_terakhir': 'SKP 2 Tahun Terakhir',
-          'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan Yang Diterbitkan Inspektorat Jenderal Kementerian Agama',
+          
           'surat_keterangan_anjab_abk_instansi_asal': 'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi asal',
           'surat_keterangan_anjab_abk_instansi_penerima': 'Surat Keterangan Anjab dan ABK terhadap jabatan PNS dari instansi penerima',
           'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan Tidak Pernah Dijatuhi Hukuman Disiplin Tingkat Sedang atau Berat Dalam 1 (satu) Tahun Terakhir Dari PPK',

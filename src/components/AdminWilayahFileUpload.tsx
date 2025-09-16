@@ -432,7 +432,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                           )}
                         </div>
                       <p className="text-sm text-gray-600 mb-2">
-                        Upload file PDF (maks. {fileConfig.file_type === 'skp_2_tahun_terakhir' ? '1MB' : '500KB'})
+                        Upload file PDF (maks. {fileConfig.file_type === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
                       </p>
                       
                       {status === 'uploaded' && uploadedFile && (

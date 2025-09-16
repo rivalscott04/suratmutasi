@@ -726,7 +726,9 @@ const Settings = () => {
     { id: 'surat_pernyataan_tidak_tugas_belajar', name: 'Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar', category: 'Dokumen Pernyataan', is_required: true, description: 'Surat pernyataan tidak sedang menjalani tugas belajar' },
     { id: 'surat_pernyataan_tidak_ikatan_dinas', name: 'Surat Pernyataan Tidak Sedang Menjalani Ikatan Dinas', category: 'Dokumen Pernyataan', is_required: true, description: 'Surat pernyataan tidak sedang menjalani ikatan dinas' },
     { id: 'surat_keterangan_kanwil', name: 'Surat Keterangan dari Kanwil', category: 'Dokumen Keterangan', is_required: true, description: 'Surat keterangan resmi dari Kanwil Provinsi' },
-    { id: 'surat_rekomendasi_kanwil_khusus', name: 'Surat Rekomendasi Khusus dari Kanwil', category: 'Dokumen Keterangan', is_required: true, description: 'Surat rekomendasi khusus dari Kanwil Provinsi' }
+    { id: 'surat_rekomendasi_kanwil_khusus', name: 'Surat Rekomendasi Khusus dari Kanwil', category: 'Dokumen Keterangan', is_required: true, description: 'Surat rekomendasi khusus dari Kanwil Provinsi' },
+    { id: 'surat_keterangan_bebas_temuan_inspektorat', name: 'Surat Keterangan Bebas Temuan (SKBT) - Inspektorat', category: 'Dokumen Kanwil', is_required: true, description: 'SKBT diterbitkan Inspektorat Jenderal Kemenag' },
+    { id: 'hasil_assessment', name: 'Hasil Assessment', category: 'Dokumen Kanwil', is_required: true, description: 'Dokumen hasil uji kompetensi/assessment dari Kanwil/otoritas terkait' }
   ];
 
   // Available job types for admin wilayah config
