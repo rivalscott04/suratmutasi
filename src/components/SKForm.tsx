@@ -67,7 +67,7 @@ function SKMutasiContent({ formData }: any) {
       <div className="text-center mb-1" style={{lineHeight: '1.0'}}>
         <div className="flex justify-center items-center mb-1">
           <img
-            src="/img/kemenag.png"
+            src="/logo-kemenag.png"
             alt="Logo Kemenag"
             style={{ width: '130px', height: '130px', objectFit: 'contain', display: 'block' }}
           />
