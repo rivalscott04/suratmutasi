@@ -787,7 +787,7 @@ const PengajuanDetail: React.FC = () => {
   })();
   
   // Operator yang sudah upload perbaikan tidak boleh edit/delete lagi, hanya bisa ajukan ulang
-  const canEdit = (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected') && 
+  const canEdit = (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected' || pengajuan?.status === 'admin_wilayah_rejected') && 
                   (isAdmin || pengajuan?.created_by === user?.id) && 
                   !hasPendingFiles; // Tidak bisa edit jika ada file pending
   const canDelete = pengajuan?.status === 'draft' && 
@@ -796,7 +796,7 @@ const PengajuanDetail: React.FC = () => {
   const canApprove = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
   const canReject = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
   // Tampilkan tombol Ajukan Ulang saat status ditolak atau draft, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
-  const canShowResubmit = (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft') && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
+  const canShowResubmit = (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft' || pengajuan?.status === 'admin_wilayah_rejected') && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
   
 
   
@@ -1496,18 +1496,6 @@ const PengajuanDetail: React.FC = () => {
                    </Button>
                  )}
 
-                {canEdit && pengajuan.status === 'draft' && (
-                   <Button
-                     onClick={() => window.open(`http://localhost:8080/pengajuan/${pengajuan.id}/upload`, '_blank')}
-                     className="w-full bg-green-600 hover:bg-green-700 text-white"
-                   >
-                     <Edit className="h-4 w-4 mr-2" />
-                     Upload Dokumen
-                   </Button>
-                 )}
-                 
-                 
-                
                 {canDelete && (
                   <Button
                     onClick={() => setShowDeleteDialog(true)}
