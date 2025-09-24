@@ -40,11 +40,14 @@ interface PengajuanData {
   status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'final_approved' | 'final_rejected';
   catatan?: string;
   rejection_reason?: string;
+  resubmitted_at?: string;
+  resubmitted_by?: string;
   created_at: string;
   files: Array<{
     id: string;
     file_type: string;
     file_name: string;
+    file_category?: string;
   }>;
 }
 
@@ -202,10 +205,24 @@ const PengajuanIndex: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, pengajuan?: PengajuanData) => {
+    // Helper function to determine if this is submitted after admin wilayah approval
+    const isSubmittedAfterAdminWilayah = (status: string, pengajuan?: PengajuanData) => {
+      if (status !== 'submitted' || !pengajuan) return false;
+      // Check if there's evidence this was previously admin_wilayah_approved
+      // We can check if there are admin_wilayah files or if it has been through admin wilayah workflow
+      return pengajuan.files?.some(f => f.file_category === 'admin_wilayah') || 
+             pengajuan.resubmitted_at || 
+             pengajuan.resubmitted_by;
+    };
+
     const statusConfig = {
       draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800 hover:bg-gray-200', icon: Clock },
-      submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800 hover:bg-blue-200', icon: FileText },
+      submitted: { 
+        label: isSubmittedAfterAdminWilayah(status, pengajuan) ? 'Diajukan Admin Wilayah' : 'Diajukan', 
+        className: 'bg-blue-100 text-blue-800 hover:bg-blue-200', 
+        icon: FileText 
+      },
       approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800 hover:bg-green-200', icon: CheckCircle },
       rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800 hover:bg-red-200', icon: XCircle },
       resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock },
@@ -558,7 +575,7 @@ const PengajuanIndex: React.FC = () => {
                                 <TableCell>
                                   <Badge variant="outline">{getJabatanDisplayName(pengajuan.jenis_jabatan)}</Badge>
                                 </TableCell>
-                                <TableCell>{getStatusBadge(pengajuan.status)}</TableCell>
+                                <TableCell>{getStatusBadge(pengajuan.status, pengajuan)}</TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm">{pengajuan.files.length}</span>
@@ -793,7 +810,7 @@ const PengajuanIndex: React.FC = () => {
                           </Badge>
                         </TableCell>
                                                  <TableCell>
-                           {getStatusBadge(pengajuan.status)}
+                           {getStatusBadge(pengajuan.status, pengajuan)}
                          </TableCell>
                                                  <TableCell>
                            <div className="flex items-center gap-2">

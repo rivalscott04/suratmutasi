@@ -316,10 +316,22 @@ const PengajuanDetail: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, pengajuan?: PengajuanData) => {
+    // Helper function to determine if this is submitted after admin wilayah approval
+    const isSubmittedAfterAdminWilayah = (status: string, pengajuan?: PengajuanData) => {
+      if (status !== 'submitted' || !pengajuan) return false;
+      // Check if there's evidence this was previously admin_wilayah_approved
+      return pengajuan.files?.some(f => f.file_category === 'admin_wilayah') || 
+             pengajuan.resubmitted_at || 
+             pengajuan.resubmitted_by;
+    };
+
     const statusConfig = {
       draft: { label: 'DRAFT', className: 'bg-gray-100 text-gray-800' },
-      submitted: { label: 'SUBMITTED', className: 'bg-blue-100 text-blue-800' },
+      submitted: { 
+        label: isSubmittedAfterAdminWilayah(status, pengajuan) ? 'DIAJUKAN ADMIN WILAYAH' : 'SUBMITTED', 
+        className: 'bg-blue-100 text-blue-800' 
+      },
       approved: { label: 'APPROVED', className: 'bg-green-100 text-green-800' },
       rejected: { label: 'REJECTED', className: 'bg-red-100 text-red-800' },
       resubmitted: { label: 'RESUBMITTED', className: 'bg-yellow-100 text-yellow-800' },
@@ -915,7 +927,7 @@ const PengajuanDetail: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {getStatusBadge(pengajuan.status)}
+          {getStatusBadge(pengajuan.status, pengajuan)}
         </div>
       </div>
 

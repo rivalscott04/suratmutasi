@@ -106,7 +106,16 @@ const AdminWilayahUploadPage: React.FC = () => {
     });
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, pengajuan?: any) => {
+    // Helper function to determine if this is submitted after admin wilayah approval
+    const isSubmittedAfterAdminWilayah = (status: string, pengajuan?: any) => {
+      if (status !== 'submitted' || !pengajuan) return false;
+      // Check if there's evidence this was previously admin_wilayah_approved
+      return pengajuan.files?.some((f: any) => f.file_category === 'admin_wilayah') || 
+             pengajuan.resubmitted_at || 
+             pengajuan.resubmitted_by;
+    };
+
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-600 text-white">Disetujui Kab/Kota</Badge>;
@@ -115,7 +124,9 @@ const AdminWilayahUploadPage: React.FC = () => {
       case 'admin_wilayah_rejected':
         return <Badge className="bg-red-600 text-white">Ditolak Admin Wilayah</Badge>;
       case 'submitted':
-        return <Badge className="bg-blue-600 text-white">Dikirim ke Superadmin</Badge>;
+        return <Badge className="bg-blue-600 text-white">
+          {isSubmittedAfterAdminWilayah(status, pengajuan) ? 'Diajukan Admin Wilayah' : 'Dikirim ke Superadmin'}
+        </Badge>;
       default:
         return <Badge className="bg-gray-600 text-white">{status}</Badge>;
     }
@@ -211,7 +222,7 @@ const AdminWilayahUploadPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <Badge className="bg-green-100 text-green-800">Admin Wilayah</Badge>
-            {getStatusBadge(pengajuan.status)}
+            {getStatusBadge(pengajuan.status, pengajuan)}
           </div>
         </div>
 
