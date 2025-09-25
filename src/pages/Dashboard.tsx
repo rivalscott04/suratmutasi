@@ -288,7 +288,24 @@ const Dashboard = () => {
                       <tr className="text-left border-b">
                         <th className="py-3 pr-4 font-medium">Kabupaten</th>
                         {statusKeys.map(sk => (
-                          <th key={sk} className="py-3 pr-4 font-medium whitespace-nowrap">{sk.replaceAll('_', ' ').toUpperCase()}</th>
+                          <th key={sk} className="py-3 pr-4 font-medium whitespace-nowrap">{
+                            (() => {
+                              const map: Record<string, string> = {
+                                draft: 'Draf',
+                                submitted: 'Diajukan',
+                                approved: 'Disetujui',
+                                rejected: 'Ditolak',
+                                resubmitted: 'Diajukan Ulang',
+                                admin_wilayah_approved: 'Disetujui Admin Wilayah',
+                                admin_wilayah_rejected: 'Ditolak Admin Wilayah',
+                                final_approved: 'Selesai',
+                                final_rejected: 'Ditolak Final'
+                              };
+                              // Gunakan split/join agar kompatibel dengan lingkungan yang tidak mendukung replaceAll
+                              const fallback = (sk || '').split('_').join(' ').toUpperCase();
+                              return map[sk] || fallback;
+                            })()
+                          }</th>
                         ))}
                         <th className="py-3 pr-4 font-medium">Total</th>
                       </tr>

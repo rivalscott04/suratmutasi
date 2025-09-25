@@ -218,14 +218,14 @@ const AdminWilayahDashboard: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800' },
+      draft: { label: 'Draf', className: 'bg-gray-100 text-gray-800' },
       submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800' },
       approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800' },
       rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800' },
       resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800' },
       admin_wilayah_approved: { label: 'Disetujui Admin Wilayah', className: 'bg-green-200 text-green-800' },
       admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800' },
-      final_approved: { label: 'Disetujui Final', className: 'bg-green-600 text-white' },
+      final_approved: { label: 'Selesai', className: 'bg-green-600 text-white' },
       final_rejected: { label: 'Ditolak Final', className: 'bg-red-600 text-white' },
     };
 
@@ -517,7 +517,7 @@ const AdminWilayahDashboard: React.FC = () => {
           {/* Pivot Rekap Tabel */}
           <Card>
             <CardHeader>
-              <CardTitle>Rekapan Status per Kabupaten</CardTitle>
+              <CardTitle>Rekap Status per Kabupaten</CardTitle>
             </CardHeader>
             <CardContent>
               {aggregationData.length === 0 ? (
