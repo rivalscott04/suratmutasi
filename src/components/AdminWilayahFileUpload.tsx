@@ -315,7 +315,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       return 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)';
     }
     
-    if (file_type === 'skbt') {
+    if (file_type === 'surat_keterangan_bebas_temuan_inspektorat') {
       return 'Surat Keterangan Bebas Temuan (SKBT)';
     }
     

@@ -930,7 +930,7 @@ const Settings = () => {
     }
     
     setAdminWilayahConfigForm({
-      jenis_jabatan_id: config.jenis_jabatan_id,
+      jenis_jabatan_id: config.jenis_jabatan_id.toString(), // Convert to string to match SelectItem value
       name: config.name,
       description: config.description,
       selectedFiles: selectedFilesMap,
