@@ -835,7 +835,25 @@ const PengajuanDetail: React.FC = () => {
   })();
   
   // Bisa ajukan ulang jika tidak ada file rejected (semua file sudah diperbaiki)
-  const resubmitEnabled = !hasRejectedFiles;
+  // Untuk operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki (status pending juga OK)
+  const resubmitEnabled = (() => {
+    if (!pengajuan) return false;
+    
+    // Jika user adalah operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki
+    if (user?.role === 'operator') {
+      const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
+      for (const t of requiredAll) {
+        const f = pengajuan.files.find((x) => x.file_type === t);
+        // Operator kabupaten bisa ajukan ulang jika file ada (baik pending maupun approved)
+        // Hanya tidak bisa jika file tidak ada atau status rejected
+        if (!f || f.verification_status === 'rejected') return false;
+      }
+      return true;
+    }
+    
+    // Untuk role lain, tetap menggunakan logika lama
+    return !hasRejectedFiles;
+  })();
 
   // Cek status berkas admin wilayah untuk final approval
   const allAdminWilayahFilesApproved = (() => {

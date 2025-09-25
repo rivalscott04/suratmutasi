@@ -209,6 +209,19 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       formData.append('uploaded_by_role', 'admin_wilayah');
       formData.append('uploaded_by_name', user?.full_name || 'Admin Wilayah');
       formData.append('uploaded_by_office', 'Kanwil Provinsi');
+      
+      // Debug FormData
+      console.log('📦 FormData created:', {
+        file: file.name,
+        pengajuan_id: pengajuanId,
+        file_type: fileType,
+        file_category: 'admin_wilayah'
+      });
+      
+      // Check if FormData is properly created
+      for (let [key, value] of formData.entries()) {
+        console.log('📋 FormData entry:', key, value);
+      }
 
       // Upload file to backend
       const response = await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/upload`, formData, token);
