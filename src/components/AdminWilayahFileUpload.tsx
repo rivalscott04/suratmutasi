@@ -440,6 +440,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {requiredFiles.map((fileConfig) => {
+            console.log('🔧 Rendering fileConfig:', fileConfig);
             const status = getFileStatus(fileConfig.file_type);
             const uploadedFile = getUploadedFile(fileConfig.file_type);
             
@@ -515,11 +516,15 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                               type="file"
                               accept=".pdf,.doc,.docx"
                               onChange={(e) => {
+                                console.log('📁 File input changed:', e.target.files);
                                 const file = e.target.files?.[0];
                                 if (file) {
+                                  console.log('📄 File selected:', file.name, 'fileConfig.file_type:', fileConfig.file_type);
                                   handleFileUpload(fileConfig.file_type, file);
                                   // Reset file input setelah file dipilih
                                   e.target.value = '';
+                                } else {
+                                  console.log('❌ No file selected');
                                 }
                               }}
                               className="hidden"
