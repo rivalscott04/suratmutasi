@@ -223,11 +223,8 @@ const PengajuanIndex: React.FC = () => {
     // Helper function to determine if this is submitted after admin wilayah approval
     const isSubmittedAfterAdminWilayah = (status: string, pengajuan?: PengajuanData) => {
       if (status !== 'submitted' || !pengajuan) return false;
-      // Check if there's evidence this was previously admin_wilayah_approved
-      // We can check if there are admin_wilayah files or if it has been through admin wilayah workflow
-      return pengajuan.files?.some(f => f.file_category === 'admin_wilayah') || 
-             pengajuan.resubmitted_at || 
-             pengajuan.resubmitted_by;
+      // Only show "Diajukan Admin Wilayah" if there are actual admin wilayah files
+      return pengajuan.files?.some(f => f.file_category === 'admin_wilayah') || false;
     };
 
     const statusConfig = {
