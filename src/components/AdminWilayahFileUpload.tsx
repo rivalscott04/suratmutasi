@@ -101,7 +101,12 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       
       const response = await apiGet(`/api/admin-wilayah-file-config/job-type/${jobTypeId}`, token);
       
+      console.log('🔍 API Response:', response);
+      console.log('🔍 Job Type ID:', jobTypeId);
+      console.log('🔍 Jenis Jabatan ID:', jenisJabatanId);
+      
       if (response.success) {
+        console.log('✅ Setting required files:', response.data);
         setRequiredFiles(response.data);
         // Notify parent about total required files (uploaded may be known later)
         if (onProgressChange) {
