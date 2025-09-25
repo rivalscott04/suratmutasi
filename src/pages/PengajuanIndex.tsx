@@ -113,7 +113,7 @@ const PengajuanIndex: React.FC = () => {
       setStatusFilter('final_approved');
     }
     fetchPengajuanData();
-  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter, isReadOnlyUser]);
+  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter, isReadOnlyUser, searchTerm]);
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
@@ -522,6 +522,8 @@ const PengajuanIndex: React.FC = () => {
                      <SelectItem value="admin_wilayah_approved">Disetujui Admin Wilayah</SelectItem>
                      <SelectItem value="admin_wilayah_rejected">Ditolak Admin Wilayah</SelectItem>
                      <SelectItem value="admin_wilayah_submitted">Pengajuan Admin Wilayah</SelectItem>
+                     <SelectItem value="final_approved">Final Approved</SelectItem>
+                     <SelectItem value="final_rejected">Final Rejected</SelectItem>
                    </SelectContent>
                  </Select>
                </div>

@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Upload, 
   FileText, 
@@ -49,9 +51,29 @@ interface DashboardStats {
   rejectedFiles: number;
 }
 
+interface PengajuanDataTableItem {
+  id: string;
+  nama: string;
+  nip: string;
+  kabupaten: string;
+  status: string;
+  jenis_jabatan: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface StatusAggregation {
+  kabupaten: string;
+  total: number;
+  statuses: Array<{
+    status: string;
+    count: number;
+  }>;
+}
+
 const AdminWilayahDashboard: React.FC = () => {
   const { token } = useAuth();
-  const [activeTab, setActiveTab] = useState<'process' | 'archive'>('process');
+  const [activeTab, setActiveTab] = useState<'process' | 'archive' | 'datatable'>('process');
   const [stats, setStats] = useState<DashboardStats>({
     totalPengajuan: 0,
     pendingUpload: 0,
@@ -66,6 +88,12 @@ const AdminWilayahDashboard: React.FC = () => {
   const [pengajuan, setPengajuan] = useState<any[]>([]);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [archive, setArchive] = useState<any[]>([]);
+  const [dataTableData, setDataTableData] = useState<PengajuanDataTableItem[]>([]);
+  const [aggregationData, setAggregationData] = useState<StatusAggregation[]>([]);
+  const [dataTableLoading, setDataTableLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [kabupatenFilter, setKabupatenFilter] = useState<string>('all');
 
   const fetchDashboardData = async () => {
     try {
@@ -111,6 +139,23 @@ const AdminWilayahDashboard: React.FC = () => {
     }
   };
 
+  const fetchDataTableData = async () => {
+    try {
+      setDataTableLoading(true);
+      const res = await apiGet('/api/admin-wilayah/pengajuan-datatable', token);
+      if (res?.success && res?.data) {
+        setDataTableData(res.data.pengajuan || []);
+        setAggregationData(res.data.aggregation || []);
+      }
+    } catch (error) {
+      console.error('Error fetching data table:', error);
+      setDataTableData([]);
+      setAggregationData([]);
+    } finally {
+      setDataTableLoading(false);
+    }
+  };
+
   const handleSubmitToSuperadmin = async (id: string) => {
     if (!token) return;
     setSubmittingId(id);
@@ -127,6 +172,7 @@ const AdminWilayahDashboard: React.FC = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchHistory();
+    fetchDataTableData();
   }, [token]);
 
   const getProgressPercentage = () => {
@@ -143,6 +189,48 @@ const AdminWilayahDashboard: React.FC = () => {
       minute: '2-digit'
     });
   };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800' },
+      submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-800' },
+      approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800' },
+      rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800' },
+      resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800' },
+      admin_wilayah_approved: { label: 'Disetujui Admin Wilayah', className: 'bg-green-200 text-green-800' },
+      admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800' },
+      final_approved: { label: 'Disetujui Final', className: 'bg-green-600 text-white' },
+      final_rejected: { label: 'Ditolak Final', className: 'bg-red-600 text-white' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || { 
+      label: status.toUpperCase(), 
+      className: 'bg-gray-100 text-gray-800' 
+    };
+
+    return (
+      <Badge className={config.className}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  // Filter data berdasarkan search term dan filter
+  const filteredData = dataTableData.filter(item => {
+    const matchesSearch = searchTerm === '' || 
+      item.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.nip.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kabupaten.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.jenis_jabatan.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+    const matchesKabupaten = kabupatenFilter === 'all' || item.kabupaten === kabupatenFilter;
+    
+    return matchesSearch && matchesStatus && matchesKabupaten;
+  });
+
+  // Get unique kabupaten untuk filter dropdown
+  const uniqueKabupaten = Array.from(new Set(dataTableData.map(item => item.kabupaten))).sort();
 
   if (loading) {
     return (
@@ -204,6 +292,7 @@ const AdminWilayahDashboard: React.FC = () => {
         <div className="flex gap-2">
           <Button variant={activeTab === 'process' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('process')}>Dalam Proses</Button>
           <Button variant={activeTab === 'archive' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('archive')}>Arsip</Button>
+          <Button variant={activeTab === 'datatable' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('datatable')}>Data Table</Button>
         </div>
 
         {/* Stats Cards */}
@@ -394,6 +483,166 @@ const AdminWilayahDashboard: React.FC = () => {
             )}
           </CardContent>
         </Card>
+        )}
+
+        {/* Data Table Tab */}
+        {activeTab === 'datatable' && (
+        <div className="space-y-6">
+          {/* Aggregation Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Rekapan Status per Kabupaten</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {aggregationData.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">Tidak ada data</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {aggregationData.map((item) => (
+                    <div key={item.kabupaten} className="border rounded-lg p-4">
+                      <h3 className="font-semibold text-lg mb-3">{item.kabupaten}</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Total:</span>
+                          <Badge className="bg-blue-100 text-blue-800">{item.total}</Badge>
+                        </div>
+                        {item.statuses.map((status) => (
+                          <div key={status.status} className="flex justify-between items-center">
+                            <span className="text-sm">{getStatusBadge(status.status).props.children}:</span>
+                            <Badge variant="outline">{status.count}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Data Table */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Data Pengajuan ({filteredData.length} dari {dataTableData.length})</CardTitle>
+                <Button onClick={fetchDataTableData} variant="outline" size="sm" disabled={dataTableLoading}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${dataTableLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Filter dan Search */}
+              <div className="mb-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Cari</label>
+                    <Input
+                      placeholder="Cari nama, NIP, kabupaten, atau jenis jabatan..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Filter Status</label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Status</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="submitted">Diajukan</SelectItem>
+                        <SelectItem value="approved">Disetujui</SelectItem>
+                        <SelectItem value="rejected">Ditolak</SelectItem>
+                        <SelectItem value="resubmitted">Diajukan Ulang</SelectItem>
+                        <SelectItem value="admin_wilayah_approved">Disetujui Admin Wilayah</SelectItem>
+                        <SelectItem value="admin_wilayah_rejected">Ditolak Admin Wilayah</SelectItem>
+                        <SelectItem value="final_approved">Disetujui Final</SelectItem>
+                        <SelectItem value="final_rejected">Ditolak Final</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Filter Kabupaten</label>
+                    <Select value={kabupatenFilter} onValueChange={setKabupatenFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih kabupaten" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Kabupaten</SelectItem>
+                        {uniqueKabupaten.map((kabupaten) => (
+                          <SelectItem key={kabupaten} value={kabupaten}>
+                            {kabupaten}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {(searchTerm || statusFilter !== 'all' || kabupatenFilter !== 'all') && (
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setSearchTerm('');
+                        setStatusFilter('all');
+                        setKabupatenFilter('all');
+                      }}
+                    >
+                      Reset Filter
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {dataTableLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">Memuat data...</p>
+                </div>
+              ) : dataTableData.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">Tidak ada data pengajuan</div>
+              ) : filteredData.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">Tidak ada data yang sesuai dengan filter</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left border-b">
+                        <th className="py-3 pr-4 font-medium">Nama</th>
+                        <th className="py-3 pr-4 font-medium">NIP</th>
+                        <th className="py-3 pr-4 font-medium">Kabupaten</th>
+                        <th className="py-3 pr-4 font-medium">Jenis Jabatan</th>
+                        <th className="py-3 pr-4 font-medium">Status</th>
+                        <th className="py-3 pr-4 font-medium">Tanggal Dibuat</th>
+                        <th className="py-3 pr-4 font-medium">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredData.map((row) => (
+                        <tr key={row.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 pr-4 font-medium">{row.nama}</td>
+                          <td className="py-3 pr-4 text-gray-600">{row.nip}</td>
+                          <td className="py-3 pr-4">{row.kabupaten}</td>
+                          <td className="py-3 pr-4">{row.jenis_jabatan}</td>
+                          <td className="py-3 pr-4">{getStatusBadge(row.status)}</td>
+                          <td className="py-3 pr-4 text-gray-600">{formatDate(row.created_at)}</td>
+                          <td className="py-3 pr-4">
+                            <Button asChild variant="outline" size="sm">
+                              <Link to={`/pengajuan/${row.id}`}>Detail</Link>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         )}
 
         {/* Recent Uploads */}
