@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { apiGet } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, TrendingUp, Clock, Users, ArrowRight, BarChart3, Calendar, Settings as SettingsIcon } from 'lucide-react';
+import { FileText, TrendingUp, Clock, Users, ArrowRight, BarChart3, Calendar, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +18,9 @@ const Dashboard = () => {
   const [loadingLetters, setLoadingLetters] = useState(false);
   const [loadingPengajuan, setLoadingPengajuan] = useState(false);
   const [search, setSearch] = useState('');
+  // Rekap (Superadmin & Admin Wilayah scope-aware via backend)
+  const [rekapAggregation, setRekapAggregation] = useState<Array<{ kabupaten: string; total: number; statuses: { status: string; count: number }[] }>>([]);
+  const [rekapLoading, setRekapLoading] = useState(false);
   const filteredLetters = letters.filter(l =>
     l.letter_number?.toLowerCase().includes(search.toLowerCase()) ||
     l.subject?.toLowerCase().includes(search.toLowerCase()) ||
@@ -43,6 +46,21 @@ const Dashboard = () => {
         .then(res => setPengajuan(res.pengajuan || []))
         .catch(() => setPengajuan([]))
         .finally(() => setLoadingPengajuan(false));
+
+      // Fetch rekap for dashboard (show to admin/superadmin, also works for admin_wilayah with scoped data)
+      const fetchRekap = async () => {
+        try {
+          setRekapLoading(true);
+          const res = await apiGet('/api/pengajuan/rekap/aggregate', token);
+          const agg = res?.data?.aggregation || res?.aggregation || [];
+          setRekapAggregation(Array.isArray(agg) ? agg : []);
+        } catch (e) {
+          setRekapAggregation([]);
+        } finally {
+          setRekapLoading(false);
+        }
+      };
+      fetchRekap();
     }
   }, [user, token]);
 
@@ -234,6 +252,68 @@ const Dashboard = () => {
           );
         })}
       </div>
+
+      {/* Rekap Status (Pivot) */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl font-semibold">Rekap Status per Kabupaten</CardTitle>
+            <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50" onClick={async () => {
+              if (!token) return;
+              try {
+                setRekapLoading(true);
+                const res = await apiGet('/api/pengajuan/rekap/aggregate', token);
+                const agg = res?.data?.aggregation || res?.aggregation || [];
+                setRekapAggregation(Array.isArray(agg) ? agg : []);
+              } finally {
+                setRekapLoading(false);
+              }
+            }}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${rekapLoading ? 'animate-spin' : ''}`} /> Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {rekapLoading ? (
+            <div className="text-center py-8 text-gray-500">Memuat rekap...</div>
+          ) : rekapAggregation.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">Tidak ada data</div>
+          ) : (
+            (() => {
+              const statusKeys = Array.from(new Set(rekapAggregation.flatMap(k => k.statuses.map(s => s.status))));
+              return (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left border-b">
+                        <th className="py-3 pr-4 font-medium">Kabupaten</th>
+                        {statusKeys.map(sk => (
+                          <th key={sk} className="py-3 pr-4 font-medium whitespace-nowrap">{sk.replaceAll('_', ' ').toUpperCase()}</th>
+                        ))}
+                        <th className="py-3 pr-4 font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rekapAggregation.map(row => {
+                        const countBy = row.statuses.reduce((acc: any, s) => { acc[s.status] = s.count; return acc; }, {} as Record<string, number>);
+                        return (
+                          <tr key={row.kabupaten} className="border-b hover:bg-gray-50">
+                            <td className="py-3 pr-4 font-medium">{row.kabupaten}</td>
+                            {statusKeys.map(sk => (
+                              <td key={sk} className="py-3 pr-4">{countBy[sk] || 0}</td>
+                            ))}
+                            <td className="py-3 pr-4 font-semibold">{row.total}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Templates (ubah jadi Jenis Template) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

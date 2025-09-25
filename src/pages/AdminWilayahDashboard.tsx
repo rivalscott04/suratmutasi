@@ -73,7 +73,7 @@ interface StatusAggregation {
 
 const AdminWilayahDashboard: React.FC = () => {
   const { token } = useAuth();
-  const [activeTab, setActiveTab] = useState<'process' | 'archive' | 'datatable'>('process');
+  const [activeTab, setActiveTab] = useState<'process' | 'archive' | 'rekap'>('process');
   const [stats, setStats] = useState<DashboardStats>({
     totalPengajuan: 0,
     pendingUpload: 0,
@@ -94,6 +94,14 @@ const AdminWilayahDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [kabupatenFilter, setKabupatenFilter] = useState<string>('all');
+  // Drill-down state
+  const [drillKabupaten, setDrillKabupaten] = useState<string | null>(null);
+  const [drillStatus, setDrillStatus] = useState<string | null>(null);
+  const [drillItems, setDrillItems] = useState<PengajuanDataTableItem[]>([]);
+  const [drillTotal, setDrillTotal] = useState(0);
+  const [drillPage, setDrillPage] = useState(1);
+  const [drillPageSize, setDrillPageSize] = useState(25);
+  const [drillLoading, setDrillLoading] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -153,6 +161,24 @@ const AdminWilayahDashboard: React.FC = () => {
       setAggregationData([]);
     } finally {
       setDataTableLoading(false);
+    }
+  };
+
+  const fetchDrillDown = async (kabupaten: string, status: string, page = 1) => {
+    try {
+      setDrillLoading(true);
+      setDrillPage(page);
+      const params = new URLSearchParams({ kabupaten, status, page: String(page), pageSize: String(drillPageSize) });
+      const res = await apiGet(`/api/pengajuan/rekap/list?${params.toString()}`, token);
+      const items = res?.data?.items || res?.items || [];
+      const total = Number(res?.data?.total ?? res?.total ?? 0);
+      setDrillItems(items);
+      setDrillTotal(total);
+    } catch (e) {
+      setDrillItems([]);
+      setDrillTotal(0);
+    } finally {
+      setDrillLoading(false);
     }
   };
 
@@ -290,9 +316,9 @@ const AdminWilayahDashboard: React.FC = () => {
 
         {/* Tabs */}
         <div className="flex gap-2">
-          <Button variant={activeTab === 'process' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('process')}>Dalam Proses</Button>
-          <Button variant={activeTab === 'archive' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('archive')}>Arsip</Button>
-          <Button variant={activeTab === 'datatable' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('datatable')}>Data Table</Button>
+          <Button className={`${activeTab === 'process' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'process' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('process')}>Dalam Proses</Button>
+          <Button className={`${activeTab === 'archive' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'archive' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('archive')}>Arsip</Button>
+          <Button className={`${activeTab === 'rekap' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'rekap' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('rekap')}>Rekap Status</Button>
         </div>
 
         {/* Stats Cards */}
@@ -485,10 +511,10 @@ const AdminWilayahDashboard: React.FC = () => {
         </Card>
         )}
 
-        {/* Data Table Tab */}
-        {activeTab === 'datatable' && (
+        {/* Rekap Status Tab */}
+        {activeTab === 'rekap' && (
         <div className="space-y-6">
-          {/* Aggregation Summary */}
+          {/* Pivot Rekap Tabel */}
           <Card>
             <CardHeader>
               <CardTitle>Rekapan Status per Kabupaten</CardTitle>
@@ -497,25 +523,49 @@ const AdminWilayahDashboard: React.FC = () => {
               {aggregationData.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">Tidak ada data</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {aggregationData.map((item) => (
-                    <div key={item.kabupaten} className="border rounded-lg p-4">
-                      <h3 className="font-semibold text-lg mb-3">{item.kabupaten}</h3>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">Total:</span>
-                          <Badge className="bg-blue-100 text-blue-800">{item.total}</Badge>
-                        </div>
-                        {item.statuses.map((status) => (
-                          <div key={status.status} className="flex justify-between items-center">
-                            <span className="text-sm">{getStatusBadge(status.status).props.children}:</span>
-                            <Badge variant="outline">{status.count}</Badge>
-                          </div>
-                        ))}
-                      </div>
+                (() => {
+                  const statusKeys = Array.from(new Set(aggregationData.flatMap(k => k.statuses.map(s => s.status))));
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="text-left border-b">
+                            <th className="py-3 pr-4 font-medium">Kabupaten</th>
+                            {statusKeys.map((sk) => (
+                              <th key={sk} className="py-3 pr-4 font-medium whitespace-nowrap">{getStatusBadge(sk)}</th>
+                            ))}
+                            <th className="py-3 pr-4 font-medium">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {aggregationData.map((row) => {
+                            const countByStatus = row.statuses.reduce((acc, s) => { acc[s.status] = s.count; return acc; }, {} as Record<string, number>);
+                            return (
+                              <tr key={row.kabupaten} className="border-b hover:bg-gray-50">
+                                <td className="py-3 pr-4 font-medium">{row.kabupaten}</td>
+                            {statusKeys.map((sk) => (
+                              <td key={sk} className="py-3 pr-4">
+                                <button
+                                  className="text-green-700 hover:underline"
+                                  onClick={() => {
+                                    setDrillKabupaten(row.kabupaten);
+                                    setDrillStatus(sk);
+                                    fetchDrillDown(row.kabupaten, sk, 1);
+                                  }}
+                                >
+                                  {countByStatus[sk] || 0}
+                                </button>
+                              </td>
+                            ))}
+                                <td className="py-3 pr-4 font-semibold">{row.total}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
-                  ))}
-                </div>
+                  );
+                })()
               )}
             </CardContent>
           </Card>
