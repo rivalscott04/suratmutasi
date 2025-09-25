@@ -837,12 +837,6 @@ const PengajuanDetail: React.FC = () => {
   // Bisa ajukan ulang jika tidak ada file rejected (semua file sudah diperbaiki)
   // Untuk operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki (status pending juga OK)
   const resubmitEnabled = (() => {
-    console.log('🔍 BASIC DEBUG - resubmitEnabled check:', {
-      pengajuan: !!pengajuan,
-      userRole: user?.role,
-      pengajuanStatus: pengajuan?.status
-    });
-    
     if (!pengajuan) return false;
     
     // Jika user adalah operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki
@@ -851,40 +845,20 @@ const PengajuanDetail: React.FC = () => {
       // Karena jika ditolak admin wilayah, operator hanya perlu perbaiki dokumen kabupaten
       const requiredForOperator = new Set<string>([...requiredKabupaten]);
       
-      console.log('🔍 DEBUG resubmitEnabled for operator:', {
-        userRole: user?.role,
-        pengajuanStatus: pengajuan.status,
-        requiredKabupaten,
-        requiredKanwil,
-        requiredForOperator: Array.from(requiredForOperator),
-        pengajuanFiles: pengajuan.files.map(f => ({ 
-          file_type: f.file_type, 
-          verification_status: f.verification_status, 
-          file_category: f.file_category 
-        }))
-      });
-      
       // Jika tidak ada file kabupaten yang wajib, bisa langsung ajukan ulang
       if (requiredForOperator.size === 0) return true;
       
       // Cek apakah semua file kabupaten yang wajib sudah ada dan tidak rejected
       for (const t of requiredForOperator) {
         const f = pengajuan.files.find((x) => x.file_type === t);
-        console.log(`🔍 Checking kabupaten file type ${t}:`, f ? { 
-          file_type: f.file_type, 
-          verification_status: f.verification_status,
-          file_category: f.file_category 
-        } : 'NOT FOUND');
         
         // Operator kabupaten bisa ajukan ulang jika file kabupaten ada (baik pending maupun approved)
         // Hanya tidak bisa jika file kabupaten tidak ada atau status rejected
         if (!f || f.verification_status === 'rejected') {
-          console.log(`❌ Cannot resubmit: file ${t} is missing or rejected`);
           return false;
         }
       }
       
-      console.log('✅ All required kabupaten files are present and not rejected');
       return true;
     }
     
