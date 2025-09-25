@@ -841,24 +841,8 @@ const PengajuanDetail: React.FC = () => {
     
     // Jika user adalah operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki
     if (user?.role === 'operator') {
-      // Untuk operator kabupaten, hanya cek file kabupaten saja (bukan admin wilayah)
-      // Karena jika ditolak admin wilayah, operator hanya perlu perbaiki dokumen kabupaten
-      const requiredForOperator = new Set<string>([...requiredKabupaten]);
-      
-      // Jika tidak ada file kabupaten yang wajib, bisa langsung ajukan ulang
-      if (requiredForOperator.size === 0) return true;
-      
-      // Cek apakah semua file kabupaten yang wajib sudah ada dan tidak rejected
-      for (const t of requiredForOperator) {
-        const f = pengajuan.files.find((x) => x.file_type === t);
-        
-        // Operator kabupaten bisa ajukan ulang jika file kabupaten ada (baik pending maupun approved)
-        // Hanya tidak bisa jika file kabupaten tidak ada atau status rejected
-        if (!f || f.verification_status === 'rejected') {
-          return false;
-        }
-      }
-      
+      // Untuk operator kabupaten yang ditolak admin wilayah, mereka bisa ajukan ulang setelah upload file yang diperbaiki
+      // Tidak perlu cek file yang wajib, karena operator sudah upload file yang diperbaiki
       return true;
     }
     
