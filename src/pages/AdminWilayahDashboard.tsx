@@ -216,7 +216,7 @@ const AdminWilayahDashboard: React.FC = () => {
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalPengajuan}</div>
               <p className="text-xs text-muted-foreground">
-                Pengajuan yang sudah approved
+                Pengajuan yang sudah di-ACC admin wilayah
               </p>
             </CardContent>
           </Card>
@@ -288,7 +288,7 @@ const AdminWilayahDashboard: React.FC = () => {
         {activeTab === 'process' && (
         <Card>
           <CardHeader>
-            <CardTitle>Pengajuan dari Kab/Kota (Approved)</CardTitle>
+            <CardTitle>Pengajuan yang Sudah Di-ACC Admin Wilayah</CardTitle>
           </CardHeader>
           <CardContent>
             {pengajuan.length === 0 ? (
