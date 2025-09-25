@@ -841,27 +841,44 @@ const PengajuanDetail: React.FC = () => {
     
     // Jika user adalah operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki
     if (user?.role === 'operator') {
-      // Untuk operator kabupaten, hanya cek file kabupaten (requiredKanwil akan kosong untuk operator)
+      // Untuk operator kabupaten, hanya cek file kabupaten saja (bukan admin wilayah)
+      // Karena jika ditolak admin wilayah, operator hanya perlu perbaiki dokumen kabupaten
       const requiredForOperator = new Set<string>([...requiredKabupaten]);
       
       console.log('🔍 DEBUG resubmitEnabled for operator:', {
         userRole: user?.role,
+        pengajuanStatus: pengajuan.status,
         requiredKabupaten,
         requiredKanwil,
         requiredForOperator: Array.from(requiredForOperator),
-        pengajuanFiles: pengajuan.files.map(f => ({ file_type: f.file_type, verification_status: f.verification_status, file_category: f.file_category }))
+        pengajuanFiles: pengajuan.files.map(f => ({ 
+          file_type: f.file_type, 
+          verification_status: f.verification_status, 
+          file_category: f.file_category 
+        }))
       });
       
-      // Jika tidak ada file yang wajib untuk operator, bisa langsung ajukan ulang
+      // Jika tidak ada file kabupaten yang wajib, bisa langsung ajukan ulang
       if (requiredForOperator.size === 0) return true;
       
+      // Cek apakah semua file kabupaten yang wajib sudah ada dan tidak rejected
       for (const t of requiredForOperator) {
         const f = pengajuan.files.find((x) => x.file_type === t);
-        console.log(`🔍 Checking file type ${t}:`, f ? { file_type: f.file_type, verification_status: f.verification_status } : 'NOT FOUND');
-        // Operator kabupaten bisa ajukan ulang jika file ada (baik pending maupun approved)
-        // Hanya tidak bisa jika file tidak ada atau status rejected
-        if (!f || f.verification_status === 'rejected') return false;
+        console.log(`🔍 Checking kabupaten file type ${t}:`, f ? { 
+          file_type: f.file_type, 
+          verification_status: f.verification_status,
+          file_category: f.file_category 
+        } : 'NOT FOUND');
+        
+        // Operator kabupaten bisa ajukan ulang jika file kabupaten ada (baik pending maupun approved)
+        // Hanya tidak bisa jika file kabupaten tidak ada atau status rejected
+        if (!f || f.verification_status === 'rejected') {
+          console.log(`❌ Cannot resubmit: file ${t} is missing or rejected`);
+          return false;
+        }
       }
+      
+      console.log('✅ All required kabupaten files are present and not rejected');
       return true;
     }
     
