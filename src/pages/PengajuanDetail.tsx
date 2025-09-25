@@ -841,9 +841,23 @@ const PengajuanDetail: React.FC = () => {
     
     // Jika user adalah operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki
     if (user?.role === 'operator') {
-      const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
-      for (const t of requiredAll) {
+      // Untuk operator kabupaten, hanya cek file kabupaten (requiredKanwil akan kosong untuk operator)
+      const requiredForOperator = new Set<string>([...requiredKabupaten]);
+      
+      console.log('🔍 DEBUG resubmitEnabled for operator:', {
+        userRole: user?.role,
+        requiredKabupaten,
+        requiredKanwil,
+        requiredForOperator: Array.from(requiredForOperator),
+        pengajuanFiles: pengajuan.files.map(f => ({ file_type: f.file_type, verification_status: f.verification_status, file_category: f.file_category }))
+      });
+      
+      // Jika tidak ada file yang wajib untuk operator, bisa langsung ajukan ulang
+      if (requiredForOperator.size === 0) return true;
+      
+      for (const t of requiredForOperator) {
         const f = pengajuan.files.find((x) => x.file_type === t);
+        console.log(`🔍 Checking file type ${t}:`, f ? { file_type: f.file_type, verification_status: f.verification_status } : 'NOT FOUND');
         // Operator kabupaten bisa ajukan ulang jika file ada (baik pending maupun approved)
         // Hanya tidak bisa jika file tidak ada atau status rejected
         if (!f || f.verification_status === 'rejected') return false;
