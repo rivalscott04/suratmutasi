@@ -510,6 +510,7 @@ const PengajuanIndex: React.FC = () => {
                      <SelectItem value="resubmitted">Diajukan Ulang</SelectItem>
                      <SelectItem value="admin_wilayah_approved">Disetujui Admin Wilayah</SelectItem>
                      <SelectItem value="admin_wilayah_rejected">Ditolak Admin Wilayah</SelectItem>
+                     <SelectItem value="admin_wilayah_submitted">Pengajuan Admin Wilayah</SelectItem>
                    </SelectContent>
                  </Select>
                </div>
