@@ -184,6 +184,15 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     setUploading(prev => ({ ...prev, [fileType]: true }));
     
     try {
+      // Debug logging
+      console.log('🔍 Uploading file:', {
+        fileType,
+        fileName: file.name,
+        pengajuanId,
+        jenisJabatanId,
+        requiredFiles: requiredFiles.map(f => ({ file_type: f.file_type, display_name: f.display_name }))
+      });
+      
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', file);
