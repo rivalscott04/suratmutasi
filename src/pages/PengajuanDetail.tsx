@@ -837,6 +837,12 @@ const PengajuanDetail: React.FC = () => {
   // Bisa ajukan ulang jika tidak ada file rejected (semua file sudah diperbaiki)
   // Untuk operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki (status pending juga OK)
   const resubmitEnabled = (() => {
+    console.log('🔍 BASIC DEBUG - resubmitEnabled check:', {
+      pengajuan: !!pengajuan,
+      userRole: user?.role,
+      pengajuanStatus: pengajuan?.status
+    });
+    
     if (!pengajuan) return false;
     
     // Jika user adalah operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki
