@@ -79,14 +79,26 @@ const PengajuanIndex: React.FC = () => {
   // Fallback grouping on client for admin when server doesn't provide grouping
   const clientGroupedByKabkota: Record<string, PengajuanData[]> = React.useMemo(() => {
     if (!isGroupingRole) return {};
-    if (Object.keys(groupedByKabkota).length > 0) return groupedByKabkota;
+    
+    // Always use server grouping if available
+    if (Object.keys(groupedByKabkota).length > 0) {
+      console.log('🔍 Using server grouping:', groupedByKabkota);
+      return groupedByKabkota;
+    }
+    
+    // Fallback to client grouping
     if (!pengajuanList || pengajuanList.length === 0) return {};
-    return pengajuanList.reduce((acc: Record<string, PengajuanData[]>, item: any) => {
+    
+    console.log('🔍 Using client grouping, pengajuanList length:', pengajuanList.length);
+    const clientGrouped = pengajuanList.reduce((acc: Record<string, PengajuanData[]>, item: any) => {
       const kab = (item.office && (item.office.kabkota || item.office.name)) || (item.pegawai && (item.pegawai as any).induk_unit) || (item.pegawai as any)?.unit_kerja || 'Lainnya';
       if (!acc[kab]) acc[kab] = [];
       acc[kab].push(item);
       return acc;
     }, {});
+    
+    console.log('🔍 Client grouped result:', clientGrouped);
+    return clientGrouped;
   }, [isGroupingRole, groupedByKabkota, pengajuanList]);
 
   
@@ -129,6 +141,8 @@ const PengajuanIndex: React.FC = () => {
         setPengajuanList(response.data);
         if (isAdmin) {
           const grouped = response.grouped_by_kabkota;
+          console.log('🔍 Frontend received grouped data:', grouped);
+          console.log('🔍 Frontend received data length:', response.data?.length);
           if (grouped) {
             setGroupedByKabkota(grouped as Record<string, PengajuanData[]>);
           } else {
