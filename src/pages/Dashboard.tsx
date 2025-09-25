@@ -288,7 +288,7 @@ const Dashboard = () => {
                       <tr className="text-left border-b">
                         <th className="py-3 pr-4 font-medium">Kabupaten</th>
                         {statusKeys.map(sk => (
-                          <th key={sk} className="py-3 pr-4 font-medium whitespace-nowrap">{
+                          <th key={sk} className="py-3 pr-4 font-medium whitespace-nowrap text-center">{
                             (() => {
                               const map: Record<string, string> = {
                                 draft: 'Draf',
@@ -307,7 +307,7 @@ const Dashboard = () => {
                             })()
                           }</th>
                         ))}
-                        <th className="py-3 pr-4 font-medium">Total</th>
+                        <th className="py-3 pr-4 font-medium text-center">Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -317,9 +317,9 @@ const Dashboard = () => {
                           <tr key={row.kabupaten} className="border-b hover:bg-gray-50">
                             <td className="py-3 pr-4 font-medium">{row.kabupaten}</td>
                             {statusKeys.map(sk => (
-                              <td key={sk} className="py-3 pr-4">{countBy[sk] || 0}</td>
+                              <td key={sk} className="py-3 pr-4 text-center">{countBy[sk] || 0}</td>
                             ))}
-                            <td className="py-3 pr-4 font-semibold">{row.total}</td>
+                            <td className="py-3 pr-4 font-semibold text-center">{row.total}</td>
                           </tr>
                         );
                       })}

@@ -532,9 +532,9 @@ const AdminWilayahDashboard: React.FC = () => {
                           <tr className="text-left border-b">
                             <th className="py-3 pr-4 font-medium">Kabupaten</th>
                             {statusKeys.map((sk) => (
-                              <th key={sk} className="py-3 pr-4 font-medium whitespace-nowrap">{getStatusBadge(sk)}</th>
+                              <th key={sk} className="py-3 pr-4 font-medium whitespace-nowrap text-center">{getStatusBadge(sk)}</th>
                             ))}
-                            <th className="py-3 pr-4 font-medium">Total</th>
+                            <th className="py-3 pr-4 font-medium text-center">Total</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -544,7 +544,7 @@ const AdminWilayahDashboard: React.FC = () => {
                               <tr key={row.kabupaten} className="border-b hover:bg-gray-50">
                                 <td className="py-3 pr-4 font-medium">{row.kabupaten}</td>
                             {statusKeys.map((sk) => (
-                              <td key={sk} className="py-3 pr-4">
+                              <td key={sk} className="py-3 pr-4 text-center">
                                 <button
                                   className="text-green-700 hover:underline"
                                   onClick={() => {
@@ -557,7 +557,7 @@ const AdminWilayahDashboard: React.FC = () => {
                                 </button>
                               </td>
                             ))}
-                                <td className="py-3 pr-4 font-semibold">{row.total}</td>
+                                <td className="py-3 pr-4 font-semibold text-center">{row.total}</td>
                               </tr>
                             );
                           })}
