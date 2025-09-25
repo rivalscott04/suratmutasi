@@ -285,9 +285,9 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   const getDescriptiveLabel = (fileConfig: AdminWilayahFileConfig) => {
     const { file_type, display_name } = fileConfig;
     
-    // Special handling for Surat Rekomendasi Kanwil variants
+    // Special handling for Surat Rekomendasi dari Instansi Pembina variants
     if (file_type === 'surat_rekomendasi_kanwil') {
-      return 'Surat Rekomendasi Kanwil - Pindah Tugas Guru/Pengawas';
+      return 'Surat Rekomendasi dari Instansi Pembina - Varian 6.1-6.9';
     }
     
     // Special handling for other specific file types
@@ -300,11 +300,23 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     }
     
     if (file_type === 'surat_pernyataan_tidak_tugas_belajar') {
-      return 'Surat Pernyataan - Tidak Sedang Tugas Belajar';
+      return 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas';
     }
     
-    if (file_type === 'surat_pernyataan_tidak_ikatan_dinas') {
-      return 'Surat Pernyataan - Tidak Sedang Ikatan Dinas';
+    if (file_type === 'surat_pernyataan_tidak_hukuman_disiplin') {
+      return 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin';
+    }
+    
+    if (file_type === 'surat_pernyataan_tidak_proses_pidana') {
+      return 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara';
+    }
+    
+    if (file_type === 'surat_pernyataan_tanggung_jawab_mutlak') {
+      return 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)';
+    }
+    
+    if (file_type === 'skbt') {
+      return 'Surat Keterangan Bebas Temuan (SKBT)';
     }
     
     if (file_type === 'surat_keterangan_kanwil') {

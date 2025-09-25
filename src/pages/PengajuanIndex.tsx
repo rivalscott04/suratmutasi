@@ -71,7 +71,7 @@ const PengajuanIndex: React.FC = () => {
   }>({ users: [] });
   const [groupedByKabkota, setGroupedByKabkota] = useState<Record<string, PengajuanData[]>>({});
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 50;
   const isAdmin = user?.role === 'admin';
   const isReadOnlyUser = user?.role === 'user';
   const isGroupingRole = isAdmin || isReadOnlyUser;
