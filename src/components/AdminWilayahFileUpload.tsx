@@ -181,6 +181,8 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   }, [requiredFiles, uploadedFiles]);
 
   const handleFileUpload = async (fileType: string, file: File) => {
+    alert(`Upload file: ${fileType} - ${file.name}`);
+    console.log('🚀 START UPLOAD - fileType:', fileType, 'fileName:', file.name);
     setUploading(prev => ({ ...prev, [fileType]: true }));
     
     try {
