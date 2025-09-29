@@ -49,6 +49,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface User {
@@ -61,6 +62,7 @@ interface User {
 
 const NavigationBar = () => {
   const { user, originalUser, isImpersonating, impersonateUser, stopImpersonating, logout, token, loading, isAdminKanwil } = useAuth();
+  const { toast } = useToast();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -188,7 +190,12 @@ const NavigationBar = () => {
         setSelectedUser('');
       } catch (error) {
         console.error('Failed to impersonate user:', error);
-        alert('Failed to impersonate user. Please try again.');
+        toast({
+          title: 'Error',
+          description: 'Gagal impersonate user. Coba lagi.',
+          variant: 'destructive',
+          duration: 3000
+        });
       }
     }
   };
@@ -210,7 +217,12 @@ const NavigationBar = () => {
       }, 3000);
     } catch (error) {
       console.error('Failed to stop impersonating:', error);
-      alert('Failed to stop impersonating. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Gagal menghentikan impersonate. Coba lagi.',
+        variant: 'destructive',
+        duration: 3000
+      });
     }
   };
 

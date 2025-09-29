@@ -186,7 +186,6 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   }, [requiredFiles, uploadedFiles]);
 
   const handleFileUpload = async (fileType: string, file: File) => {
-    alert(`Upload file: ${fileType} - ${file.name}`);
     console.log('🚀 START UPLOAD - fileType:', fileType, 'fileName:', file.name);
     setUploading(prev => ({ ...prev, [fileType]: true }));
     
@@ -250,14 +249,16 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
         
         toast({
           title: "Success",
-          description: "File berhasil diupload",
+          description: `Upload berhasil: ${file.name}`,
           variant: "default",
+          duration: 3000
         });
       } else {
         toast({
           title: "Error",
           description: response.message || "Gagal upload file",
           variant: "destructive",
+          duration: 3000
         });
       }
     } catch (error) {
@@ -266,6 +267,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
         title: "Error",
         description: "Gagal upload file",
         variant: "destructive",
+        duration: 3000
       });
     } finally {
       setUploading(prev => ({ ...prev, [fileType]: false }));
@@ -299,6 +301,20 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatRelativeTime = (isoString: string) => {
+    const now = Date.now();
+    const then = new Date(isoString).getTime();
+    const diff = Math.max(0, Math.floor((now - then) / 1000));
+    if (diff < 5) return 'baru saja';
+    if (diff < 60) return `${diff} detik lalu`;
+    const minutes = Math.floor(diff / 60);
+    if (minutes < 60) return `${minutes} menit lalu`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} jam lalu`;
+    const days = Math.floor(hours / 24);
+    return `${days} hari lalu`;
   };
 
   const getFileStatus = (fileType: string) => {
@@ -483,6 +499,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                             <CheckCircle className="h-4 w-4" />
                             <span className="text-sm font-medium truncate max-w-xs">{uploadedFile.file_name}</span>
                             <span className="text-sm text-gray-500">({formatFileSize(uploadedFile.file_size)})</span>
+                            <span className="text-sm text-gray-500">• {formatRelativeTime(uploadedFile.created_at)}</span>
                           </div>
                           {/* Single action group (no duplicates) */}
                           <div className="mt-2 flex gap-2 flex-wrap">

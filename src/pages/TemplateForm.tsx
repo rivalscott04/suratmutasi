@@ -1443,7 +1443,11 @@ const TemplateForm: React.FC = () => {
                     if (suratId) {
                       window.open(generateUrl(`/letters/${suratId}/preview`), '_blank');
                     } else {
-                      alert('Surat belum disimpan. Simpan surat terlebih dahulu untuk membuka preview di tab baru.');
+                      toast({
+                        title: 'Info',
+                        description: 'Surat belum disimpan. Simpan dulu untuk membuka preview.',
+                        duration: 3000
+                      });
                     }
                   }}
                   type="button"
