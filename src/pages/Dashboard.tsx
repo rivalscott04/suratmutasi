@@ -119,9 +119,24 @@ const Dashboard = () => {
 
   const exportExcel = async () => {
     try {
-      // Ambil data pengajuan dengan relasi lengkap untuk export (sama seperti di PengajuanIndex)
-      const res = await apiGet('/api/pengajuan', token);
-      const pengajuanData = res.data || res.pengajuan || [];
+      // Ambil semua data pengajuan dengan pagination
+      let allPengajuanData: any[] = [];
+      let page = 1;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const res = await apiGet(`/api/pengajuan?page=${page}&limit=100`, token);
+        const pageData = res.data || res.pengajuan || [];
+        
+        if (pageData.length === 0) {
+          hasMore = false;
+        } else {
+          allPengajuanData = [...allPengajuanData, ...pageData];
+          page++;
+        }
+      }
+      
+      const pengajuanData = allPengajuanData;
 
       // Sheet 1: Data Detail per Pengajuan
       const detailData = pengajuanData.map((item: any) => ({
