@@ -4,9 +4,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { apiGet } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, TrendingUp, Clock, Users, ArrowRight, BarChart3, Calendar, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
+import { FileText, TrendingUp, Clock, Users, ArrowRight, BarChart3, Calendar, Settings as SettingsIcon, RefreshCw, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import * as XLSX from 'xlsx';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Dashboard = () => {
@@ -99,6 +100,80 @@ const Dashboard = () => {
   const lastMonthLetters = getLastMonthData(letters, 'createdAt');
   const currentMonthPengajuan = getCurrentMonthData(pengajuan, 'createdAt');
   const lastMonthPengajuan = getLastMonthData(pengajuan, 'createdAt');
+
+  const getStatusLabel = (status: string) => {
+    const statusConfig = {
+      draft: 'Draf',
+      submitted: 'Diajukan',
+      approved: 'Disetujui',
+      rejected: 'Ditolak',
+      resubmitted: 'Diajukan Ulang',
+      admin_wilayah_approved: 'Disetujui Admin Wilayah',
+      admin_wilayah_rejected: 'Ditolak Admin Wilayah',
+      final_approved: 'Selesai',
+      final_rejected: 'Ditolak Final',
+    };
+
+    return statusConfig[status as keyof typeof statusConfig] || status.toUpperCase();
+  };
+
+  const exportExcel = async () => {
+    try {
+      // Sheet 1: Data Detail per Pengajuan
+      const detailData = pengajuan.map((item: any) => ({
+        'Nama': item.pegawai?.nama || '-',
+        'NIP': item.pegawai?.nip || '-',
+        'Kabupaten/Kota': item.office?.kabkota || item.office?.name || '-',
+        'Jenis Jabatan': item.jenis_jabatan || '-',
+        'Status': getStatusLabel(item.status),
+        'Tanggal Dibuat': new Date(item.created_at).toLocaleDateString('id-ID'),
+        'Tanggal Diupdate': new Date(item.updated_at).toLocaleDateString('id-ID')
+      }));
+
+      // Sheet 2: Summary per Kabupaten
+      const summaryData = rekapAggregation.map(row => {
+        const countByStatus = row.statuses.reduce((acc, s) => { 
+          acc[s.status] = s.count; 
+          return acc; 
+        }, {} as Record<string, number>);
+
+        return {
+          'Kabupaten/Kota': row.kabupaten,
+          'Draf': countByStatus['draft'] || 0,
+          'Diajukan': countByStatus['submitted'] || 0,
+          'Disetujui': countByStatus['approved'] || 0,
+          'Ditolak': countByStatus['rejected'] || 0,
+          'Diajukan Ulang': countByStatus['resubmitted'] || 0,
+          'Disetujui Admin Wilayah': countByStatus['admin_wilayah_approved'] || 0,
+          'Ditolak Admin Wilayah': countByStatus['admin_wilayah_rejected'] || 0,
+          'Selesai': countByStatus['final_approved'] || 0,
+          'Ditolak Final': countByStatus['final_rejected'] || 0,
+          'Total': row.total
+        };
+      });
+
+      // Buat workbook dengan 2 sheet
+      const wb = XLSX.utils.book_new();
+      
+      // Sheet 1: Data Detail
+      const ws1 = XLSX.utils.json_to_sheet(detailData);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Data Detail Pengajuan');
+      
+      // Sheet 2: Summary per Kabupaten
+      const ws2 = XLSX.utils.json_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Rekap per Kabupaten');
+
+      // Generate filename dengan timestamp
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+      const filename = `Rekap_Status_Superadmin_${timestamp}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(wb, filename);
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+    }
+  };
 
   // Statistik dinamis
   const stats = [
@@ -258,19 +333,24 @@ const Dashboard = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-semibold">Rekap Status per Kabupaten</CardTitle>
-            <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50" onClick={async () => {
-              if (!token) return;
-              try {
-                setRekapLoading(true);
-                const res = await apiGet('/api/pengajuan/rekap/aggregate', token);
-                const agg = res?.data?.aggregation || res?.aggregation || [];
-                setRekapAggregation(Array.isArray(agg) ? agg : []);
-              } finally {
-                setRekapLoading(false);
-              }
-            }}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${rekapLoading ? 'animate-spin' : ''}`} /> Refresh
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50" onClick={async () => {
+                if (!token) return;
+                try {
+                  setRekapLoading(true);
+                  const res = await apiGet('/api/pengajuan/rekap/aggregate', token);
+                  const agg = res?.data?.aggregation || res?.aggregation || [];
+                  setRekapAggregation(Array.isArray(agg) ? agg : []);
+                } finally {
+                  setRekapLoading(false);
+                }
+              }}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${rekapLoading ? 'animate-spin' : ''}`} /> Refresh
+              </Button>
+              <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50" onClick={exportExcel}>
+                <Download className="h-4 w-4 mr-2" /> Export Excel
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

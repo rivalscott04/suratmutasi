@@ -17,8 +17,10 @@ import {
   Activity,
   Calendar,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Download
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
@@ -241,6 +243,76 @@ const AdminWilayahDashboard: React.FC = () => {
     );
   };
 
+  const getStatusLabel = (status: string) => {
+    const statusConfig = {
+      draft: 'Draf',
+      submitted: 'Diajukan',
+      approved: 'Disetujui',
+      rejected: 'Ditolak',
+      resubmitted: 'Diajukan Ulang',
+      admin_wilayah_approved: 'Disetujui Admin Wilayah',
+      admin_wilayah_rejected: 'Ditolak Admin Wilayah',
+      final_approved: 'Selesai',
+      final_rejected: 'Ditolak Final',
+    };
+
+    return statusConfig[status as keyof typeof statusConfig] || status.toUpperCase();
+  };
+
+  const exportExcel = () => {
+    // Sheet 1: Data Detail per Pengajuan (sudah terfilter berdasarkan scope admin wilayah)
+    const detailData = dataTableData.map(item => ({
+      'Nama': item.nama,
+      'NIP': item.nip,
+      'Kabupaten/Kota': item.kabupaten,
+      'Jenis Jabatan': item.jenis_jabatan,
+      'Status': getStatusLabel(item.status),
+      'Tanggal Dibuat': new Date(item.created_at).toLocaleDateString('id-ID'),
+      'Tanggal Diupdate': new Date(item.updated_at).toLocaleDateString('id-ID')
+    }));
+
+    // Sheet 2: Summary per Kabupaten (sudah terfilter berdasarkan scope admin wilayah)
+    const summaryData = aggregationData.map(row => {
+      const countByStatus = row.statuses.reduce((acc, s) => { 
+        acc[s.status] = s.count; 
+        return acc; 
+      }, {} as Record<string, number>);
+
+      return {
+        'Kabupaten/Kota': row.kabupaten,
+        'Draf': countByStatus['draft'] || 0,
+        'Diajukan': countByStatus['submitted'] || 0,
+        'Disetujui': countByStatus['approved'] || 0,
+        'Ditolak': countByStatus['rejected'] || 0,
+        'Diajukan Ulang': countByStatus['resubmitted'] || 0,
+        'Disetujui Admin Wilayah': countByStatus['admin_wilayah_approved'] || 0,
+        'Ditolak Admin Wilayah': countByStatus['admin_wilayah_rejected'] || 0,
+        'Selesai': countByStatus['final_approved'] || 0,
+        'Ditolak Final': countByStatus['final_rejected'] || 0,
+        'Total': row.total
+      };
+    });
+
+    // Buat workbook dengan 2 sheet
+    const wb = XLSX.utils.book_new();
+    
+    // Sheet 1: Data Detail
+    const ws1 = XLSX.utils.json_to_sheet(detailData);
+    XLSX.utils.book_append_sheet(wb, ws1, 'Data Detail Pengajuan');
+    
+    // Sheet 2: Summary per Kabupaten
+    const ws2 = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Rekap per Kabupaten');
+
+    // Generate filename dengan timestamp
+    const now = new Date();
+    const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    const filename = `Rekap_Status_Admin_Wilayah_${timestamp}.xlsx`;
+
+    // Download file
+    XLSX.writeFile(wb, filename);
+  };
+
   // Filter data berdasarkan search term dan filter
   const filteredData = dataTableData.filter(item => {
     const matchesSearch = searchTerm === '' || 
@@ -308,6 +380,10 @@ const AdminWilayahDashboard: React.FC = () => {
             <Button onClick={fetchDashboardData} variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
+            </Button>
+            <Button onClick={exportExcel} variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel
             </Button>
             <Activity className="h-6 w-6 text-green-600" />
             <Badge className="bg-green-100 text-green-800">Admin Wilayah</Badge>
@@ -517,7 +593,13 @@ const AdminWilayahDashboard: React.FC = () => {
           {/* Pivot Rekap Tabel */}
           <Card>
             <CardHeader>
-              <CardTitle>Rekap Status per Kabupaten</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Rekap Status per Kabupaten</CardTitle>
+                <Button onClick={exportExcel} variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Excel
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {aggregationData.length === 0 ? (
