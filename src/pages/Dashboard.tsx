@@ -119,15 +119,15 @@ const Dashboard = () => {
 
   const exportExcel = async () => {
     try {
+      // Ambil data pengajuan dengan relasi lengkap untuk export (sama seperti di PengajuanIndex)
+      const res = await apiGet('/api/pengajuan', token);
+      const pengajuanData = res.data || res.pengajuan || [];
+
       // Sheet 1: Data Detail per Pengajuan
-      const detailData = pengajuan.map((item: any) => ({
+      const detailData = pengajuanData.map((item: any) => ({
         'Nama': item.pegawai?.nama || '-',
-        'NIP': item.pegawai?.nip || '-',
-        'Kabupaten/Kota': item.office?.kabkota || item.office?.name || '-',
-        'Jenis Jabatan': item.jenis_jabatan || '-',
         'Status': getStatusLabel(item.status),
-        'Tanggal Dibuat': new Date(item.created_at).toLocaleDateString('id-ID'),
-        'Tanggal Diupdate': new Date(item.updated_at).toLocaleDateString('id-ID')
+        'Kabupaten/Kota': item.office?.kabkota || item.office?.name || '-'
       }));
 
       // Sheet 2: Summary per Kabupaten

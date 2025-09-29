@@ -263,12 +263,8 @@ const AdminWilayahDashboard: React.FC = () => {
     // Sheet 1: Data Detail per Pengajuan (sudah terfilter berdasarkan scope admin wilayah)
     const detailData = dataTableData.map(item => ({
       'Nama': item.nama,
-      'NIP': item.nip,
-      'Kabupaten/Kota': item.kabupaten,
-      'Jenis Jabatan': item.jenis_jabatan,
       'Status': getStatusLabel(item.status),
-      'Tanggal Dibuat': new Date(item.created_at).toLocaleDateString('id-ID'),
-      'Tanggal Diupdate': new Date(item.updated_at).toLocaleDateString('id-ID')
+      'Kabupaten/Kota': item.kabupaten
     }));
 
     // Sheet 2: Summary per Kabupaten (sudah terfilter berdasarkan scope admin wilayah)
