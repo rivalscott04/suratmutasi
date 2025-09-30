@@ -728,7 +728,7 @@ const Settings = () => {
     { id: 'surat_pernyataan_tidak_proses_pidana', name: 'Surat Pernyataan Tidak Sedang Menjalani Proses Pidana atau Pernah Dipidana Penjara', category: 'Dokumen Pernyataan', is_required: true, description: 'Surat pernyataan tidak sedang menjalani proses pidana atau pernah dipidana penjara' },
     { id: 'surat_pernyataan_tanggung_jawab_mutlak', name: 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)', category: 'Dokumen Pernyataan', is_required: true, description: 'Surat pernyataan tanggung jawab mutlak untuk pengajuan mutasi' },
     { id: 'surat_keterangan_bebas_temuan_inspektorat', name: 'Surat Keterangan Bebas Temuan (SKBT) - Inspektorat', category: 'Dokumen Kanwil', is_required: true, description: 'SKBT diterbitkan Inspektorat Jenderal Kemenag' },
-    { id: 'surat_keterangan_kanwil', name: 'Surat Keterangan dari Kanwil', category: 'Dokumen Keterangan', is_required: true, description: 'Surat keterangan resmi dari Kanwil Provinsi' },
+    { id: 'hasil_evaluasi_pertimbangan_baperjakat', name: 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)', category: 'Dokumen Kanwil', is_required: true, description: 'Hasil evaluasi dan pertimbangan BAPERJAKAT dari Kanwil Provinsi' },
     { id: 'surat_rekomendasi_kanwil_khusus', name: 'Surat Rekomendasi Khusus dari Kanwil (Khusus Penghulu)', category: 'Dokumen Keterangan', is_required: true, description: 'Surat rekomendasi khusus dari Kanwil Provinsi untuk jabatan Penghulu' },
     { id: 'hasil_assessment', name: 'Hasil Assessment', category: 'Dokumen Kanwil', is_required: true, description: 'Dokumen hasil uji kompetensi/assessment dari Kanwil/otoritas terkait' }
   ];

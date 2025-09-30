@@ -391,7 +391,6 @@ const PengajuanDetail: React.FC = () => {
       'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah',
       'surat_pernyataan_tidak_ikatan_dinas': 'Surat Pernyataan Tidak Ikatan Dinas',
       'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan Tidak Tugas Belajar',
-      'surat_keterangan_kanwil': 'Surat Keterangan Kanwil',
       'surat_rekomendasi_kanwil': 'Surat Rekomendasi Kanwil'
     };
     
@@ -575,7 +574,7 @@ const PengajuanDetail: React.FC = () => {
         'surat_persetujuan_kepala_wilayah',
         'surat_pernyataan_tidak_ikatan_dinas',
         'surat_pernyataan_tidak_tugas_belajar',
-        'surat_keterangan_kanwil',
+        'hasil_evaluasi_pertimbangan_baperjakat',
         'surat_rekomendasi_kanwil'
       ];
       return validTypes.includes(file.file_type);
@@ -1033,7 +1032,10 @@ const PengajuanDetail: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pengajuan.files.filter(f => !f.file_category || f.file_category === 'kabupaten').map((file) => (
+                  {pengajuan.files
+                    .filter(f => !f.file_category || f.file_category === 'kabupaten')
+                    .sort((a, b) => a.file_type.localeCompare(b.file_type)) // Urutkan berdasarkan file_type secara abjad
+                    .map((file) => (
                                          <div key={file.id} className="p-6 border rounded-lg">
                        <div className="flex items-center justify-between">
                          <div className="flex-1 space-y-2">
@@ -1161,7 +1163,10 @@ const PengajuanDetail: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pengajuan.files.filter(f => f.file_category === 'admin_wilayah').map((file) => (
+                  {pengajuan.files
+                    .filter(f => f.file_category === 'admin_wilayah')
+                    .sort((a, b) => a.file_type.localeCompare(b.file_type)) // Urutkan berdasarkan file_type secara abjad
+                    .map((file) => (
                     <div key={file.id} className="p-6 border rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 space-y-2">

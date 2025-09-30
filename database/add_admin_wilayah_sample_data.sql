@@ -47,10 +47,10 @@ INSERT INTO admin_wilayah_file_configuration (
 ),
 (
     @job_type_id,
-    'surat_keterangan_kanwil',
-    'Surat Keterangan dari Kanwil',
+    'hasil_evaluasi_pertimbangan_baperjakat',
+    'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
     0,
-    'Surat keterangan resmi dari Kanwil Provinsi',
+    'Hasil evaluasi dan pertimbangan BAPERJAKAT dari Kanwil Provinsi',
     1,
     NOW(),
     NOW()

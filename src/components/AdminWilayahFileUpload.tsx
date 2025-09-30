@@ -364,8 +364,8 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       return 'Surat Keterangan Bebas Temuan (SKBT)';
     }
     
-    if (file_type === 'surat_keterangan_kanwil') {
-      return 'Surat Keterangan - Dari Kanwil Provinsi';
+    if (file_type === 'hasil_evaluasi_pertimbangan_baperjakat') {
+      return 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)';
     }
     
     if (file_type === 'surat_rekomendasi_kanwil_khusus') {
