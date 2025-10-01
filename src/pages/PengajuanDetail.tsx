@@ -2225,11 +2225,54 @@ const PengajuanDetail: React.FC = () => {
                  <div className="text-xs text-gray-500 truncate">Preview dokumen PDF</div>
                </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Button verifikasi dipindahkan ke sini */}
+                {previewFile && (() => {
+                  const isKabupatenFile = !previewFile.file_category || previewFile.file_category === 'kabupaten';
+                  const isAdminWilayahFile = previewFile.file_category === 'admin_wilayah';
+                  
+                  // Admin Wilayah hanya bisa verifikasi berkas kabupaten
+                  const canAdminWilayahVerify = isAdminWilayah && isKabupatenFile && 
+                    (pengajuan.status === 'submitted' || pengajuan.status === 'approved' || pengajuan.status === 'rejected');
+                  
+                  // Superadmin bisa verifikasi semua berkas
+                  const canAdminVerify = isAdmin && 
+                    (pengajuan.status === 'submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved');
+                  
+                  return (canAdminVerify || canAdminWilayahVerify);
+                })() && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateVerificationFromPreview('approved')}
+                      disabled={updatingVerification}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        previewFile.verification_status === 'approved'
+                          ? 'bg-green-100 text-green-800 border border-green-300'
+                          : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-green-50'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      ✓ Sesuai
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateVerificationFromPreview('rejected')}
+                      disabled={updatingVerification}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        previewFile.verification_status === 'rejected'
+                          ? 'bg-red-100 text-red-800 border border-red-300'
+                          : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-red-50'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      ✗ Tidak Sesuai
+                    </button>
+                  </>
+                )}
+                
                 <button type="button" onClick={() => goToAdjacentPreview(-1)} className="text-sm px-2 py-1 rounded bg-green-50 text-green-700 disabled:opacity-50" disabled={!getCurrentPreviewFiles().length || getCurrentPreviewFiles().findIndex(f => f.id === previewFile?.id) <= 0}>
-                  <ChevronLeft className="inline h-4 w-4 mr-1" />Prev
+                  <ChevronLeft className="inline h-4 w-4 mr-1" />Sebelumnya
                 </button>
                 <button type="button" onClick={() => goToAdjacentPreview(1)} className="text-sm px-2 py-1 rounded bg-green-50 text-green-700 disabled:opacity-50" disabled={!getCurrentPreviewFiles().length || getCurrentPreviewFiles().findIndex(f => f.id === previewFile?.id) >= getCurrentPreviewFiles().length - 1}>
-                  Next<ChevronRight className="inline h-4 w-4 ml-1" />
+                  Selanjutnya<ChevronRight className="inline h-4 w-4 ml-1" />
                 </button>
               </div>
              </div>
@@ -2267,83 +2310,28 @@ const PengajuanDetail: React.FC = () => {
              )}
            </div>
 
-          {/* Verification Section */}
+          {/* Verification Section - Simplified Status */}
           {previewFile && (
             <div className="px-4 py-2 bg-white border-t flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-700">Status:</span>
-                  
-                  {/* Tombol verifikasi hanya untuk role yang berhak */}
-                  {(() => {
-                    const isKabupatenFile = !previewFile.file_category || previewFile.file_category === 'kabupaten';
-                    const isAdminWilayahFile = previewFile.file_category === 'admin_wilayah';
-                    
-                    // Admin Wilayah hanya bisa verifikasi berkas kabupaten
-                    const canAdminWilayahVerify = isAdminWilayah && isKabupatenFile && 
-                      (pengajuan.status === 'submitted' || pengajuan.status === 'approved' || pengajuan.status === 'rejected');
-                    
-                    // Superadmin bisa verifikasi semua berkas
-                    const canAdminVerify = isAdmin && 
-                      (pengajuan.status === 'submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved');
-                    
-                    return (canAdminVerify || canAdminWilayahVerify);
-                  })() ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateVerificationFromPreview('approved')}
-                        disabled={updatingVerification}
-                        className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                          previewFile.verification_status === 'approved'
-                            ? 'bg-green-100 text-green-800 border border-green-300'
-                            : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-green-50'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        ✓ Sesuai
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateVerificationFromPreview('rejected')}
-                        disabled={updatingVerification}
-                        className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                          previewFile.verification_status === 'rejected'
-                            ? 'bg-red-100 text-red-800 border border-red-300'
-                            : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-red-50'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        ✗ Tidak Sesuai
-                      </button>
-                    </>
-                  ) : (
-                    // Tampilkan status saja tanpa tombol untuk role yang tidak berhak
-                    <span className={`px-3 py-1.5 rounded text-xs font-medium ${
-                      previewFile.verification_status === 'approved'
-                        ? 'bg-green-100 text-green-800 border border-green-300'
-                        : previewFile.verification_status === 'rejected'
-                        ? 'bg-red-100 text-red-800 border border-red-300'
-                        : 'bg-gray-100 text-gray-600 border border-gray-300'
-                    }`}>
-                      {previewFile.verification_status === 'approved' ? '✓ Sesuai' : 
-                       previewFile.verification_status === 'rejected' ? '✗ Tidak Sesuai' : 
-                       '○ Belum Diverifikasi'}
-                    </span>
-                  )}
+                  <span className={`px-3 py-1.5 rounded text-xs font-medium ${
+                    previewFile.verification_status === 'approved'
+                      ? 'bg-green-100 text-green-800 border border-green-300'
+                      : previewFile.verification_status === 'rejected'
+                      ? 'bg-red-100 text-red-800 border border-red-300'
+                      : 'bg-gray-100 text-gray-600 border border-gray-300'
+                  }`}>
+                    {updatingVerification ? '⏳ Menyimpan...' :
+                     previewFile.verification_status === 'approved' ? '✓ Sesuai' : 
+                     previewFile.verification_status === 'rejected' ? '✗ Tidak Sesuai' : 
+                     '○ Belum Diverifikasi'}
+                  </span>
                 </div>
-                 <div className="text-xs text-gray-500">
-                   {updatingVerification ? (
-                     <span className="text-blue-600">⏳ Menyimpan...</span>
-                   ) : previewFile.verification_status === 'approved' ? (
-                     <span className="text-green-600">✓ Sudah diverifikasi</span>
-                   ) : previewFile.verification_status === 'rejected' ? (
-                     <span className="text-red-600">✗ Ditolak</span>
-                   ) : (
-                     <span className="text-gray-500">⏳ Belum diverifikasi</span>
-                   )}
-                 </div>
-               </div>
-             </div>
-           )}
+              </div>
+            </div>
+          )}
 
            {/* Tombol Aksi Final - Setujui/Tolak Pengajuan di Modal */}
            {previewFile && (canApprove || canReject) && (() => {

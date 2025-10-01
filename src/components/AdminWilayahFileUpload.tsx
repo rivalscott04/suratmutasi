@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Send, RefreshCw, Eye, Download, Edit } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import FileUploadProgress from '@/components/FileUploadProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -61,6 +62,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   const [availableJobTypes, setAvailableJobTypes] = useState<string[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   const [uploading, setUploading] = useState<{ [key: string]: boolean }>({});
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -188,6 +190,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   const handleFileUpload = async (fileType: string, file: File) => {
     console.log('🚀 START UPLOAD - fileType:', fileType, 'fileName:', file.name);
     setUploading(prev => ({ ...prev, [fileType]: true }));
+    setUploadProgress(prev => ({ ...prev, [fileType]: 0 }));
     
     try {
       // Debug logging
@@ -222,8 +225,23 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
         console.log('📋 FormData entry:', key, value);
       }
 
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          const current = prev[fileType] || 0;
+          if (current < 90) {
+            return { ...prev, [fileType]: current + Math.random() * 20 };
+          }
+          return prev;
+        });
+      }, 200);
+
       // Upload file to backend
       const response = await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/upload`, formData, token);
+      
+      // Complete progress
+      clearInterval(progressInterval);
+      setUploadProgress(prev => ({ ...prev, [fileType]: 100 }));
       
       if (response.success) {
         const newFile: PengajuanFile = {
@@ -271,6 +289,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       });
     } finally {
       setUploading(prev => ({ ...prev, [fileType]: false }));
+      setUploadProgress(prev => ({ ...prev, [fileType]: 0 }));
     }
   };
 
@@ -326,50 +345,137 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     return uploadedFiles.find(f => f.file_type === fileType);
   };
 
-  // Function to get descriptive label for file types
+  // Function to get job type specific descriptions
+  const getJobTypeSpecificDescription = (jobType: string, fileType: string) => {
+    const jobTypeDescriptions: { [key: string]: { [key: string]: string } } = {
+      'Guru': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      },
+      'Kepala Madrasah': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      },
+      'Wakil Kepala Madrasah': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      },
+      'Kepala TU': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      },
+      'Kepala Seksi': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      },
+      'Kepala Sub Bagian': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      },
+      'Kepala Urusan': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      },
+      'Staff': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      },
+      'Pelaksana': {
+        'surat_rekomendasi_kanwil': 'Surat Rekomendasi dari Instansi Pembina - Permohonan Pindah Tugas ke Dirjen Pendis',
+        'surat_persetujuan_kepala_wilayah': 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi',
+        'surat_pengantar_permohonan_rekomendasi': 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas',
+        'surat_pernyataan_tidak_tugas_belajar': 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas',
+        'surat_pernyataan_tidak_hukuman_disiplin': 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin',
+        'surat_pernyataan_tidak_proses_pidana': 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara',
+        'surat_pernyataan_tanggung_jawab_mutlak': 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)',
+        'surat_keterangan_bebas_temuan_inspektorat': 'Surat Keterangan Bebas Temuan (SKBT)',
+        'hasil_evaluasi_pertimbangan_baperjakat': 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)',
+        'surat_rekomendasi_kanwil_khusus': 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi'
+      }
+    };
+
+    return jobTypeDescriptions[jobType]?.[fileType] || null;
+  };
+
+  // Function to get descriptive label for file types based on job type
   const getDescriptiveLabel = (fileConfig: AdminWilayahFileConfig) => {
     const { file_type, display_name } = fileConfig;
     
     // Special handling for Surat Rekomendasi dari Instansi Pembina variants
     if (file_type === 'surat_rekomendasi_kanwil') {
-      return 'Surat Rekomendasi dari Instansi Pembina - Varian 6.1-6.9';
+      // Get job type specific description
+      const jobTypeSpecificDescription = getJobTypeSpecificDescription(jenisJabatanId, file_type);
+      return jobTypeSpecificDescription || 'Surat Rekomendasi dari Instansi Pembina - Varian 6.1-6.9';
     }
     
-    // Special handling for other specific file types
-    if (file_type === 'surat_persetujuan_kepala_wilayah') {
-      return 'Surat Persetujuan Kepala Wilayah - Kemenag Provinsi';
-    }
-    
-    if (file_type === 'surat_pengantar_permohonan_rekomendasi') {
-      return 'Surat Pengantar - Permohonan Rekomendasi Pindah Tugas';
-    }
-    
-    if (file_type === 'surat_pernyataan_tidak_tugas_belajar') {
-      return 'Surat Pernyataan - Tidak Sedang Tugas Belajar atau Ikatan Dinas';
-    }
-    
-    if (file_type === 'surat_pernyataan_tidak_hukuman_disiplin') {
-      return 'Surat Pernyataan - Tidak Sedang Dijatuhi Hukuman Disiplin';
-    }
-    
-    if (file_type === 'surat_pernyataan_tidak_proses_pidana') {
-      return 'Surat Pernyataan - Tidak Sedang Proses Pidana atau Penjara';
-    }
-    
-    if (file_type === 'surat_pernyataan_tanggung_jawab_mutlak') {
-      return 'Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)';
-    }
-    
-    if (file_type === 'surat_keterangan_bebas_temuan_inspektorat') {
-      return 'Surat Keterangan Bebas Temuan (SKBT)';
-    }
-    
-    if (file_type === 'hasil_evaluasi_pertimbangan_baperjakat') {
-      return 'Hasil Evaluasi dan Pertimbangan (BAPERJAKAT)';
-    }
-    
-    if (file_type === 'surat_rekomendasi_kanwil_khusus') {
-      return 'Surat Rekomendasi Khusus - Dari Kanwil Provinsi';
+    // Get job type specific description for other file types
+    const jobTypeSpecificDescription = getJobTypeSpecificDescription(jenisJabatanId, file_type);
+    if (jobTypeSpecificDescription) {
+      return jobTypeSpecificDescription;
     }
     
     // Default fallback
@@ -492,6 +598,16 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                       <p className="text-sm text-gray-600 mb-2">
                         Upload file PDF (maks. {fileConfig.file_type === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
                       </p>
+                      
+                      {/* Individual File Upload Progress */}
+                      {uploading[fileConfig.file_type] && (
+                        <FileUploadProgress
+                          isUploading={uploading[fileConfig.file_type]}
+                          progress={uploadProgress[fileConfig.file_type] || 0}
+                          fileName={fileConfig.display_name}
+                          className="mt-2"
+                        />
+                      )}
                       
                       {status === 'uploaded' && uploadedFile && (
                         <div className="mt-2">

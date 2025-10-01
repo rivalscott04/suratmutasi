@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, FileText, User, Calendar, MapPin, CheckCircle, XCircle, Send, ChevronDown } from 'lucide-react';
 import AdminWilayahFileUpload from '@/components/AdminWilayahFileUpload';
+import UploadProgressTracker from '@/components/UploadProgressTracker';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 
@@ -297,6 +298,16 @@ const AdminWilayahUploadPage: React.FC = () => {
                 Pilih jenis berkas yang sudah dikonfigurasi oleh superadmin
               </p>
             </div>
+
+            {/* Upload Progress Tracker */}
+            {selectedJobType && uploadProgress.total > 0 && (
+              <UploadProgressTracker
+                uploaded={uploadProgress.required}
+                total={uploadProgress.total}
+                isComplete={uploadProgress.isComplete}
+                className="mb-6"
+              />
+            )}
 
             {/* File Upload Component */}
             {selectedJobType && (
