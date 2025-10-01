@@ -101,11 +101,13 @@ const NavigationBar = () => {
       items.push({ name: 'Management User', href: '/users', icon: UserCog });
     }
 
-    // Tambahkan menu khusus admin wilayah DI ATAS base menu (biarkan ada 2 dashboard bila dibutuhkan)
+    // Menu khusus admin wilayah - ganti base menu dengan menu khusus
     if (isAdminWilayah) {
-      items.unshift({ name: 'Dashboard Admin Wilayah', href: '/admin-wilayah/dashboard', icon: Home });
-      // Menu Upload File diarahkan ke dashboard untuk memilih pengajuan terlebih dahulu
-      items.push({ name: 'Upload File', href: '/admin-wilayah/dashboard', icon: Upload });
+      // Admin wilayah tidak perlu Dashboard umum, langsung pakai Dashboard Admin Wilayah
+      items[0] = { name: 'Dashboard Admin Wilayah', href: '/admin-wilayah/dashboard', icon: Home };
+      // Hapus Template Generator karena itu tugas operator
+      items.splice(1, 1); // Remove Template Generator
+      // Upload File sudah tersedia di dashboard melalui button "Upload Kanwil" per pengajuan
     }
 
     items.push({ name: 'Settings', href: '/settings', icon: Settings });

@@ -140,4 +140,45 @@ export async function apiFetch(method: string, url: string, options: { data?: an
 export const apiGet = (url: string, token?: string, headers?: any) => apiFetch('GET', url, { token, headers });
 export const apiPost = (url: string, data?: any, token?: string, headers?: any) => apiFetch('POST', url, { data, token, headers });
 export const apiPut = (url: string, data?: any, token?: string, headers?: any) => apiFetch('PUT', url, { data, token, headers });
-export const apiDelete = (url: string, token?: string, headers?: any) => apiFetch('DELETE', url, { token, headers }); 
+export const apiDelete = (url: string, token?: string, headers?: any) => apiFetch('DELETE', url, { token, headers });
+
+// API function untuk replace file
+export const replaceFile = async (pengajuanId: string, fileId: string, file: File, token: string, userRole: string) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const baseUrl = userRole === 'admin_wilayah' ? '/api/admin-wilayah' : '/api';
+  const url = `${baseUrl}/pengajuan/${pengajuanId}/files/${fileId}/replace`;
+  const fullUrl = getBaseUrl() + url;
+  
+  console.log('🔍 Debug API replace file:', {
+    pengajuanId,
+    fileId,
+    fileName: file.name,
+    userRole,
+    baseUrl,
+    url,
+    fullUrl,
+    token: token ? 'exists' : 'missing'
+  });
+  
+  const response = await fetch(fullUrl, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
+  });
+  
+  console.log('🔍 Response status:', response.status);
+  console.log('🔍 Response ok:', response.ok);
+  
+  const result = await response.json();
+  console.log('🔍 Response data:', result);
+  
+  if (!response.ok) {
+    throw new Error(result.message || 'Gagal mengganti file');
+  }
+  
+  return result;
+}; 

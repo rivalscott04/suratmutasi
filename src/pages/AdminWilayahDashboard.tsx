@@ -388,9 +388,9 @@ const AdminWilayahDashboard: React.FC = () => {
 
         {/* Tabs */}
         <div className="flex gap-2">
-          <Button className={`${activeTab === 'process' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'process' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('process')}>Dalam Proses</Button>
-          <Button className={`${activeTab === 'archive' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'archive' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('archive')}>Arsip</Button>
-          <Button className={`${activeTab === 'rekap' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'rekap' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('rekap')}>Rekap Status</Button>
+          <Button className={`${activeTab === 'process' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'process' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('process')}>📋 Pengajuan</Button>
+          <Button className={`${activeTab === 'archive' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'archive' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('archive')}>📁 Riwayat</Button>
+          <Button className={`${activeTab === 'rekap' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}`} variant={activeTab === 'rekap' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('rekap')}>📊 Laporan</Button>
         </div>
 
         {/* Stats Cards */}
