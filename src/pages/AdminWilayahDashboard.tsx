@@ -218,6 +218,31 @@ const AdminWilayahDashboard: React.FC = () => {
     fetchFilterOptions();
   }, [token]);
 
+  // Auto-refresh progress setiap 30 detik untuk update live
+  useEffect(() => {
+    if (!token) return;
+    
+    const interval = setInterval(() => {
+      fetchDashboardData();
+      fetchDataTableData();
+    }, 30000); // 30 detik
+
+    return () => clearInterval(interval);
+  }, [token]);
+
+  // Refresh data ketika user kembali ke halaman (window focus)
+  useEffect(() => {
+    if (!token) return;
+
+    const handleFocus = () => {
+      fetchDashboardData();
+      fetchDataTableData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [token]);
+
   const getProgressPercentage = () => {
     if (stats.totalFiles === 0) return 0;
     return (stats.verifiedFiles / stats.totalFiles) * 100;
@@ -533,9 +558,6 @@ const AdminWilayahDashboard: React.FC = () => {
                               </Button>
                               <Button asChild size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                                 <Link to={`/admin-wilayah/upload/${row.id}`}>Upload Kanwil</Link>
-                              </Button>
-                              <Button size="sm" disabled={!canSubmit || submittingId === row.id} onClick={() => handleSubmitToSuperadmin(row.id)} className={`text-white ${canSubmit ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-300 cursor-not-allowed'}`}>
-                                {submittingId === row.id ? 'Mengajukan...' : 'Ajukan ke Superadmin'}
                               </Button>
                             </div>
                           </td>

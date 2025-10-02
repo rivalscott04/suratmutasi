@@ -47,13 +47,15 @@ interface AdminWilayahFileUploadProps {
   jenisJabatanId: string;
   onFilesUploaded: (files: PengajuanFile[]) => void;
   onProgressChange?: (uploaded: number, total: number) => void;
+  pengajuanStatus?: string;
 }
 
 const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   pengajuanId,
   jenisJabatanId,
   onFilesUploaded,
-  onProgressChange
+  onProgressChange,
+  pengajuanStatus
 }) => {
   const { token, user } = useAuth();
   const { toast } = useToast();
@@ -298,15 +300,15 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     try {
       // Submit logic here
       toast({
-        title: "Success",
-        description: "Files submitted for review",
+        title: "Berhasil",
+        description: "File berhasil diajukan ke Superadmin",
         variant: "default",
       });
       setShowSubmitDialog(false);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to submit files",
+        description: "Gagal mengajukan file ke Superadmin",
         variant: "destructive",
       });
     } finally {
@@ -719,21 +721,22 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
         const allRequiredUploaded = requiredFiles.every(fileConfig => 
           uploadedFiles.some(uploadedFile => uploadedFile.file_type === fileConfig.file_type)
         );
+        const isAlreadySubmitted = pengajuanStatus === 'submitted';
         
         return (
           <div className="flex justify-end">
             {allRequiredUploaded ? (
               <Button 
-                onClick={() => setShowSubmitDialog(true)} 
+                onClick={() => !isAlreadySubmitted && setShowSubmitDialog(true)} 
                 className="bg-green-600 hover:bg-green-700"
-                disabled={submitting}
+                disabled={submitting || isAlreadySubmitted}
               >
                 <Send className="h-4 w-4 mr-2" />
-                Submit for Review
+                {isAlreadySubmitted ? 'Sudah Dikirim' : 'Ajukan ke Superadmin'}
               </Button>
             ) : (
               <div className="text-sm text-gray-500 text-center">
-                Submit button akan muncul setelah semua berkas wajib diupload
+                Tombol ajukan akan muncul setelah semua berkas wajib diupload
               </div>
             )}
           </div>
@@ -744,19 +747,19 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Submit Files for Review</AlertDialogTitle>
+            <AlertDialogTitle>Ajukan ke Superadmin</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to submit all uploaded files for review? This action cannot be undone.
+              Apakah Anda yakin ingin mengajukan semua file yang telah diupload ke Superadmin? Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSubmitForReview}
               disabled={submitting}
               className="bg-green-600 hover:bg-green-700"
             >
-              {submitting ? 'Submitting...' : 'Submit'}
+              {submitting ? 'Mengajukan...' : 'Ajukan'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
