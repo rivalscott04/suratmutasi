@@ -98,6 +98,67 @@ const AdminWilayahDashboard: React.FC = () => {
   const [kabupatenFilter, setKabupatenFilter] = useState<string>('all');
   // Drill-down state
   const [drillKabupaten, setDrillKabupaten] = useState<string | null>(null);
+
+  // Generate recent activities from real data
+  const generateRecentActivities = () => {
+    const activities: Array<{
+      type: 'upload' | 'approval' | 'rejection' | 'system';
+      message: string;
+      time: string;
+    }> = [];
+
+    // Add recent uploads
+    recentUploads.slice(0, 3).forEach((upload) => {
+      const timeAgo = getTimeAgo(upload.uploaded_at);
+      activities.push({
+        type: 'upload',
+        message: `File ${upload.file_type} uploaded for ${upload.pengajuan.pegawai.nama} (NIP: ${upload.pengajuan.pegawai.nip})`,
+        time: timeAgo
+      });
+    });
+
+    // Add recent pengajuan status changes
+    pengajuan.slice(0, 2).forEach((item) => {
+      const timeAgo = getTimeAgo(item.updated_at || item.created_at);
+      if (item.status === 'approved') {
+        activities.push({
+          type: 'approval',
+          message: `Pengajuan approved for ${item.pegawai?.nama || 'Unknown'} (${item.jenis_jabatan})`,
+          time: timeAgo
+        });
+      } else if (item.status === 'rejected') {
+        activities.push({
+          type: 'rejection',
+          message: `Pengajuan rejected for ${item.pegawai?.nama || 'Unknown'} (${item.jenis_jabatan})`,
+          time: timeAgo
+        });
+      }
+    });
+
+    // Sort by most recent (assuming ISO date strings)
+    return activities.sort((a, b) => {
+      // For now, return as is since we're limiting to latest items already
+      return 0;
+    }).slice(0, 5); // Show max 5 activities
+  };
+
+  const getTimeAgo = (dateString: string): string => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInDays > 0) {
+      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else if (diffInHours > 0) {
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else {
+      return 'Just now';
+    }
+  };
+
+  const recentActivities = generateRecentActivities();
   const [drillStatus, setDrillStatus] = useState<string | null>(null);
   const [drillItems, setDrillItems] = useState<PengajuanDataTableItem[]>([]);
   const [drillTotal, setDrillTotal] = useState(0);
@@ -536,9 +597,10 @@ const AdminWilayahDashboard: React.FC = () => {
                   <tbody>
                     {pengajuan.map((row) => {
                       const pegawai = row.pegawai || {};
-                      const progress = row.progress_admin_wilayah || { required: 0, approved: 0 };
-                      const progressText = `${progress.approved}/${progress.required}`;
-                      const canSubmit = row.status === 'admin_wilayah_approved' && (row.progress_admin_wilayah?.required || 0) > 0 && (row.progress_admin_wilayah?.approved || 0) >= (row.progress_admin_wilayah?.required || 0);
+                      // Gunakan data upload progress yang sama dengan upload page
+                      const uploadProgress = row.uploadProgress || { required: 0, total: 0 };
+                      const progressText = `${uploadProgress.required}/${uploadProgress.total}`;
+                      const canSubmit = row.status === 'admin_wilayah_approved' && (uploadProgress.total || 0) > 0 && (uploadProgress.required || 0) >= (uploadProgress.total || 0);
                       return (
                         <tr key={row.id} className="border-b">
                           <td className="py-2 pr-4">{pegawai.nama || '-'}</td>
@@ -548,7 +610,7 @@ const AdminWilayahDashboard: React.FC = () => {
                           <td className="py-2 pr-4">
                             <div className="flex items-center gap-2">
                               <span>{progressText}</span>
-                              <Progress value={progress.required ? (progress.approved / progress.required) * 100 : 0} className="h-2 w-32" />
+                              <Progress value={uploadProgress.total ? (uploadProgress.required / uploadProgress.total) * 100 : 0} className="h-2 w-32" />
                             </div>
                           </td>
                           <td className="py-2 pr-4">
@@ -852,23 +914,31 @@ const AdminWilayahDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
+        {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <Button asChild className="flex-1">
-                <Link to="/admin-wilayah/pengajuan">
-                  <FileText className="h-4 w-4 mr-2" />
-                  View All Pengajuan
-                </Link>
-              </Button>
-              <Button variant="outline" className="flex-1">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
+            <div className="space-y-3">
+              {recentActivities.length > 0 ? (
+                recentActivities.map((activity, index) => (
+                  <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className={`w-2 h-2 rounded-full ${activity.type === 'upload' ? 'bg-blue-500' : 
+                      activity.type === 'approval' ? 'bg-green-500' : 
+                      activity.type === 'rejection' ? 'bg-red-500' : 'bg-gray-400'}`} />
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900">{activity.message}</p>
+                      <p className="text-xs text-gray-500">{activity.time}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <Activity className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">No recent activities</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
