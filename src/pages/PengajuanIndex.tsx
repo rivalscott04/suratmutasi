@@ -68,7 +68,8 @@ const PengajuanIndex: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [filterOptions, setFilterOptions] = useState<{
     users: Array<{ id: string; email: string; full_name: string }>;
-  }>({ users: [] });
+    statuses: Array<{ value: string; label: string; count: number }>;
+  }>({ users: [], statuses: [] });
   const [groupedByKabkota, setGroupedByKabkota] = useState<Record<string, PengajuanData[]>>({});
 
   const itemsPerPage = 50;
@@ -116,10 +117,10 @@ const PengajuanIndex: React.FC = () => {
   }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter, isReadOnlyUser, searchTerm]);
 
   useEffect(() => {
-    if (isAuthenticated && isAdmin) {
+    if (isAuthenticated) {
       fetchFilterOptions();
     }
-  }, [isAuthenticated, isAdmin]);
+  }, [isAuthenticated]);
 
 
     const fetchPengajuanData = async () => {
@@ -170,9 +171,14 @@ const PengajuanIndex: React.FC = () => {
 
        const fetchFilterOptions = async () => {
       try {
+        console.log('🔍 Fetching filter options...');
         const response = await apiGet('/api/pengajuan/filter-options', token);
+        console.log('🔍 Filter options response:', response);
         if (response.success) {
           setFilterOptions(response.data);
+          console.log('🔍 Filter options set:', response.data);
+        } else {
+          console.error('🔍 Filter options failed:', response.message);
         }
       } catch (error) {
         console.error('Error fetching filter options:', error);
@@ -514,16 +520,13 @@ const PengajuanIndex: React.FC = () => {
                    </SelectTrigger>
                    <SelectContent>
                      <SelectItem value="all">Semua Status</SelectItem>
-                     <SelectItem value="draft">Draft</SelectItem>
-                     <SelectItem value="submitted">Diajukan</SelectItem>
-                     <SelectItem value="approved">Disetujui</SelectItem>
-                     <SelectItem value="rejected">Ditolak</SelectItem>
-                     <SelectItem value="resubmitted">Diajukan Ulang</SelectItem>
-                     <SelectItem value="admin_wilayah_approved">Disetujui Admin Wilayah</SelectItem>
-                     <SelectItem value="admin_wilayah_rejected">Ditolak Admin Wilayah</SelectItem>
-                     <SelectItem value="admin_wilayah_submitted">Pengajuan Admin Wilayah</SelectItem>
-                     <SelectItem value="final_approved">Final Approved</SelectItem>
-                     <SelectItem value="final_rejected">Final Rejected</SelectItem>
+                     {filterOptions.statuses
+                       .filter(status => status.count > 0) // Only show statuses with data
+                       .map((status) => (
+                         <SelectItem key={status.value} value={status.value}>
+                           {status.label} ({status.count})
+                         </SelectItem>
+                       ))}
                    </SelectContent>
                  </Select>
                </div>

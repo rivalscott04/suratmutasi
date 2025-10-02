@@ -121,6 +121,9 @@ const PengajuanDetail: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [approvalNote, setApprovalNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [isVerificationPanelCollapsed, setIsVerificationPanelCollapsed] = useState(false);
+  const [isModalFullscreen, setIsModalFullscreen] = useState(false);
+  const [pdfZoom, setPdfZoom] = useState(100);
   const [finalApprovalNote, setFinalApprovalNote] = useState('');
   const [finalRejectionReason, setFinalRejectionReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -2215,8 +2218,14 @@ const PengajuanDetail: React.FC = () => {
          if (!open && previewFile?.blobUrl) {
            URL.revokeObjectURL(previewFile.blobUrl);
          }
+         // Reset states when modal closes
+         if (!open) {
+           setIsVerificationPanelCollapsed(false);
+           setIsModalFullscreen(false);
+           setPdfZoom(100);
+         }
        }}>
-         <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden flex flex-col">
+         <DialogContent className={`${isModalFullscreen ? 'max-w-none w-[100vw] h-[100vh]' : 'max-w-6xl w-[95vw] h-[90vh]'} p-0 overflow-hidden flex flex-col transition-all duration-300`}>
            <div className="border-b bg-white px-4 py-3 flex-shrink-0">
              <div className="flex items-center justify-between">
                <div className="min-w-0 flex-1">
@@ -2225,6 +2234,61 @@ const PengajuanDetail: React.FC = () => {
                  <div className="text-xs text-gray-500 truncate">Preview dokumen PDF</div>
                </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                {/* PDF Zoom Controls */}
+                {previewFile?.blobUrl && (
+                  <div className="flex items-center gap-1 border rounded-md">
+                    <button
+                      type="button"
+                      onClick={() => setPdfZoom(Math.max(50, pdfZoom - 25))}
+                      className="p-1.5 hover:bg-gray-100 transition-colors"
+                      title="Zoom out"
+                    >
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      </svg>
+                    </button>
+                    <span className="px-2 py-1 text-xs font-medium text-gray-600 min-w-[3rem] text-center">
+                      {pdfZoom}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPdfZoom(Math.min(200, pdfZoom + 25))}
+                      className="p-1.5 hover:bg-gray-100 transition-colors"
+                      title="Zoom in"
+                    >
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPdfZoom(100)}
+                      className="px-2 py-1 text-xs hover:bg-gray-100 transition-colors border-l"
+                      title="Reset zoom"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                )}
+
+                {/* Fullscreen Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsModalFullscreen(!isModalFullscreen)}
+                  className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                  title={isModalFullscreen ? "Keluar dari fullscreen" : "Masuk ke fullscreen"}
+                >
+                  {isModalFullscreen ? (
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                  )}
+                </button>
+                
                 {/* Button verifikasi dipindahkan ke sini */}
                 {previewFile && (() => {
                   const isKabupatenFile = !previewFile.file_category || previewFile.file_category === 'kabupaten';
@@ -2279,7 +2343,7 @@ const PengajuanDetail: React.FC = () => {
            </div>
 
            {/* Body */}
-           <div className="flex-1 bg-gray-50 overflow-hidden">
+           <div className={`${isVerificationPanelCollapsed ? 'flex-1' : 'flex-1'} bg-gray-50 overflow-hidden relative`}>
              {previewError ? (
                <div className="h-full flex flex-col items-center justify-center text-center px-6">
                  <div className="text-xl font-semibold text-gray-900 mb-2">{previewError}</div>
@@ -2301,40 +2365,105 @@ const PengajuanDetail: React.FC = () => {
                  <div className="text-sm text-gray-600">Memuat pratinjau...</div>
                </div>
              ) : (
-               <iframe 
-                 src={previewFile.blobUrl} 
-                 className="w-full h-full border-0 bg-white" 
-                 title="File Preview"
-                 style={{ minHeight: '600px' }}
-               />
+               <div className="h-full overflow-auto">
+                 <iframe 
+                   src={`${previewFile.blobUrl}#zoom=${pdfZoom}`}
+                   className="w-full border-0 bg-white" 
+                   title="File Preview"
+                   style={{ 
+                     minHeight: isModalFullscreen ? 'calc(100vh - 200px)' : 'calc(90vh - 200px)',
+                     height: 'auto',
+                     transform: `scale(${pdfZoom / 100})`,
+                     transformOrigin: 'top left',
+                     width: `${100 / (pdfZoom / 100)}%`
+                   }}
+                 />
+               </div>
              )}
            </div>
 
-          {/* Verification Section - Simplified Status */}
+          {/* Verification Section - Collapsible */}
           {previewFile && (
-            <div className="px-4 py-2 bg-white border-t flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Status:</span>
-                  <span className={`px-3 py-1.5 rounded text-xs font-medium ${
-                    previewFile.verification_status === 'approved'
-                      ? 'bg-green-100 text-green-800 border border-green-300'
-                      : previewFile.verification_status === 'rejected'
-                      ? 'bg-red-100 text-red-800 border border-red-300'
-                      : 'bg-gray-100 text-gray-600 border border-gray-300'
-                  }`}>
-                    {updatingVerification ? '⏳ Menyimpan...' :
-                     previewFile.verification_status === 'approved' ? '✓ Sesuai' : 
-                     previewFile.verification_status === 'rejected' ? '✗ Tidak Sesuai' : 
-                     '○ Belum Diverifikasi'}
-                  </span>
+            <div className="bg-white border-t flex-shrink-0">
+              {/* Collapse Toggle Header */}
+              <div 
+                className="px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setIsVerificationPanelCollapsed(!isVerificationPanelCollapsed)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Status Verifikasi:</span>
+                    <span className={`px-3 py-1.5 rounded text-xs font-medium ${
+                      previewFile.verification_status === 'approved'
+                        ? 'bg-green-100 text-green-800 border border-green-300'
+                        : previewFile.verification_status === 'rejected'
+                        ? 'bg-red-100 text-red-800 border border-red-300'
+                        : 'bg-gray-100 text-gray-600 border border-gray-300'
+                    }`}>
+                      {updatingVerification ? '⏳ Menyimpan...' :
+                       previewFile.verification_status === 'approved' ? '✓ Sesuai' : 
+                       previewFile.verification_status === 'rejected' ? '✗ Tidak Sesuai' : 
+                       '○ Belum Diverifikasi'}
+                    </span>
+                    
+                    {/* Progress Summary - Always Visible */}
+                    {(() => {
+                      const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
+                      const allFiles = Array.from(requiredAll).map(fileType => 
+                        pengajuan?.files.find(f => f.file_type === fileType)
+                      ).filter(Boolean);
+                      
+                      const totalFiles = allFiles.length;
+                      const approvedCount = allFiles.filter(f => f?.verification_status === 'approved').length;
+                      const rejectedCount = allFiles.filter(f => f?.verification_status === 'rejected').length;
+                      const verifiedCount = approvedCount + rejectedCount;
+                      
+                      return (
+                        <div className="flex items-center gap-2 ml-2">
+                          <span className="text-xs text-gray-500">
+                            Progress: {verifiedCount}/{totalFiles} file
+                          </span>
+                          <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500 transition-all duration-300" 
+                              style={{ width: `${totalFiles > 0 ? (verifiedCount / totalFiles) * 100 : 0}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-gray-600">
+                            {totalFiles > 0 ? Math.round((verifiedCount / totalFiles) * 100) : 0}%
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      {isVerificationPanelCollapsed ? 'Klik untuk memperluas' : 'Klik untuk mengecilkan'}
+                    </span>
+                    <svg 
+                      className={`h-4 w-4 text-gray-400 transition-transform ${isVerificationPanelCollapsed ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
+              
+              {/* Collapsible Content */}
+              {!isVerificationPanelCollapsed && (
+                <div className="px-4 py-2 border-t bg-gray-50">
+                  {/* Content area - currently empty but ready for future additions */}
+                </div>
+              )}
             </div>
           )}
 
            {/* Tombol Aksi Final - Setujui/Tolak Pengajuan di Modal */}
-           {previewFile && (canApprove || canReject) && (() => {
+           {previewFile && (canApprove || canReject) && !isVerificationPanelCollapsed && (() => {
              const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
              const allFiles = Array.from(requiredAll).map(fileType => 
                pengajuan?.files.find(f => f.file_type === fileType)
@@ -2351,26 +2480,9 @@ const PengajuanDetail: React.FC = () => {
              
              return (
                <div className="px-4 py-3 bg-gray-50 border-t">
-                 {/* Progress Verifikasi */}
-                 <div className="mb-3">
-                   <div className="flex items-center justify-between mb-1">
-                     <span className="text-xs font-medium text-gray-700">Progress Verifikasi</span>
-                     <span className="text-xs text-gray-600">{verifiedCount} dari {totalFiles} file</span>
-                   </div>
-                   <div className="flex items-center gap-2 mb-2">
-                     <Progress value={(verifiedCount / totalFiles) * 100} className="flex-1 h-2" />
-                     <span className="text-xs font-semibold text-gray-700">{Math.round((verifiedCount / totalFiles) * 100)}%</span>
-                   </div>
-                   <div className="flex items-center gap-4 text-xs">
-                     <span className="text-green-600">✓ {approvedCount} Sesuai</span>
-                     <span className="text-red-600">✗ {rejectedCount} Tidak Sesuai</span>
-                     <span className="text-gray-500">○ {pendingCount} Belum</span>
-                   </div>
-                 </div>
-                 
                  {/* Tombol Aksi - Hanya muncul setelah semua diverifikasi */}
                  {allVerified && (
-                   <div className="flex items-center justify-between gap-3 pt-3 border-t">
+                   <div className="flex items-center justify-between gap-3">
                      <div className="text-xs text-gray-600">
                        {allFilesApproved ? (
                          <span className="text-green-600 font-medium">✓ Semua dokumen sesuai, siap disetujui</span>

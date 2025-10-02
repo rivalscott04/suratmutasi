@@ -181,7 +181,8 @@ const Dashboard = () => {
       // Generate filename dengan timestamp
       const now = new Date();
       const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-      const filename = `Rekap_Status_Superadmin_${timestamp}.xlsx`;
+      const roleLabel = (user?.role === 'user') ? 'AdminPusat' : 'Superadmin';
+      const filename = `Rekap_Status_${roleLabel}_${timestamp}.xlsx`;
 
       // Download file
       XLSX.writeFile(wb, filename);
@@ -272,7 +273,7 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Dashboard
+            {user?.role === 'user' ? 'Dashboard Admin Pusat' : 'Dashboard'}
           </h1>
           <p className="text-gray-600">
             Selamat datang, {user?.full_name || user?.email || 'User'} - {user?.role || 'Operator'}
@@ -427,29 +428,31 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Templates (ubah jadi Jenis Template) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5 text-green-700" /> Jenis Template</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {templateTypes.length === 0 ? (
-                <div className="text-center text-gray-500">Belum ada template surat</div>
-              ) : (
-                templateTypes.map((name, idx) => (
-                  <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                    <FileText className="w-4 h-4 text-green-600" />
-                    <span className="font-medium text-gray-900">{name}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        {/* Template Terbaru diganti, atau bisa dihapus jika tidak perlu */}
-      </div>
+      {/* Jenis Template: tidak ditampilkan untuk admin pusat (role user) */}
+      {user?.role !== 'user' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5 text-green-700" /> Jenis Template</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {templateTypes.length === 0 ? (
+                  <div className="text-center text-gray-500">Belum ada template surat</div>
+                ) : (
+                  templateTypes.map((name, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                      <FileText className="w-4 h-4 text-green-600" />
+                      <span className="font-medium text-gray-900">{name}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          {/* Template Terbaru diganti, atau bisa dihapus jika tidak perlu */}
+        </div>
+      )}
 
       {/* Tabel Surat Terbaru (tambah link ke detail surat) */}
       <Card className="mb-4">

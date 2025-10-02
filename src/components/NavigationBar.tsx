@@ -110,7 +110,16 @@ const NavigationBar = () => {
       // Upload File sudah tersedia di dashboard melalui button "Upload Kanwil" per pengajuan
     }
 
-    items.push({ name: 'Settings', href: '/settings', icon: Settings });
+    // Untuk role user (admin pusat), sembunyikan Template Generator dan Settings
+    if (isUser) {
+      const templateIdx = items.findIndex((i) => i.name === 'Template Generator');
+      if (templateIdx !== -1) items.splice(templateIdx, 1);
+    }
+
+    // Settings hanya untuk non-user
+    if (!isUser) {
+      items.push({ name: 'Settings', href: '/settings', icon: Settings });
+    }
 
     return items;
   };

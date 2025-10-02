@@ -104,6 +104,9 @@ const AdminWilayahDashboard: React.FC = () => {
   const [drillPage, setDrillPage] = useState(1);
   const [drillPageSize, setDrillPageSize] = useState(25);
   const [drillLoading, setDrillLoading] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<{
+    statuses: Array<{ value: string; label: string; count: number }>;
+  }>({ statuses: [] });
 
   const fetchDashboardData = async () => {
     try {
@@ -166,6 +169,17 @@ const AdminWilayahDashboard: React.FC = () => {
     }
   };
 
+  const fetchFilterOptions = async () => {
+    try {
+      const response = await apiGet('/api/pengajuan/filter-options', token);
+      if (response.success) {
+        setFilterOptions(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching filter options:', error);
+    }
+  };
+
   const fetchDrillDown = async (kabupaten: string, status: string, page = 1) => {
     try {
       setDrillLoading(true);
@@ -201,6 +215,7 @@ const AdminWilayahDashboard: React.FC = () => {
     fetchDashboardData();
     fetchHistory();
     fetchDataTableData();
+    fetchFilterOptions();
   }, [token]);
 
   const getProgressPercentage = () => {
@@ -679,15 +694,13 @@ const AdminWilayahDashboard: React.FC = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Semua Status</SelectItem>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="submitted">Diajukan</SelectItem>
-                        <SelectItem value="approved">Disetujui</SelectItem>
-                        <SelectItem value="rejected">Ditolak</SelectItem>
-                        <SelectItem value="resubmitted">Diajukan Ulang</SelectItem>
-                        <SelectItem value="admin_wilayah_approved">Disetujui Admin Wilayah</SelectItem>
-                        <SelectItem value="admin_wilayah_rejected">Ditolak Admin Wilayah</SelectItem>
-                        <SelectItem value="final_approved">Disetujui Final</SelectItem>
-                        <SelectItem value="final_rejected">Ditolak Final</SelectItem>
+                        {filterOptions.statuses
+                          .filter(status => status.count > 0) // Only show statuses with data
+                          .map((status) => (
+                            <SelectItem key={status.value} value={status.value}>
+                              {status.label} ({status.count})
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
