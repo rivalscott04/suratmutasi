@@ -2462,8 +2462,8 @@ const PengajuanDetail: React.FC = () => {
             </div>
           )}
 
-           {/* Tombol Aksi Final - Setujui/Tolak Pengajuan di Modal */}
-           {previewFile && (canApprove || canReject) && !isVerificationPanelCollapsed && (() => {
+           {/* Tombol Aksi Final - Setujui/Tolak Pengajuan di Modal - Selalu Muncul */}
+           {previewFile && (canApprove || canReject) && (() => {
              const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
              const allFiles = Array.from(requiredAll).map(fileType => 
                pengajuan?.files.find(f => f.file_type === fileType)
@@ -2479,8 +2479,8 @@ const PengajuanDetail: React.FC = () => {
              const allVerified = pendingCount === 0 && totalFiles > 0;
              
              return (
-               <div className="px-4 py-3 bg-gray-50 border-t">
-                 {/* Tombol Aksi - Hanya muncul setelah semua diverifikasi */}
+               <div className="px-4 py-3 bg-white border-t shadow-md sticky bottom-0 z-10">
+                 {/* Tombol Aksi - Selalu tampil ketika semua sudah diverifikasi */}
                  {allVerified && (
                    <div className="flex items-center justify-between gap-3">
                      <div className="text-xs text-gray-600">
