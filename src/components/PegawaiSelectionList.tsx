@@ -9,6 +9,7 @@ import { Search, Users, FileText, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import ErrorModal from '@/components/ui/error-modal';
 
 interface PegawaiData {
   nip: string;
@@ -26,6 +27,8 @@ const PegawaiSelectionList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
   const { token } = useAuth();
 
@@ -65,11 +68,17 @@ const PegawaiSelectionList: React.FC = () => {
       if (data.success) {
         navigate(`/pengajuan/${data.data.id}/upload`);
       } else {
-        setError(data.message || 'Gagal membuat pengajuan');
+        // Show error in modal instead of inline
+        setErrorMessage(data.message || 'Gagal membuat pengajuan');
+        setShowErrorModal(true);
+        setError(null); // Clear inline error
       }
     } catch (error) {
       console.error('Error creating pengajuan:', error);
-      setError('Terjadi kesalahan saat membuat pengajuan');
+      // Show error in modal instead of inline
+      setErrorMessage('Terjadi kesalahan saat membuat pengajuan');
+      setShowErrorModal(true);
+      setError(null); // Clear inline error
     } finally {
       setProcessing(false);
     }
@@ -201,6 +210,15 @@ const PegawaiSelectionList: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Gagal Membuat Pengajuan"
+        message={errorMessage}
+        showRetry={false}
+      />
     </div>
   );
 };

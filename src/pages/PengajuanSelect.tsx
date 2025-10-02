@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Users, Send, Loader2, AlertCircle, ChevronLeft, ChevronRight, Briefcase, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
+import ErrorModal from '@/components/ui/error-modal';
 
 
 interface PegawaiData {
@@ -38,6 +39,8 @@ const PengajuanSelect: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -136,11 +139,17 @@ const PengajuanSelect: React.FC = () => {
           }
         });
       } else {
-        setError(response.message || 'Gagal membuat pengajuan');
+        // Show error in modal instead of inline
+        setErrorMessage(response.message || 'Gagal membuat pengajuan');
+        setShowErrorModal(true);
+        setError(null); // Clear inline error
       }
     } catch (error) {
       console.error('Error creating pengajuan:', error);
-      setError('Terjadi kesalahan saat membuat pengajuan');
+      // Show error in modal instead of inline
+      setErrorMessage('Terjadi kesalahan saat membuat pengajuan');
+      setShowErrorModal(true);
+      setError(null); // Clear inline error
     } finally {
       setSubmitting(false);
     }
@@ -486,7 +495,14 @@ const PengajuanSelect: React.FC = () => {
         </CardContent>
       </Card>
 
-
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Gagal Membuat Pengajuan"
+        message={errorMessage}
+        showRetry={false}
+      />
     </div>
   );
 };
