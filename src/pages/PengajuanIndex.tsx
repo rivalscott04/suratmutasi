@@ -685,7 +685,11 @@ const PengajuanIndex: React.FC = () => {
                           variant={currentPage === page ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCurrentPage(page)}
-                          className="w-8 h-8 p-0"
+                          className={`w-8 h-8 p-0 ${
+                            currentPage === page 
+                              ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                              : "bg-white hover:bg-green-50 text-gray-700 border-gray-300 hover:border-green-300"
+                          }`}
                         >
                           {page}
                         </Button>
@@ -778,7 +782,11 @@ const PengajuanIndex: React.FC = () => {
                             variant={currentPage === page ? "default" : "outline"}
                             size="sm"
                             onClick={() => setCurrentPage(page)}
-                            className="w-8 h-8 p-0"
+                            className={`w-8 h-8 p-0 ${
+                              currentPage === page 
+                                ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                                : "bg-white hover:bg-green-50 text-gray-700 border-gray-300 hover:border-green-300"
+                            }`}
                           >
                             {page}
                           </Button>
@@ -950,7 +958,11 @@ const PengajuanIndex: React.FC = () => {
                             variant={currentPage === page ? "default" : "outline"}
                             size="sm"
                             onClick={() => setCurrentPage(page)}
-                            className="w-8 h-8 p-0"
+                            className={`w-8 h-8 p-0 ${
+                              currentPage === page 
+                                ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                                : "bg-white hover:bg-green-50 text-gray-700 border-gray-300 hover:border-green-300"
+                            }`}
                           >
                             {page}
                           </Button>
