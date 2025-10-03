@@ -300,3 +300,90 @@ input, button, form {
     box-shadow: none;
   }
 }
+
+/* Dynamic Island Styles */
+.dynamic-island {
+  position: fixed !important;
+  top: 80px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: #000 !important;
+  border-radius: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1000 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.darkroom {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+/* Phone Call Scene Styles */
+.caller {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+}
+
+.caller .photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.caller-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.caller-info .device {
+  font-size: 12px;
+  color: #888;
+}
+
+.caller-info .name {
+  font-size: 16px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.phone-booth {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+}
+
+.phone {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.phone.refuse {
+  background: #ff3b30;
+}
+
+.phone.receive {
+  background: #34c759;
+}
+
+.phone:hover {
+  transform: scale(1.1);
+}
+
+.phone .icon {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(1);
+}

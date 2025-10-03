@@ -21,11 +21,20 @@ import { Template7 } from '@/components/templates/Template7';
 import { Template8 } from '@/components/templates/Template8';
 import { Template9 } from '@/components/templates/Template9';
 import { BaseTemplateData, Template1Data, Template2Data, Template3Data, Template4Data, Template5Data, Template6Data, Template7Data, Template8Data, Template9Data, Pegawai } from '@/types/template';
-import { Printer, ArrowLeft, FileText, CheckCircle, ExternalLink } from 'lucide-react';
+import { Printer, ArrowLeft, FileText, CheckCircle, ExternalLink, Loader2 } from 'lucide-react';
+import { useFormSubmissionProtection } from '@/hooks/useDoubleClickProtection';
+import { SubmitButton } from '@/components/ui/protected-button';
+import { PageHeader } from '@/components/PageHeader';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { apiPost, apiGet } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { showSuccess, showError, showGenerateSuccess, showGenerateError } from '@/lib/messageUtils';
+import { AdvancedErrorModal } from "@/components/ui/advanced-error-modal";
+import { FormFeedbackProvider, useFormFeedbackContext } from '@/components/FormFeedbackProvider';
+import { FormStatusIndicator } from '@/components/ui/form-status-indicator';
+import { FormProgressIndicator } from '@/components/ui/form-progress-indicator';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DialogTitle, DialogDescription } from '@radix-ui/react-dialog';
 import SuratPreviewContainer from '@/components/SuratPreviewContainer';
@@ -122,7 +131,9 @@ function formatTanggalIndonesia(tanggal: string) {
   }
 }
 
-const TemplateForm: React.FC = () => {
+// Inner component yang menggunakan form feedback
+const TemplateFormInner: React.FC = () => {
+  const formFeedback = useFormFeedbackContext();
   const { templateId } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
   
@@ -244,6 +255,7 @@ const TemplateForm: React.FC = () => {
   const { token, user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const { submitForm, isSubmitting } = useFormSubmissionProtection();
   const [pdfLoading, setPdfLoading] = useState(false);
   const [suratId, setSuratId] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -391,30 +403,32 @@ const TemplateForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    setSaving(true);
-    setSubmitError(null);
-    setPdfUrl(null);
-    // Validasi field wajib
-    if (!office?.id) {
-      setSubmitError('Data kantor tidak ditemukan. Silakan atur kantor di Settings.');
-      setSaving(false);
-      return;
-    }
-    if (!user?.id) {
-      setSubmitError('User tidak valid. Silakan login ulang.');
-      setSaving(false);
-      return;
-    }
-    if (templateId !== '2' && templateId !== '9' && !selectedPegawai?.nip) {
-      setSubmitError('Pilih pegawai yang akan dinyatakan dalam surat.');
-      setSaving(false);
-      return;
-    }
-    if (!selectedPejabat?.nip) {
-      setSubmitError('Pilih pejabat penandatangan surat.');
-      setSaving(false);
-      return;
-    }
+    // Use form feedback system
+    formFeedback.startSubmission();
+    formFeedback.clearFeedback();
+
+    // Use submitForm protection instead of manual setSaving
+    submitForm(
+      async () => {
+        setSubmitError(null);
+        setPdfUrl(null);
+        // Validasi field wajib
+        if (!office?.id) {
+          setSubmitError('Data kantor tidak ditemukan. Silakan atur kantor di Settings.');
+          throw new Error('Data kantor tidak ditemukan');
+        }
+        if (!user?.id) {
+          setSubmitError('User tidak valid. Silakan login ulang.');
+          throw new Error('User tidak valid');
+        }
+        if (templateId !== '2' && templateId !== '9' && !selectedPegawai?.nip) {
+          setSubmitError('Pilih pegawai yang akan dinyatakan dalam surat.');
+          throw new Error('Pegawai belum dipilih');
+        }
+        if (!selectedPejabat?.nip) {
+          setSubmitError('Pilih pejabat penandatangan surat.');
+          throw new Error('Pejabat belum dipilih');
+        }
     // Format nomor surat sesuai template
     const kodeKabko = office?.kode_kabko || baseData.kode_kabko || '-';
     let letter_number = '';
@@ -437,11 +451,10 @@ const TemplateForm: React.FC = () => {
     } else if (templateId === '9') {
       letter_number = `B-${template9Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.01.2/${template9Data.blnno}/${template9Data.thnno}`;
     }
-    if (!letter_number) {
-      setSubmitError('Nomor surat wajib diisi.');
-      setSaving(false);
-      return;
-    }
+        if (!letter_number) {
+          setSubmitError('Nomor surat wajib diisi.');
+          throw new Error('Nomor surat wajib diisi');
+        }
 
     // Format tanggal Indonesia untuk tanda tangan
     let tanggalIndo = '';
@@ -530,31 +543,28 @@ const TemplateForm: React.FC = () => {
     
 
     
-    try {
-  
-
-      const res = await apiPost('/api/letters', payload, token);
-      setSuratId(res.letter?.id || res.id);
-      setShowSuccessModal(true);
-      toast({ title: 'Surat berhasil disimpan', description: 'Surat siap digenerate PDF.' });
-      
-
-      
-
-    } catch (err: any) {
-      
-      // Handle specific error messages
-      if (err.message && err.message.includes('Nomor surat sudah ada')) {
-        setSubmitError('Nomor surat sudah ada. Silakan gunakan nomor surat yang berbeda.');
-      } else if (err.message && err.message.includes('Internal server error')) {
-        setSubmitError('Terjadi kesalahan server. Silakan coba lagi.');
-      } else {
-        setSubmitError(err.message || 'Terjadi kesalahan saat menyimpan surat');
+        const res = await apiPost('/api/letters', payload, token);
+        setSuratId(res.letter?.id || res.id);
+        setShowSuccessModal(true);
+        showSuccess('SAVE_SUCCESS', 'Surat berhasil disimpan dan siap digenerate PDF.');
+        formFeedback.endSubmission(true, 'Surat berhasil disimpan dan siap digenerate PDF.');
+      },
+      () => {
+        // onSuccess callback - already handled above
+      },
+      (err: any) => {
+        // onError callback
+        if (err.message && err.message.includes('Nomor surat sudah ada')) {
+          setSubmitError('Nomor surat sudah ada. Silakan gunakan nomor surat yang berbeda.');
+        } else if (err.message && err.message.includes('Internal server error')) {
+          setSubmitError('Terjadi kesalahan server. Silakan coba lagi.');
+        } else {
+          setSubmitError(err.message || 'Terjadi kesalahan saat menyimpan surat');
+        }
+        setPdfUrl(null);
+        formFeedback.endSubmission(false, err.message || 'Terjadi kesalahan saat menyimpan surat');
       }
-      
-      setSaving(false);
-      setPdfUrl(null);
-    }
+    );
   };
 
   const handleGeneratePdf = async () => {
@@ -564,9 +574,9 @@ const TemplateForm: React.FC = () => {
     try {
       const res = await apiPost(`/api/letters/${suratId}/generate-pdf`, {}, token);
       setPdfUrl(res.file?.file_path || res.file_path);
-      toast({ title: 'PDF berhasil digenerate', description: 'Klik link untuk mengunduh.' });
+      showGenerateSuccess('PDF berhasil digenerate. Klik link untuk mengunduh.');
     } catch (err: any) {
-      toast({ title: 'Gagal generate PDF', description: err.message || 'Terjadi kesalahan', variant: 'destructive' });
+      showGenerateError(err.message || 'Terjadi kesalahan saat generate PDF');
     } finally {
       setPdfLoading(false);
     }
@@ -1204,25 +1214,23 @@ const TemplateForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/generator')}
-              className="mb-4"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Kembali ke Pilihan Template
-            </Button>
-          </div>
-          <div className="flex items-center space-x-2 mb-2">
-            <Badge variant="secondary">{selectedTemplate.category}</Badge>
-            <span className="text-sm text-muted-foreground">•</span>
-            <span className="text-sm text-muted-foreground">Template {templateId}</span>
-          </div>
-          <h1 className="text-3xl font-bold">{selectedTemplate.title}</h1>
-          <p className="text-muted-foreground mt-2">{selectedTemplate.description}</p>
-        </div>
+        <PageHeader
+          title={selectedTemplate.title}
+          subtitle={`${selectedTemplate.description} • Template ${templateId}`}
+          actions={
+            <div className="flex items-center gap-4">
+              <FormStatusIndicator feedback={formFeedback.feedback} compact={true} />
+              <Button
+                variant="outline"
+                onClick={() => navigate('/generator')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Kembali ke Pilihan Template
+              </Button>
+            </div>
+          }
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Section */}
@@ -1420,9 +1428,14 @@ const TemplateForm: React.FC = () => {
                   </div>
                 </FormSection>
                 <div className="pt-6">
-                  <Button type="submit" className="w-full bg-teal-700 hover:bg-teal-800 text-white" disabled={saving}>
-                    {saving ? 'Menyimpan...' : 'Simpan & Generate Surat'}
-                  </Button>
+                  <SubmitButton 
+                    type="submit" 
+                    className="w-full bg-teal-700 hover:bg-teal-800 text-white" 
+                    isProcessing={isSubmitting}
+                    processingText="Menyimpan..."
+                  >
+                    Simpan & Generate Surat
+                  </SubmitButton>
                 </div>
                 {submitError && <div className="text-error mb-2">{submitError}</div>}
               </form>
@@ -1534,6 +1547,29 @@ const TemplateForm: React.FC = () => {
         </DialogContent>
       </Dialog>
     </div>
+  );
+};
+
+// Main component dengan form feedback provider
+const TemplateForm: React.FC = () => {
+  const { templateId } = useParams<{ templateId: string }>();
+  
+  // Initialize form data
+  const initialFormData = {
+    templateId: templateId || '',
+    // Add other initial form data here
+  };
+
+  return (
+    <FormFeedbackProvider
+      initialData={initialFormData}
+      autoSave={false}
+      showToastOnSave={true}
+      showToastOnError={true}
+      showToastOnValidation={false}
+    >
+      <TemplateFormInner />
+    </FormFeedbackProvider>
   );
 };
 

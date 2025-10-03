@@ -47,7 +47,10 @@ import {
   Users as UsersIcon, 
   Loader2,
   Eye,
-  EyeOff
+  EyeOff,
+  RefreshCw,
+  Copy,
+  Check
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -90,6 +93,62 @@ const Users = () => {
   const [showAddUserResultModal, setShowAddUserResultModal] = useState(false);
   const [addUserSuccess, setAddUserSuccess] = useState<boolean | null>(null);
   const [addUserMessage, setAddUserMessage] = useState('');
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
+  // Generate secure password
+  const generateSecurePassword = () => {
+    const length = 12;
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+    
+    // Ensure at least one character from each category
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const symbols = '!@#$%^&*';
+    
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+    
+    // Fill the rest with random characters
+    for (let i = 4; i < length; i++) {
+      password += charset[Math.floor(Math.random() * charset.length)];
+    }
+    
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  };
+
+  // Copy password to clipboard
+  const copyPasswordToClipboard = async (password: string) => {
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopiedPassword(true);
+      toast({
+        title: "Password disalin",
+        description: "Password telah disalin ke clipboard",
+      });
+      setTimeout(() => setCopiedPassword(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Gagal menyalin",
+        description: "Tidak dapat menyalin password ke clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Generate and set password
+  const handleGeneratePassword = () => {
+    const newPassword = generateSecurePassword();
+    setFormData({ ...formData, password: newPassword });
+    toast({
+      title: "Password di-generate",
+      description: "Password secure telah di-generate",
+    });
+  };
 
   // Check if user is admin
   if (user?.role !== 'admin') {
@@ -410,23 +469,62 @@ const Users = () => {
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Password"
+                  />
+                  <div className="absolute right-0 top-0 h-full flex items-center gap-1 pr-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-full px-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                    {formData.password && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-full px-2 hover:bg-transparent"
+                        onClick={() => copyPasswordToClipboard(formData.password)}
+                      >
+                        {copiedPassword ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGeneratePassword}
+                    className="flex items-center gap-2 border-green-600 text-green-600 hover:bg-green-50"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Generate Password
+                  </Button>
+                  {formData.password && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyPasswordToClipboard(formData.password)}
+                      className="flex items-center gap-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                    >
+                      {copiedPassword ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copiedPassword ? 'Disalin!' : 'Copy Password'}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             <div>
@@ -500,23 +598,62 @@ const Users = () => {
             </div>
             <div>
               <Label htmlFor="edit-password">Password Baru (opsional)</Label>
-              <div className="relative">
-                <Input
-                  id="edit-password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Kosongkan jika tidak ingin mengubah password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    id="edit-password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Kosongkan jika tidak ingin mengubah password"
+                  />
+                  <div className="absolute right-0 top-0 h-full flex items-center gap-1 pr-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-full px-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                    {formData.password && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-full px-2 hover:bg-transparent"
+                        onClick={() => copyPasswordToClipboard(formData.password)}
+                      >
+                        {copiedPassword ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGeneratePassword}
+                    className="flex items-center gap-2 border-green-600 text-green-600 hover:bg-green-50"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Generate Password
+                  </Button>
+                  {formData.password && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyPasswordToClipboard(formData.password)}
+                      className="flex items-center gap-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                    >
+                      {copiedPassword ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copiedPassword ? 'Disalin!' : 'Copy Password'}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             <div>

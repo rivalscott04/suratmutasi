@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Send, RefreshCw, Eye, Download, Edit } from 'lucide-react';
+import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Send, RefreshCw, Eye, Download, Edit, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import FileUploadProgress from '@/components/FileUploadProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useFormSubmissionProtection } from '@/hooks/useDoubleClickProtection';
+import { SubmitButton } from '@/components/ui/protected-button';
+import { showSuccess, showError, showUploadSuccess, showUploadError, showDownloadError } from '@/lib/messageUtils';
 
 // Normalize any text to a safe DOM id segment
 const toSafeId = (raw: string): string => {
@@ -67,6 +70,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { submitForm, isSubmitting } = useFormSubmissionProtection();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -296,24 +300,20 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   };
 
   const handleSubmitForReview = async () => {
-    setSubmitting(true);
-    try {
-      // Submit logic here
-      toast({
-        title: "Berhasil",
-        description: "File berhasil diajukan ke Superadmin",
-        variant: "default",
-      });
-      setShowSubmitDialog(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Gagal mengajukan file ke Superadmin",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+    submitForm(
+      async () => {
+        // Submit logic here
+        showSuccess('SUBMIT_SUCCESS', 'File berhasil diajukan ke Superadmin');
+        setShowSubmitDialog(false);
+      },
+      () => {
+        // onSuccess - already handled above
+      },
+      (error) => {
+        // onError
+        showError('OPERATION_FAILED', 'Gagal mengajukan file ke Superadmin');
+      }
+    );
   };
 
   const formatFileSize = (bytes: number) => {
@@ -497,7 +497,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       // Revoke later to avoid memory leak
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (e) {
-      toast({ title: 'Error', description: 'Gagal membuka preview file', variant: 'destructive' });
+      showError('OPERATION_FAILED', 'Gagal membuka preview file');
     }
   };
 
@@ -517,7 +517,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (e) {
-      toast({ title: 'Error', description: 'Gagal mengunduh file', variant: 'destructive' });
+      showDownloadError('Gagal mengunduh file');
     }
   };
 
@@ -754,12 +754,15 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleSubmitForReview}
-              disabled={submitting}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {submitting ? 'Mengajukan...' : 'Ajukan'}
+            <AlertDialogAction asChild>
+              <SubmitButton
+                onClick={handleSubmitForReview}
+                className="bg-green-600 hover:bg-green-700"
+                isProcessing={isSubmitting}
+                processingText="Mengajukan..."
+              >
+                Ajukan
+              </SubmitButton>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

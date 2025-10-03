@@ -1,7 +1,12 @@
 import { useState, useRef } from "react";
-import { FileText, Printer, Save, BookMarked } from "lucide-react";
+import { FileText, Printer, Save, BookMarked, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useSaveProtection } from "@/hooks/useDoubleClickProtection";
+import { SaveButton } from "@/components/ui/protected-button";
+import { showSuccess, showError, showSaveSuccess, showSaveError } from '@/lib/messageUtils';
+import { FormFeedbackProvider, useFormFeedbackContext } from '@/components/FormFeedbackProvider';
+import { FormStatusIndicator } from '@/components/ui/form-status-indicator';
 import { PegawaiSearchInput } from "@/components/PegawaiSearchInput";
 import { Pegawai } from "@/types/template";
 import { Button } from "@/components/ui/button";
@@ -12,11 +17,11 @@ import logoKemenag from "@/assets/logo-kemenag.png";
 
 const personSchema = z.object({
   nama: z.string().min(1, "Nama harus diisi"),
-  nip: z.string().min(1, "NIP harus diisi"),
+  nip: z.string().regex(/^[0-9]{18}$/, "Format NIP tidak valid (18 digit)"),
   pangkat: z.string().min(1, "Pangkat harus diisi"),
   jabatan: z.string().min(1, "Jabatan harus diisi"),
   unitKerja: z.string().min(1, "Unit kerja harus diisi"),
-  keterangan: z.string(),
+  keterangan: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -246,16 +251,18 @@ function SKMutasiContent({ formData }: any) {
   );
 }
 
-export default function SKMutasi() {
+// Inner component yang menggunakan form feedback
+function SKMutasiInner() {
+  const formFeedback = useFormFeedbackContext();
   const [formData, setFormData] = useState<any>({
     nomor: "",
     tentang: "MUTASI PEGAWAI NEGERI SIPIL",
     person: {
-      nama: "HADI ROHANA MUSTAFAWI",
-      nip: "198103052012032004",
-      pangkat: "Penata Muda Tk.I / III c",
-      jabatan: "Pengadministrasi Perkantoran (Jabatan Pelaksana) pada KUA Kecamatan Keruak Kabupaten Lombok Timur",
-      unitKerja: "KUA Kecamatan Keruak",
+      nama: "Nama",
+      nip: "NIP",
+      pangkat: "Pangkat/Gol",
+      jabatan: "Jabatan",
+      unitKerja: "Uker",
       keterangan: ""
     },
     memperhatikan: {
@@ -279,9 +286,44 @@ export default function SKMutasi() {
   });
 
   const [showToast, setShowToast] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const { toast } = useToast();
+  const { saveData, isSaving } = useSaveProtection();
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Real-time validation function
+  const validateField = (field: string, value: any) => {
+    try {
+      // Create partial schema for the field
+      let fieldSchema;
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.');
+        if (parent === 'person') {
+          fieldSchema = personSchema.shape[child as keyof typeof personSchema.shape];
+        }
+      } else {
+        fieldSchema = formSchema.shape[field as keyof typeof formSchema.shape];
+      }
+      
+      if (fieldSchema) {
+        fieldSchema.parse(value);
+        // Clear error if validation passes
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setValidationErrors(prev => ({
+          ...prev,
+          [field]: error.errors[0]?.message || 'Invalid value'
+        }));
+      }
+    }
+  };
 
   const handlePejabatSelect = (pegawai?: Pegawai) => {
     setFormData((prev: any) => ({
@@ -343,17 +385,34 @@ export default function SKMutasi() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
 
-    setShowToast(true);
-    
-    toast({
-      title: "Berhasil",
-      description: "Surat Keputusan Mutasi berhasil dibuat dan disimpan",
-    });
+    // Use form feedback system
+    formFeedback.startSubmission();
+    formFeedback.clearFeedback();
+
+    // Use save protection
+    saveData(
+      async () => {
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setShowToast(true);
+        showSaveSuccess("Surat Keputusan Mutasi berhasil dibuat dan disimpan");
+        formFeedback.endSubmission(true, "Surat Keputusan Mutasi berhasil dibuat dan disimpan");
+      },
+      () => {
+        // onSuccess - already handled in saveData
+      },
+      (error) => {
+        // onError
+        showSaveError("Surat Keputusan Mutasi tidak dapat disimpan. Periksa data dan coba lagi.");
+        formFeedback.endSubmission(false, "Surat Keputusan Mutasi tidak dapat disimpan. Periksa data dan coba lagi.");
+      }
+    );
   };
 
   const closeToast = () => {
@@ -364,7 +423,10 @@ export default function SKMutasi() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">SK Mutasi Generator</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold text-gray-900">SK Mutasi Generator</h1>
+            <FormStatusIndicator feedback={formFeedback.feedback} compact={true} />
+          </div>
           <Link to="/archive">
             <Button className="bg-green-600 hover:bg-green-700 text-white">
               <BookMarked className="w-4 h-4 mr-2" />
@@ -402,18 +464,32 @@ export default function SKMutasi() {
                     <Input 
                       id="nomor"
                       value={formData.nomor} 
-                      onChange={(e) => setFormData((p: any) => ({ ...p, nomor: e.target.value }))} 
-                      placeholder="Nomor surat" 
+                      onChange={(e) => {
+                        setFormData((p: any) => ({ ...p, nomor: e.target.value }));
+                        validateField('nomor', e.target.value);
+                      }}
+                      placeholder="Nomor surat"
+                      className={validationErrors.nomor ? 'border-red-500 focus:border-red-500' : ''}
                     />
+                    {validationErrors.nomor && (
+                      <p className="text-sm text-red-600">{validationErrors.nomor}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="tentang">Tentang</Label>
                     <Input 
                       id="tentang"
                       value={formData.tentang} 
-                      onChange={(e) => setFormData((p: any) => ({ ...p, tentang: e.target.value }))} 
-                      placeholder="Tentang" 
+                      onChange={(e) => {
+                        setFormData((p: any) => ({ ...p, tentang: e.target.value }));
+                        validateField('tentang', e.target.value);
+                      }}
+                      placeholder="Tentang"
+                      className={validationErrors.tentang ? 'border-red-500 focus:border-red-500' : ''}
                     />
+                    {validationErrors.tentang && (
+                      <p className="text-sm text-red-600">{validationErrors.tentang}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -498,13 +574,14 @@ export default function SKMutasi() {
                 <h2 className="text-xl font-semibold text-gray-900">Preview SK Mutasi</h2>
               </div>
               <div className="flex gap-2">
-                <Button 
+                <SaveButton 
                   onClick={handleSave}
                   className="bg-green-600 hover:bg-green-700 text-white"
+                  isProcessing={isSaving}
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Simpan
-                </Button>
+                </SaveButton>
                 <Button 
                   onClick={handlePrint}
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -524,5 +601,26 @@ export default function SKMutasi() {
 
       {/* Toast sederhana via useToast sudah cukup; komponen CenteredToast tidak tersedia di codebase */}
     </div>
+  );
+}
+
+// Main component dengan form feedback provider
+export default function SKMutasi() {
+  const initialFormData = {
+    nomor: "",
+    tentang: "MUTASI PEGAWAI NEGERI SIPIL",
+    // Add other initial form data here
+  };
+
+  return (
+    <FormFeedbackProvider
+      initialData={initialFormData}
+      autoSave={false}
+      showToastOnSave={true}
+      showToastOnError={true}
+      showToastOnValidation={false}
+    >
+      <SKMutasiInner />
+    </FormFeedbackProvider>
   );
 }

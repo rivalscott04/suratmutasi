@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigation } from '@/hooks/useNavigation';
 import { apiGet } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
@@ -76,55 +77,8 @@ const NavigationBar = () => {
   const [userSearchTerm, setUserSearchTerm] = useState('');
 
 
-  // Navigation items berdasarkan role
-  const getNavigationItems = () => {
-    const isAdmin = isImpersonating ? originalUser?.role === 'admin' : user?.role === 'admin';
-    // Saat impersonate, gunakan role user yang sedang diimpersonate untuk menentukan menu yang tampil
-    const isAdminWilayah = user?.role === 'admin_wilayah';
-    const isUser = user?.role === 'user';
-    const isOperator = user?.role === 'operator';
-
-    // Base menu untuk semua role selain user biasa
-    const items = [
-      { name: 'Dashboard', href: '/dashboard', icon: Home },
-      { name: 'Template Generator', href: '/generator', icon: FileText },
-      { name: 'Riwayat Surat', href: '/letters', icon: FileText },
-      { name: 'Data Pengajuan', href: '/pengajuan', icon: Upload },
-    ];
-
-    // SK Generator hanya untuk user dan admin (bukan operator dan admin_wilayah)
-    if (isUser || isAdmin) {
-      items.splice(2, 0, { name: 'SK Generator', href: '/generator/sk', icon: FileText });
-    }
-
-    if (isAdmin) {
-      items.push({ name: 'Management User', href: '/users', icon: UserCog });
-    }
-
-    // Menu khusus admin wilayah - ganti base menu dengan menu khusus
-    if (isAdminWilayah) {
-      // Admin wilayah tidak perlu Dashboard umum, langsung pakai Dashboard Admin Wilayah
-      items[0] = { name: 'Dashboard Admin Wilayah', href: '/admin-wilayah/dashboard', icon: Home };
-      // Hapus Template Generator karena itu tugas operator
-      items.splice(1, 1); // Remove Template Generator
-      // Upload File sudah tersedia di dashboard melalui button "Upload Kanwil" per pengajuan
-    }
-
-    // Untuk role user (admin pusat), sembunyikan Template Generator dan Settings
-    if (isUser) {
-      const templateIdx = items.findIndex((i) => i.name === 'Template Generator');
-      if (templateIdx !== -1) items.splice(templateIdx, 1);
-    }
-
-    // Settings hanya untuk non-user
-    if (!isUser) {
-      items.push({ name: 'Settings', href: '/settings', icon: Settings });
-    }
-
-    return items;
-  };
-
-  const navigationItems = getNavigationItems();
+  // Get navigation items using new navigation system
+  const { navigationItems, isActivePath } = useNavigation();
 
   // Fetch available users untuk impersonate
   useEffect(() => {
@@ -156,16 +110,7 @@ const NavigationBar = () => {
     }
   };
 
-  // Deteksi active, support /letters dan /letters/:id, serta /pengajuan dan /pengajuan/:id
-  const isActive = (path: string) => {
-    if (path === '/letters') {
-      return location.pathname.startsWith('/letters');
-    }
-    if (path === '/pengajuan') {
-      return location.pathname.startsWith('/pengajuan');
-    }
-    return location.pathname === path;
-  };
+  // Use isActivePath from navigation hook instead
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -291,11 +236,11 @@ const NavigationBar = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={cn(
-                      "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                      isActive(item.href)
-                        ? "bg-green-100 text-green-700"
-                        : "text-gray-600 hover:text-green-700 hover:bg-green-50"
+                      className={cn(
+                        "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                        isActivePath(item.href)
+                          ? "bg-green-100 text-green-700"
+                          : "text-gray-600 hover:text-green-700 hover:bg-green-50"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -345,6 +290,41 @@ const NavigationBar = () => {
                       )}
                     </div>
                   </DropdownMenuLabel>
+                  
+                  {/* Session Status */}
+                  <DropdownMenuItem className="flex items-center justify-between py-2 cursor-default">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-600">Session Aktif</span>
+                    </div>
+                    <button 
+                      className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const response = await fetch('/api/auth/refresh', {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                          if (response.ok) {
+                            const data = await response.json();
+                            if (data.token) {
+                              localStorage.setItem('token', data.token);
+                              if (window.dispatchTokenUpdate) {
+                                window.dispatchTokenUpdate(data.token);
+                              }
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Refresh failed:', error);
+                        }
+                      }}
+                    >
+                      Refresh
+                    </button>
+                  </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator />
                   {/* Stop Impersonating option */}
                   {isImpersonating && (
@@ -403,7 +383,7 @@ const NavigationBar = () => {
                       to={item.href}
                       className={cn(
                         "flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium",
-                        isActive(item.href)
+                        isActivePath(item.href)
                           ? "bg-green-100 text-green-700"
                           : "text-gray-600 hover:text-green-700 hover:bg-green-50"
                       )}
@@ -691,7 +671,7 @@ const NavigationBar = () => {
             <div className="flex items-center">
               <UserCheck className="w-4 h-4 text-green-600 mr-2" />
               <span className="text-sm text-green-700">
-                Sekarang Anda mengakses sistem sebagai: <strong>{originalUser?.full_name}</strong>
+                Sekarang Anda mengakses sistem sebagai: <strong>{user?.full_name}</strong>
               </span>
             </div>
           </div>

@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, FileText, User, Calendar, MapPin, CheckCircle, XCircle, Send, ChevronDown } from 'lucide-react';
+import { ArrowLeft, FileText, User, Calendar, MapPin, CheckCircle, XCircle, Send, ChevronDown, Loader2 } from 'lucide-react';
+import { useFormSubmissionProtection } from '@/hooks/useDoubleClickProtection';
+import { SubmitButton } from '@/components/ui/protected-button';
+import { PageHeader } from '@/components/PageHeader';
 import AdminWilayahFileUpload from '@/components/AdminWilayahFileUpload';
 import UploadProgressTracker from '@/components/UploadProgressTracker';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +30,7 @@ const AdminWilayahUploadPage: React.FC = () => {
   const [pengajuan, setPengajuan] = useState<PengajuanDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { submitForm, isSubmitting } = useFormSubmissionProtection();
   const [availableJobTypes, setAvailableJobTypes] = useState<string[]>([]);
   const [selectedJobType, setSelectedJobType] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<{ required: number; total: number; isComplete: boolean }>({ required: 0, total: 0, isComplete: false });
@@ -155,13 +159,20 @@ const AdminWilayahUploadPage: React.FC = () => {
 
   const submitToSuperadmin = async () => {
     if (!token || !pengajuanId) return;
-    setSubmitting(true);
-    try {
-      await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/submit-to-superadmin`, {}, token);
-      await fetchDetail();
-    } finally {
-      setSubmitting(false);
-    }
+    
+    submitForm(
+      async () => {
+        await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/submit-to-superadmin`, {}, token);
+        await fetchDetail();
+      },
+      () => {
+        // onSuccess - already handled above
+      },
+      (error) => {
+        // onError - you can add error handling here if needed
+        console.error('Error submitting to superadmin:', error);
+      }
+    );
   };
 
   if (loading) {
@@ -201,29 +212,25 @@ const AdminWilayahUploadPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/admin-wilayah/dashboard')}
-              className="border-green-200 text-green-700 hover:bg-green-50"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kembali
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Upload File Admin Wilayah</h1>
-              <p className="text-gray-600 mt-1">
-                Upload file tambahan untuk pengajuan mutasi pegawai
-              </p>
+        {/* Header with Breadcrumb */}
+        <PageHeader
+          title="Upload File Admin Wilayah"
+          subtitle="Upload file tambahan untuk pengajuan mutasi pegawai"
+          actions={
+            <div className="flex items-center gap-2">
+              <Badge className="bg-green-100 text-green-800">Admin Wilayah</Badge>
+              {getStatusBadge(pengajuan.status, pengajuan)}
+              <Button
+                variant="outline"
+                onClick={() => navigate('/admin-wilayah/dashboard')}
+                className="border-green-200 text-green-700 hover:bg-green-50"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Kembali
+              </Button>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge className="bg-green-100 text-green-800">Admin Wilayah</Badge>
-            {getStatusBadge(pengajuan.status, pengajuan)}
-          </div>
-        </div>
+          }
+        />
 
         {/* Pengajuan Info */}
         <Card className="border-green-200 bg-green-50">
@@ -327,10 +334,15 @@ const AdminWilayahUploadPage: React.FC = () => {
           {(pengajuan.status === 'approved' || pengajuan.status === 'submitted') && (
             <>
               <span className="text-sm text-gray-600 mr-2">{uploadProgress.required}/{uploadProgress.total} berkas wajib</span>
-              <Button onClick={submitToSuperadmin} disabled={submitting || pengajuan.status === 'submitted' || (uploadProgress.required < uploadProgress.total)} className="bg-green-600 hover:bg-green-700 text-white">
-              <Send className="h-4 w-4 mr-2" />
-              {pengajuan.status === 'submitted' ? 'Sudah Dikirim' : 'Submit ke Superadmin'}
-              </Button>
+              <SubmitButton 
+                onClick={submitToSuperadmin} 
+                className="bg-green-600 hover:bg-green-700 text-white"
+                isProcessing={isSubmitting || pengajuan.status === 'submitted' || (uploadProgress.required < uploadProgress.total)}
+                processingText="Mengirim..."
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {pengajuan.status === 'submitted' ? 'Sudah Dikirim' : 'Submit ke Superadmin'}
+              </SubmitButton>
             </>
           )}
         </div>

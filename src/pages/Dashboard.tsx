@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import * as XLSX from 'xlsx';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/PageHeader';
+import { showSuccess, showError, showSaveSuccess, showSaveError } from '@/lib/messageUtils';
 
 const Dashboard = () => {
   const { user, token, loading } = useAuth();
@@ -22,6 +24,7 @@ const Dashboard = () => {
   // Rekap (Superadmin & Admin Wilayah scope-aware via backend)
   const [rekapAggregation, setRekapAggregation] = useState<Array<{ kabupaten: string; total: number; statuses: { status: string; count: number }[] }>>([]);
   const [rekapLoading, setRekapLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const filteredLetters = letters.filter(l =>
     l.letter_number?.toLowerCase().includes(search.toLowerCase()) ||
     l.subject?.toLowerCase().includes(search.toLowerCase()) ||
@@ -118,6 +121,7 @@ const Dashboard = () => {
   };
 
   const exportExcel = async () => {
+    setExporting(true);
     try {
       // Ambil semua data pengajuan dengan pagination
       let allPengajuanData: any[] = [];
@@ -188,6 +192,8 @@ const Dashboard = () => {
       XLSX.writeFile(wb, filename);
     } catch (error) {
       console.error('Error exporting Excel:', error);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -269,26 +275,23 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {user?.role === 'user' ? 'Dashboard Admin Pusat' : 'Dashboard'}
-          </h1>
-          <p className="text-gray-600">
-            Selamat datang, {user?.full_name || user?.email || 'User'} - {user?.role || 'Operator'}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2 text-sm text-gray-500">
-          <Calendar className="h-4 w-4" />
-          <span>{new Date().toLocaleDateString('id-ID', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}</span>
-        </div>
-      </div>
+      {/* Header with Breadcrumb */}
+      <PageHeader
+        title={user?.role === 'user' ? 'Dashboard Admin Pusat' : 'Dashboard'}
+        subtitle={`Selamat datang, ${user?.full_name || user?.email || 'User'} - ${user?.role || 'Operator'}`}
+        showBreadcrumb={false}
+        actions={
+          <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <Calendar className="h-4 w-4" />
+            <span>{new Date().toLocaleDateString('id-ID', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}</span>
+          </div>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -350,21 +353,35 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-semibold">Rekap Status per Kabupaten</CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50" onClick={async () => {
-                if (!token) return;
-                try {
-                  setRekapLoading(true);
-                  const res = await apiGet('/api/pengajuan/rekap/aggregate', token);
-                  const agg = res?.data?.aggregation || res?.aggregation || [];
-                  setRekapAggregation(Array.isArray(agg) ? agg : []);
-                } finally {
-                  setRekapLoading(false);
-                }
-              }}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${rekapLoading ? 'animate-spin' : ''}`} /> Refresh
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-green-200 text-green-700 hover:bg-green-50" 
+                disabled={rekapLoading}
+                onClick={async () => {
+                  if (!token) return;
+                  try {
+                    setRekapLoading(true);
+                    const res = await apiGet('/api/pengajuan/rekap/aggregate', token);
+                    const agg = res?.data?.aggregation || res?.aggregation || [];
+                    setRekapAggregation(Array.isArray(agg) ? agg : []);
+                  } finally {
+                    setRekapLoading(false);
+                  }
+                }}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${rekapLoading ? 'animate-spin' : ''}`} /> 
+                {rekapLoading ? 'Loading...' : 'Refresh'}
               </Button>
-              <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50" onClick={exportExcel}>
-                <Download className="h-4 w-4 mr-2" /> Export Excel
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-green-200 text-green-700 hover:bg-green-50" 
+                disabled={exporting}
+                onClick={exportExcel}
+              >
+                <Download className="h-4 w-4 mr-2" /> 
+                {exporting ? 'Exporting...' : 'Export Excel'}
               </Button>
             </div>
           </div>

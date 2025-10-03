@@ -11,11 +11,12 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown, FileText, Trash2, FolderOpen, AlertTriangle } from 'lucide-react';
+import { Building, Users, Settings as SettingsIcon, Save, Upload, Download, Clipboard, Check, Plus, Edit, Crown, FileText, Trash2, FolderOpen, AlertTriangle, Wrench } from 'lucide-react';
 import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import MaintenanceToggle from '../components/MaintenanceToggle';
 
 const CopyableText: React.FC<{ text: string; label?: string; className?: string }> = ({ text, label = 'Teks', className }) => {
   const [copied, setCopied] = useState(false);
@@ -1233,7 +1234,7 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="office" className="space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
           <TabsTrigger value="office" className="flex items-center space-x-2">
             <Building className="h-4 w-4" />
             <span>Kantor</span>
@@ -1254,6 +1255,12 @@ const Settings = () => {
             <Users className="h-4 w-4" />
             <span>Pegawai</span>
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="maintenance" className="flex items-center space-x-2">
+              <Wrench className="h-4 w-4" />
+              <span>Maintenance</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="system" className="flex items-center space-x-2">
             <SettingsIcon className="h-4 w-4" />
             <span>Sistem</span>
@@ -1583,6 +1590,12 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="maintenance">
+            <MaintenanceToggle />
+          </TabsContent>
+        )}
 
         <TabsContent value="system">
           <Card>

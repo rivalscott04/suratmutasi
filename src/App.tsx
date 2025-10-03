@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-route
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
+import SessionManager from "@/components/SessionManager";
 import { Lock } from 'lucide-react';
 
 // Lazy load all pages for code splitting
@@ -28,6 +29,7 @@ const JobTypeConfiguration = lazy(() => import("./pages/JobTypeConfiguration"));
 const AdminWilayahDashboard = lazy(() => import("./pages/AdminWilayahDashboard"));
 const AdminWilayahUploadPage = lazy(() => import("./pages/AdminWilayahUploadPage"));
 const SKForm = lazy(() => import("./components/SKForm"));
+const MaintenancePage = lazy(() => import("./pages/MaintenancePage"));
 
 // Loading component for Suspense fallback
 const PageLoading = () => (
@@ -108,6 +110,21 @@ const AdminWilayahRoute = ({ children }: { children: React.ReactNode }) => {
   return <AppLayout>{children}</AppLayout>;
 };
 
+const MaintenanceRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, isMaintenanceMode } = useAuth();
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  // If maintenance mode is active and user is not superadmin, show maintenance page
+  if (isMaintenanceMode && (!user || user.role !== 'admin' || user.office_id !== null)) {
+    return <MaintenancePage />;
+  }
+  
+  return <>{children}</>;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -117,123 +134,157 @@ const AppRoutes = () => {
         </Suspense>
       } />
       <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageLoading />}>
-            <Dashboard />
-          </Suspense>
-        </ProtectedRoute>
+        <MaintenanceRoute>
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoading />}>
+              <Dashboard />
+            </Suspense>
+          </ProtectedRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/generator" element={
-        <AdminOperatorRoute>
-          <Suspense fallback={<PageLoading />}>
-            <TemplateSelection />
-          </Suspense>
-        </AdminOperatorRoute>
+        <MaintenanceRoute>
+          <AdminOperatorRoute>
+            <Suspense fallback={<PageLoading />}>
+              <TemplateSelection />
+            </Suspense>
+          </AdminOperatorRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/generator/create/:templateId" element={
-        <AdminOperatorRoute>
-          <Suspense fallback={<PageLoading />}>
-            <TemplateForm />
-          </Suspense>
-        </AdminOperatorRoute>
+        <MaintenanceRoute>
+          <AdminOperatorRoute>
+            <Suspense fallback={<PageLoading />}>
+              <TemplateForm />
+            </Suspense>
+          </AdminOperatorRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/generator/sk" element={
-        <AdminOrUserRoute>
-          <Suspense fallback={<PageLoading />}>
-            <SKForm />
-          </Suspense>
-        </AdminOrUserRoute>
+        <MaintenanceRoute>
+          <AdminOrUserRoute>
+            <Suspense fallback={<PageLoading />}>
+              <SKForm />
+            </Suspense>
+          </AdminOrUserRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/users" element={
-        <AdminRoute>
-          <Suspense fallback={<PageLoading />}>
-            <Users />
-          </Suspense>
-        </AdminRoute>
+        <MaintenanceRoute>
+          <AdminRoute>
+            <Suspense fallback={<PageLoading />}>
+              <Users />
+            </Suspense>
+          </AdminRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/settings" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageLoading />}>
-            <Settings />
-          </Suspense>
-        </ProtectedRoute>
+        <MaintenanceRoute>
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoading />}>
+              <Settings />
+            </Suspense>
+          </ProtectedRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/letters/:id" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageLoading />}>
-            <LetterDetail />
-          </Suspense>
-        </ProtectedRoute>
+        <MaintenanceRoute>
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoading />}>
+              <LetterDetail />
+            </Suspense>
+          </ProtectedRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/letters" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageLoading />}>
-            <Letters />
-          </Suspense>
-        </ProtectedRoute>
+        <MaintenanceRoute>
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoading />}>
+              <Letters />
+            </Suspense>
+          </ProtectedRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/letters/:id/preview" element={
-        <Suspense fallback={<PageLoading />}>
-          <LetterPrintPreview />
-        </Suspense>
+        <MaintenanceRoute>
+          <Suspense fallback={<PageLoading />}>
+            <LetterPrintPreview />
+          </Suspense>
+        </MaintenanceRoute>
       } />
       <Route path="/pengajuan" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageLoading />}>
-            <PengajuanIndex />
-          </Suspense>
-        </ProtectedRoute>
+        <MaintenanceRoute>
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoading />}>
+              <PengajuanIndex />
+            </Suspense>
+          </ProtectedRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/pengajuan/select" element={
-        <AdminOperatorRoute>
-          <Suspense fallback={<PageLoading />}>
-            <PengajuanSelect />
-          </Suspense>
-        </AdminOperatorRoute>
+        <MaintenanceRoute>
+          <AdminOperatorRoute>
+            <Suspense fallback={<PageLoading />}>
+              <PengajuanSelect />
+            </Suspense>
+          </AdminOperatorRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/pengajuan/:pengajuanId" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageLoading />}>
-            <PengajuanDetail />
-          </Suspense>
-        </ProtectedRoute>
+        <MaintenanceRoute>
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoading />}>
+              <PengajuanDetail />
+            </Suspense>
+          </ProtectedRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/pengajuan/:pengajuanId/upload" element={
-        <AdminOperatorRoute>
-          <Suspense fallback={<PageLoading />}>
-            <PengajuanFileUpload />
-          </Suspense>
-        </AdminOperatorRoute>
+        <MaintenanceRoute>
+          <AdminOperatorRoute>
+            <Suspense fallback={<PageLoading />}>
+              <PengajuanFileUpload />
+            </Suspense>
+          </AdminOperatorRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/pengajuan/:pengajuanId/edit" element={
-        <AdminOperatorRoute>
-          <Suspense fallback={<PageLoading />}>
-            <PengajuanEdit />
-          </Suspense>
-        </AdminOperatorRoute>
+        <MaintenanceRoute>
+          <AdminOperatorRoute>
+            <Suspense fallback={<PageLoading />}>
+              <PengajuanEdit />
+            </Suspense>
+          </AdminOperatorRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/job-type-configuration" element={
-        <AdminRoute>
-          <Suspense fallback={<PageLoading />}>
-            <JobTypeConfiguration />
-          </Suspense>
-        </AdminRoute>
+        <MaintenanceRoute>
+          <AdminRoute>
+            <Suspense fallback={<PageLoading />}>
+              <JobTypeConfiguration />
+            </Suspense>
+          </AdminRoute>
+        </MaintenanceRoute>
       } />
       
       {/* Admin Wilayah Routes */}
       <Route path="/admin-wilayah/dashboard" element={
-        <AdminWilayahRoute>
-          <Suspense fallback={<PageLoading />}>
-            <AdminWilayahDashboard />
-          </Suspense>
-        </AdminWilayahRoute>
+        <MaintenanceRoute>
+          <AdminWilayahRoute>
+            <Suspense fallback={<PageLoading />}>
+              <AdminWilayahDashboard />
+            </Suspense>
+          </AdminWilayahRoute>
+        </MaintenanceRoute>
       } />
       <Route path="/admin-wilayah/upload/:pengajuanId" element={
-        <AdminWilayahRoute>
-          <Suspense fallback={<PageLoading />}>
-            <AdminWilayahUploadPage />
-          </Suspense>
-        </AdminWilayahRoute>
+        <MaintenanceRoute>
+          <AdminWilayahRoute>
+            <Suspense fallback={<PageLoading />}>
+              <AdminWilayahUploadPage />
+            </Suspense>
+          </AdminWilayahRoute>
+        </MaintenanceRoute>
       } />
       
       
@@ -385,7 +436,9 @@ const AppInner = () => {
           </div>
         )}
         <AuthProvider>
-          <AppRoutes />
+          <SessionManager>
+            <AppRoutes />
+          </SessionManager>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
