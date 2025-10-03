@@ -45,7 +45,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Dynamic Island state - default hidden
   const [showWelcomeIsland, setShowWelcomeIsland] = useState(false);
-  const [hasShownWelcome, setHasShownWelcome] = useState(false);
+  const [hasShownWelcome, setHasShownWelcome] = useState(() => {
+    // Check localStorage for previous welcome display in this session
+    return localStorage.getItem('hasShownWelcome') === 'true';
+  });
   const [isHiding, setIsHiding] = useState(false);
 
   // Setup window functions untuk refresh token
@@ -235,6 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🎬 Starting show animation...');
       setShowWelcomeIsland(true);
       setHasShownWelcome(true);
+      localStorage.setItem('hasShownWelcome', 'true');
       
       // Start hide animation after 3 seconds
       console.log('⏱️ Setting timer for hide animation in 3 seconds...');
@@ -321,6 +325,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('token');
     localStorage.removeItem('originalToken');
     localStorage.removeItem('originalUser');
+    localStorage.removeItem('hasShownWelcome'); // Clear welcome flag for next session
   };
 
   const refreshUser = async () => {
