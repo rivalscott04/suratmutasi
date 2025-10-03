@@ -214,11 +214,11 @@ const Dashboard = () => {
       color: 'text-green-600'
     },
     {
-      title: 'Pengajuan Aktif',
-      value: pengajuan.filter(p => p.status === 'active' || p.status === 'pending').length,
+      title: 'Pengajuan Terbaru',
+      value: pengajuan.filter(p => p.status === 'submitted' && p.files?.some(f => f.file_category === 'admin_wilayah')).length,
       change: calculatePercentageChange(
-        pengajuan.filter(p => p.status === 'active' || p.status === 'pending').length,
-        lastMonthPengajuan.filter(p => p.status === 'active' || p.status === 'pending').length
+        pengajuan.filter(p => p.status === 'submitted' && p.files?.some(f => f.file_category === 'admin_wilayah')).length,
+        lastMonthPengajuan.filter(p => p.status === 'submitted' && p.files?.some(f => f.file_category === 'admin_wilayah')).length
       ),
       icon: Users,
       color: 'text-purple-600'
