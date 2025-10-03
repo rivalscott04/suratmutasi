@@ -223,7 +223,7 @@ const PengajuanEdit: React.FC = () => {
       <div className="container mx-auto p-6">
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            <Loader2 className="h-8 w-8 animate-spin mr-2 text-green-600" />
             <span>Memuat data pengajuan...</span>
           </CardContent>
         </Card>
@@ -416,7 +416,7 @@ const PengajuanEdit: React.FC = () => {
           >
             {submitting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 mr-2 animate-spin text-green-600" />
                 Menyimpan...
               </>
             ) : (
@@ -447,7 +447,7 @@ const PengajuanEdit: React.FC = () => {
             >
               {submitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin text-green-600" />
                   Menyimpan...
                 </>
               ) : (

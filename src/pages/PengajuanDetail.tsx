@@ -1112,7 +1112,7 @@ const PengajuanDetail: React.FC = () => {
       <div className="container mx-auto p-6">
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            <Loader2 className="h-8 w-8 animate-spin mr-2 text-green-600" />
             <span>Memuat detail pengajuan...</span>
           </CardContent>
         </Card>
@@ -1545,7 +1545,7 @@ const PengajuanDetail: React.FC = () => {
                           {isAdmin && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved') ? (
                             <div className="flex items-center gap-3 mr-3">
                               {verifyingFile === file.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                                <Loader2 className="h-4 w-4 animate-spin text-green-600" />
                               ) : (
                                 <div className="flex items-center gap-3 transition-all duration-500 ease-in-out">
                                   <div className="relative transform transition-all duration-500 ease-in-out hover:scale-105 active:scale-95">
@@ -1851,7 +1851,7 @@ const PengajuanDetail: React.FC = () => {
                   >
                     {submitting ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin text-green-600" />
                         Memproses...
                       </>
                     ) : (

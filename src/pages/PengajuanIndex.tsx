@@ -713,7 +713,7 @@ const PengajuanIndex: React.FC = () => {
           <div className="border rounded-lg overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin mr-2" />
+                <Loader2 className="h-8 w-8 animate-spin mr-2 text-green-600" />
                 <span>Memuat data pengajuan...</span>
               </div>
             ) : pengajuanList.length === 0 && totalItems === 0 ? (
@@ -1006,7 +1006,7 @@ const PengajuanIndex: React.FC = () => {
             >
               {deleting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin text-green-600" />
                   Menghapus...
                 </>
               ) : (

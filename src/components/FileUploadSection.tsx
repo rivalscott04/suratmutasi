@@ -61,7 +61,7 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
       case 'rejected':
         return <XCircle className="h-5 w-5 text-red-600" />;
       case 'pending':
-        return <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />;
+        return <Loader2 className="h-5 w-5 text-green-600 animate-spin" />;
       default:
         return <FileText className="h-5 w-5 text-gray-400" />;
     }
@@ -188,7 +188,7 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
                     >
                       {uploading ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin text-green-600" />
                           Uploading...
                         </>
                       ) : (

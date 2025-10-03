@@ -485,7 +485,7 @@ const NavigationBar = () => {
             <div className="max-h-96 overflow-y-auto border rounded-lg">
               {loadingUsers ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                  <Loader2 className="w-6 h-6 animate-spin mr-2 text-green-600" />
                   <span className="text-sm text-gray-500">Loading users...</span>
                 </div>
               ) : availableUsers.length === 0 ? (

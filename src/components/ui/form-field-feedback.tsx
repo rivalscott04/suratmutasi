@@ -45,7 +45,7 @@ export const FormFieldFeedback: React.FC<FormFieldFeedbackProps> = ({
     
     switch (type) {
       case 'validating':
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+        return <Loader2 className="h-4 w-4 animate-spin text-green-600" />;
       case 'error':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'warning':

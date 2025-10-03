@@ -101,7 +101,7 @@ const PegawaiSelectionList: React.FC = () => {
       <div className="container mx-auto p-6">
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin text-green-600" />
             <span className="ml-2">Memuat data pegawai...</span>
           </CardContent>
         </Card>
@@ -199,7 +199,7 @@ const PegawaiSelectionList: React.FC = () => {
               >
                 {processing ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-green-600" />
                     Memproses...
                   </>
                 ) : (

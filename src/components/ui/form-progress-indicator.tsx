@@ -34,7 +34,7 @@ export const FormProgressIndicator: React.FC<FormProgressIndicatorProps> = ({
     }
     
     if (index === currentStep && isSubmitting) {
-      return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+      return <Loader2 className="h-4 w-4 animate-spin text-green-600" />;
     }
     
     return (
@@ -98,7 +98,7 @@ export const FormProgressIndicator: React.FC<FormProgressIndicatorProps> = ({
       <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
         <div className="flex items-center gap-2">
           {isSubmitting ? (
-            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+            <Loader2 className="h-4 w-4 animate-spin text-green-600" />
           ) : hasError ? (
             <AlertCircle className="h-4 w-4 text-red-500" />
           ) : (
@@ -130,7 +130,7 @@ export const SimpleProgressIndicator: React.FC<{
 }> = ({ isSubmitting, hasError, message, className }) => {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      {isSubmitting && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+      {isSubmitting && <Loader2 className="h-4 w-4 animate-spin text-green-600" />}
       {hasError && <AlertCircle className="h-4 w-4 text-red-500" />}
       {!isSubmitting && !hasError && <CheckCircle className="h-4 w-4 text-green-500" />}
       

@@ -83,7 +83,7 @@ export const ProtectedButton: React.FC<ProtectedButtonProps> = ({
     };
   }, []);
 
-  const defaultProcessingIcon = <Loader2 className="h-4 w-4 animate-spin" />;
+  const defaultProcessingIcon = <Loader2 className="h-4 w-4 animate-spin text-green-600" />;
 
   return (
     <Button

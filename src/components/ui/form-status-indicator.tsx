@@ -57,7 +57,7 @@ export const FormStatusIndicator: React.FC<FormStatusIndicatorProps> = ({
   };
 
   const getStatusIcon = () => {
-    if (isSubmitting) return <Loader2 className="h-4 w-4 animate-spin" />;
+    if (isSubmitting) return <Loader2 className="h-4 w-4 animate-spin text-green-600" />;
     if (isValidating) return <Clock className="h-4 w-4 animate-pulse" />;
     if (hasErrors) return <AlertCircle className="h-4 w-4" />;
     if (hasWarnings) return <AlertTriangle className="h-4 w-4" />;

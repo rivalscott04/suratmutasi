@@ -400,7 +400,7 @@ const Users = () => {
           {/* Users Table */}
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              <Loader2 className="w-6 h-6 animate-spin mr-2 text-green-600" />
               <span>Loading users...</span>
             </div>
           ) : (
@@ -588,7 +588,7 @@ const Users = () => {
               disabled={isSubmitting || !formData.email || !formData.full_name || !formData.password}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2 text-white" /> : null}
               Tambah User
             </Button>
           </DialogFooter>
@@ -717,7 +717,7 @@ const Users = () => {
               disabled={isSubmitting || !formData.email || !formData.full_name}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2 text-white" /> : null}
               Update User
             </Button>
           </DialogFooter>
@@ -741,7 +741,7 @@ const Users = () => {
               disabled={isSubmitting}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2 text-white" /> : null}
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
