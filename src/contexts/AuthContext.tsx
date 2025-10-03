@@ -61,13 +61,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // Check maintenance status whenever user changes
+  useEffect(() => {
+    if (user) {
+      checkMaintenanceStatus();
+    }
+  }, [user]);
+
   // Check maintenance status
   const checkMaintenanceStatus = async () => {
     try {
       const response = await fetch('/api/maintenance/status');
       const data = await response.json();
-      setIsMaintenanceMode(data.isMaintenanceMode || false);
-      setMaintenanceMessage(data.message || '');
+      
+      // Check if user is superadmin (can bypass maintenance)
+      const currentUser = user || JSON.parse(localStorage.getItem('user') || 'null');
+      const isSuperAdmin = currentUser && currentUser.role === 'admin' && currentUser.office_id === null;
+      
+      // If user is superadmin, don't set maintenance mode
+      if (isSuperAdmin) {
+        setIsMaintenanceMode(false);
+        setMaintenanceMessage('');
+      } else {
+        setIsMaintenanceMode(data.isMaintenanceMode || false);
+        setMaintenanceMessage(data.message || '');
+      }
     } catch (error) {
       console.error('Error checking maintenance status:', error);
       // Set default values if API fails

@@ -124,6 +124,7 @@ const Users = () => {
   // Copy password to clipboard
   const copyPasswordToClipboard = async (password: string) => {
     try {
+      // Try modern clipboard API first
       await navigator.clipboard.writeText(password);
       setCopiedPassword(true);
       toast({
@@ -132,11 +133,38 @@ const Users = () => {
       });
       setTimeout(() => setCopiedPassword(false), 2000);
     } catch (err) {
-      toast({
-        title: "Gagal menyalin",
-        description: "Tidak dapat menyalin password ke clipboard",
-        variant: "destructive",
-      });
+      // Fallback to legacy method
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = password;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        textarea.style.left = '-999999px';
+        textarea.style.top = '-999999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        if (successful) {
+          setCopiedPassword(true);
+          toast({
+            title: "Password disalin",
+            description: "Password telah disalin ke clipboard",
+          });
+          setTimeout(() => setCopiedPassword(false), 2000);
+        } else {
+          throw new Error('execCommand failed');
+        }
+      } catch (fallbackErr) {
+        toast({
+          title: "Gagal menyalin",
+          description: "Tidak dapat menyalin password ke clipboard",
+          variant: "destructive",
+        });
+      }
     }
   };
 
