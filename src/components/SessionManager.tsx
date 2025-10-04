@@ -338,6 +338,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ children }) => {
                   onClick={handleRefresh}
                   disabled={sessionState.isRefreshing}
                   size="sm"
+                  variant="outline"
                   className="w-full"
                 >
                   {sessionState.isRefreshing ? (
