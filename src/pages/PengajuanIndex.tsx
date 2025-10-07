@@ -237,7 +237,7 @@ const PengajuanIndex: React.FC = () => {
       draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800 hover:bg-gray-200', icon: Clock },
       submitted: { 
         label: isSubmittedAfterAdminWilayah(status, pengajuan) ? 'Diajukan Admin Wilayah' : 'Diajukan', 
-        className: 'bg-blue-100 text-blue-800 hover:bg-blue-200', 
+        className: isSubmittedAfterAdminWilayah(status, pengajuan) ? 'bg-blue-200 text-blue-800 hover:bg-blue-300' : 'bg-blue-100 text-blue-800 hover:bg-blue-200', 
         icon: FileText 
       },
       approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800 hover:bg-green-200', icon: CheckCircle },

@@ -77,7 +77,7 @@ interface PengajuanData {
   jenis_jabatan: string;
   jabatan_id?: number;
   total_dokumen: number;
-status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'final_approved' | 'final_rejected';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'final_approved' | 'final_rejected';
   catatan?: string;
   rejection_reason?: string;
   rejected_by?: string;
@@ -1759,9 +1759,19 @@ const PengajuanDetail: React.FC = () => {
                    <div className="flex items-start gap-4">
                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                      <div className="flex-1 space-y-1">
-                       <p className="font-medium">Diajukan ke Superadmin</p>
+                       <p className="font-medium">
+                         {pengajuan.files?.some(f => f.file_category === 'admin_wilayah') 
+                           ? 'Diajukan Admin Wilayah ke Superadmin' 
+                           : 'Diajukan ke Superadmin'
+                         }
+                       </p>
                        <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
-                       <p className="text-xs text-gray-500">Admin Wilayah mengajukan ke Superadmin untuk review final</p>
+                       <p className="text-xs text-gray-500">
+                         {pengajuan.files?.some(f => f.file_category === 'admin_wilayah')
+                           ? 'Admin Wilayah mengajukan ke Superadmin untuk review final'
+                           : 'Pengajuan diajukan ke Superadmin untuk review'
+                         }
+                       </p>
                      </div>
                    </div>
                  )}
