@@ -143,11 +143,21 @@ export const apiPut = (url: string, data?: any, token?: string, headers?: any) =
 export const apiDelete = (url: string, token?: string, headers?: any) => apiFetch('DELETE', url, { token, headers });
 
 // API function untuk replace file
-export const replaceFile = async (pengajuanId: string, fileId: string, file: File, token: string, userRole: string) => {
+export const replaceFile = async (pengajuanId: string, fileId: string, file: File, token: string, userRole: string, fileCategory?: string) => {
   const formData = new FormData();
   formData.append('file', file);
   
-  const baseUrl = userRole === 'admin_wilayah' ? '/api/admin-wilayah' : '/api';
+  // Logic untuk menentukan endpoint berdasarkan user role dan file category
+  let baseUrl = '/api';
+  
+  if (userRole === 'admin_wilayah') {
+    // Admin wilayah selalu menggunakan endpoint admin-wilayah
+    baseUrl = '/api/admin-wilayah';
+  } else if (userRole === 'admin') {
+    // Super admin menggunakan endpoint biasa untuk semua file (termasuk admin wilayah)
+    baseUrl = '/api';
+  }
+  
   const url = `${baseUrl}/pengajuan/${pengajuanId}/files/${fileId}/replace`;
   const fullUrl = getBaseUrl() + url;
   
@@ -156,6 +166,7 @@ export const replaceFile = async (pengajuanId: string, fileId: string, file: Fil
     fileId,
     fileName: file.name,
     userRole,
+    fileCategory,
     baseUrl,
     url,
     fullUrl,

@@ -903,23 +903,24 @@ const PengajuanDetail: React.FC = () => {
     input.onchange = (e) => {
       const newFile = (e.target as HTMLInputElement).files?.[0];
       if (newFile) {
-        uploadFilePengganti(file.id, newFile);
+        uploadFilePengganti(file.id, newFile, file.file_category);
       }
     };
     input.click();
   };
 
-  const uploadFilePengganti = async (fileId: string, newFile: File) => {
+  const uploadFilePengganti = async (fileId: string, newFile: File, fileCategory?: string) => {
     try {
       console.log('🔍 Debug replace file:', {
         pengajuanId,
         fileId,
         fileName: newFile.name,
+        fileCategory,
         userRole: user?.role,
         token: token ? 'exists' : 'missing'
       });
       
-      const result = await replaceFile(pengajuanId!, fileId, newFile, token!, user?.role || '');
+      const result = await replaceFile(pengajuanId!, fileId, newFile, token!, user?.role || '', fileCategory);
       
       toast({
         title: "Berhasil",
