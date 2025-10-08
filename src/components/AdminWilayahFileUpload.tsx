@@ -73,6 +73,10 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   const { submitForm, isSubmitting } = useFormSubmissionProtection();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Drag and drop state
+  const [dragOver, setDragOver] = useState<string | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
 
   // Fetch admin wilayah file configuration
   const fetchFileConfigs = async () => {
@@ -526,6 +530,66 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     if (input) input.click();
   };
 
+  // Drag and drop handlers
+  const handleDragEnter = (fileType: string, event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragOver(fileType);
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = (fileType: string, event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    // Only clear drag state if leaving the drop zone entirely
+    if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+      setDragOver(null);
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = (fileType: string, event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      // Validate file type
+      const allowedTypes = ['.pdf', '.doc', '.docx'];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      if (!allowedTypes.includes(fileExtension)) {
+        showError('INVALID_FILE_TYPE', 'Hanya file PDF, DOC, dan DOCX yang diizinkan');
+        setDragOver(null);
+        setIsDragActive(false);
+        return;
+      }
+      
+      // Validate file size
+      const maxSize = fileType === 'skp_2_tahun_terakhir' ? 1.6 * 1024 * 1024 : 500 * 1024; // 1.6MB or 500KB
+      if (file.size > maxSize) {
+        const maxSizeText = fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB';
+        showError('FILE_TOO_LARGE', `Ukuran file maksimal ${maxSizeText}`);
+        setDragOver(null);
+        setIsDragActive(false);
+        return;
+      }
+      
+      // Upload the file
+      handleFileUpload(fileType, file);
+    }
+    
+    setDragOver(null);
+    setIsDragActive(false);
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -580,7 +644,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
             })()}
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {requiredFiles.map((fileConfig) => {
             console.log('🔧 Rendering fileConfig:', fileConfig);
             const status = getFileStatus(fileConfig.file_type);
@@ -588,50 +652,65 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
             
             return (
               <Card key={fileConfig.id} className="border border-gray-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                                              <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-medium text-gray-900">{getDescriptiveLabel(fileConfig)}</h4>
-                          {fileConfig.is_required && (
-                            <Badge variant="destructive" className="text-[10px] py-0 px-1.5">Wajib</Badge>
-                          )}
-                        </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        Upload file PDF (maks. {fileConfig.file_type === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
+                <CardContent className="p-3">
+                  <div className="flex flex-col gap-3">
+                    {/* Title and Status */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-gray-900 text-sm leading-tight" title={getDescriptiveLabel(fileConfig)}>
+                          {getDescriptiveLabel(fileConfig)}
+                        </h4>
+                        {fileConfig.is_required && (
+                          <Badge variant="destructive" className="text-[10px] py-0 px-1.5">Wajib</Badge>
+                        )}
+                      </div>
+                      
+                      {/* Status Badge */}
+                      {status === 'uploaded' ? (
+                        <Badge className="bg-green-600 text-white flex items-center gap-1 text-xs">
+                          <CheckCircle className="h-3 w-3" />
+                          Uploaded
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                          <FileText className="h-3 w-3" />
+                          Pending
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* File info and upload area */}
+                    <div className="space-y-2">
+                      {/* File requirements */}
+                      <p className="text-xs text-gray-500">
+                        PDF (maks. {fileConfig.file_type === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
                       </p>
                       
-                      {/* Individual File Upload Progress */}
+                      {/* Upload Progress */}
                       {uploading[fileConfig.file_type] && (
-                        <FileUploadProgress
-                          isUploading={uploading[fileConfig.file_type]}
-                          progress={uploadProgress[fileConfig.file_type] || 0}
-                          fileName={fileConfig.display_name}
-                          className="mt-2"
-                        />
+                        <div className="flex items-center gap-2 text-xs">
+                          <div className="animate-spin h-3 w-3 border border-green-600 border-t-transparent rounded-full" />
+                          <span className="text-green-600">Uploading... {uploadProgress[fileConfig.file_type] || 0}%</span>
+                        </div>
                       )}
                       
+                      {/* Uploaded File Info */}
                       {status === 'uploaded' && uploadedFile && (
-                        <div className="mt-2">
-                          <div className="flex items-center gap-2 text-green-600">
-                            <CheckCircle className="h-4 w-4" />
-                            <span className="text-sm font-medium truncate max-w-xs">{uploadedFile.file_name}</span>
-                            <span className="text-sm text-gray-500">({formatFileSize(uploadedFile.file_size)})</span>
-                            <span className="text-sm text-gray-500">• {formatRelativeTime(uploadedFile.created_at)}</span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1 text-green-600 text-xs">
+                            <CheckCircle className="h-3 w-3" />
+                            <span className="truncate">{uploadedFile.file_name}</span>
+                            <span className="text-gray-500">({formatFileSize(uploadedFile.file_size)})</span>
                           </div>
-                          {/* Single action group (no duplicates) */}
-                          <div className="mt-2 flex gap-2 flex-wrap">
-                            <Button size="sm" variant="outline" onClick={() => handlePreview(uploadedFile)} className="flex items-center gap-1">
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="outline" onClick={() => handlePreview(uploadedFile)} className="h-6 px-2 text-xs">
                               <Eye className="h-3 w-3" />
-                              Preview
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleDownload(uploadedFile)} className="flex items-center gap-1">
+                            <Button size="sm" variant="outline" onClick={() => handleDownload(uploadedFile)} className="h-6 px-2 text-xs">
                               <Download className="h-3 w-3" />
-                              Download
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => triggerReplace(fileConfig.file_type)} className="flex items-center gap-1">
+                            <Button size="sm" variant="outline" onClick={() => triggerReplace(fileConfig.file_type)} className="h-6 px-2 text-xs">
                               <Edit className="h-3 w-3" />
-                              Ganti File
                             </Button>
                             <input
                               id={`replace-${toSafeId(fileConfig.file_type)}`}
@@ -642,7 +721,6 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                                 const file = e.target.files?.[0];
                                 if (file) {
                                   handleFileUpload(fileConfig.file_type, file);
-                                  // Reset file input setelah file dipilih
                                   e.target.value = '';
                                 }
                               }}
@@ -650,60 +728,62 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                           </div>
                         </div>
                       )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {status === 'uploaded' ? (
-                        <Badge className="bg-green-600 text-white flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Uploaded
-                        </Badge>
-                      ) : (
-                        <>
-                          <Badge variant="secondary" className="flex items-center gap-1">
-                            <FileText className="h-3 w-3" />
-                            Pending
-                          </Badge>
-                          <div className="flex gap-1">
-                            <input
-                              type="file"
-                              accept=".pdf,.doc,.docx"
-                              onChange={(e) => {
-                                console.log('📁 File input changed:', e.target.files);
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  console.log('📄 File selected:', file.name, 'fileConfig.file_type:', fileConfig.file_type);
-                                  handleFileUpload(fileConfig.file_type, file);
-                                  // Reset file input setelah file dipilih
-                                  e.target.value = '';
-                                } else {
-                                  console.log('❌ No file selected');
-                                }
-                              }}
-                              className="hidden"
-                              id={`file-${toSafeId(fileConfig.file_type)}`}
-                            />
-                            <label htmlFor={`file-${toSafeId(fileConfig.file_type)}`}
-                              onClick={() => {
-                                const input = document.getElementById(`file-${toSafeId(fileConfig.file_type)}`) as HTMLInputElement | null;
-                                if (input && !input.disabled) input.click();
-                              }}
-                            >
-                              <Button
-                                disabled={uploading[fileConfig.file_type]}
-                                size="sm"
-                                className="h-8 px-3 cursor-pointer bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                {uploading[fileConfig.file_type] ? (
-                                  <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
-                                ) : (
-                                  <Upload className="h-3 w-3 mr-1" />
-                                )}
-                                Pilih File
-                              </Button>
-                            </label>
+                      
+                      {/* Drag and Drop Zone */}
+                      {status !== 'uploaded' && (
+                        <div
+                          className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer w-full h-32 ${
+                            dragOver === fileConfig.file_type
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
+                          } ${uploading[fileConfig.file_type] ? 'pointer-events-none opacity-50' : ''}`}
+                          onDragEnter={(e) => handleDragEnter(fileConfig.file_type, e)}
+                          onDragLeave={(e) => handleDragLeave(fileConfig.file_type, e)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(fileConfig.file_type, e)}
+                          onClick={() => {
+                            const input = document.getElementById(`file-${toSafeId(fileConfig.file_type)}`) as HTMLInputElement | null;
+                            if (input && !input.disabled && !uploading[fileConfig.file_type]) input.click();
+                          }}
+                        >
+                          <div className="flex flex-col items-center justify-center h-full text-center">
+                            {uploading[fileConfig.file_type] ? (
+                              <>
+                                <div className="animate-spin h-6 w-6 border-2 border-green-600 border-t-transparent rounded-full mb-2" />
+                                <p className="text-sm text-green-600 font-medium">Uploading...</p>
+                              </>
+                            ) : dragOver === fileConfig.file_type ? (
+                              <>
+                                <Upload className="h-8 w-8 text-green-500 mb-2" />
+                                <p className="text-sm text-green-600 font-medium">Lepaskan file di sini</p>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-6 w-6 text-gray-400 mb-2" />
+                                <p className="text-xs text-gray-600 leading-tight">Drag & drop file di sini atau klik untuk memilih</p>
+                              </>
+                            )}
                           </div>
-                        </>
+                          
+                          {/* Hidden file input */}
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx"
+                            onChange={(e) => {
+                              console.log('📁 File input changed:', e.target.files);
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                console.log('📄 File selected:', file.name, 'fileConfig.file_type:', fileConfig.file_type);
+                                handleFileUpload(fileConfig.file_type, file);
+                                e.target.value = '';
+                              } else {
+                                console.log('❌ No file selected');
+                              }
+                            }}
+                            className="hidden"
+                            id={`file-${toSafeId(fileConfig.file_type)}`}
+                          />
+                        </div>
                       )}
                     </div>
                   </div>
