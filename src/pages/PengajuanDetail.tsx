@@ -42,6 +42,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import ExpandableCards, { Card as SUExpandableCard } from '@/components/smoothui/ui/ExpandableCards';
 import { apiGet, apiPut, apiDelete, apiPost, replaceFile } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { EditJabatanDialog } from '@/components/EditJabatanDialog';
+import { AuditLogCard } from '@/components/AuditLogCard';
 
 interface PengajuanFile {
   id: string;
@@ -135,6 +137,7 @@ const PengajuanDetail: React.FC = () => {
   const [selectedExpandableCard, setSelectedExpandableCard] = useState<number | null>(null);
   const [verificationNotes, setVerificationNotes] = useState('');
   const [updatingVerification, setUpdatingVerification] = useState(false);
+  const [showEditJabatanDialog, setShowEditJabatanDialog] = useState(false);
   
   // Check if there are admin wilayah files
   const hasAdminWilayahFiles = pengajuan?.files?.some(file => file.file_category === 'admin_wilayah') || false;
@@ -1338,7 +1341,20 @@ const PengajuanDetail: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Jenis Jabatan Target</label>
-                    <Badge variant="outline" className="text-sm">{getJabatanDisplayName(pengajuan.jenis_jabatan)}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-sm">{getJabatanDisplayName(pengajuan.jenis_jabatan)}</Badge>
+                      {isAdmin && pengajuan.status === 'admin_wilayah_approved' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowEditJabatanDialog(true)}
+                          className="h-7 text-xs"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Kabupaten/Kota Asal</label>
@@ -1348,6 +1364,15 @@ const PengajuanDetail: React.FC = () => {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+
+          {/* Audit Log - Only visible for admin */}
+          {isAdmin && (
+            <AuditLogCard
+              pengajuanId={pengajuanId || ''}
+              token={token}
+              isAdmin={isAdmin}
+            />
+          )}
 
           {/* Berkas Kabupaten/Kota */}
           {(user?.role === 'operator' || activeTab === 'KabupatenKota') && (
@@ -2652,11 +2677,31 @@ const PengajuanDetail: React.FC = () => {
              </AlertDialogAction>
            </AlertDialogFooter>
          </AlertDialogContent>
-       </AlertDialog>
+      </AlertDialog>
 
-       
-     </div>
-   );
- };
+      {/* Edit Jabatan Dialog */}
+      {pengajuan && (
+        <EditJabatanDialog
+          open={showEditJabatanDialog}
+          onOpenChange={setShowEditJabatanDialog}
+          pengajuanId={pengajuan.id}
+          currentJabatan={{
+            jabatan_id: pengajuan.jabatan_id,
+            jenis_jabatan: pengajuan.jenis_jabatan
+          }}
+          onSuccess={() => {
+            fetchPengajuanData();
+            toast({
+              title: 'Berhasil!',
+              description: 'Jabatan pengajuan berhasil diubah.',
+            });
+          }}
+          token={token}
+        />
+      )}
+      
+    </div>
+  );
+};
 
  export default PengajuanDetail;
