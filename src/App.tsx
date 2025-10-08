@@ -25,6 +25,7 @@ const PengajuanFileUpload = lazy(() => import("./components/PengajuanFileUpload"
 const PengajuanIndex = lazy(() => import("./pages/PengajuanIndex"));
 const PengajuanDetail = lazy(() => import("./pages/PengajuanDetail"));
 const PengajuanEdit = lazy(() => import("./pages/PengajuanEdit"));
+const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
 const JobTypeConfiguration = lazy(() => import("./pages/JobTypeConfiguration"));
 const AdminWilayahDashboard = lazy(() => import("./pages/AdminWilayahDashboard"));
 const AdminWilayahUploadPage = lazy(() => import("./pages/AdminWilayahUploadPage"));
@@ -255,6 +256,15 @@ const AppRoutes = () => {
               <PengajuanEdit />
             </Suspense>
           </AdminOperatorRoute>
+        </MaintenanceRoute>
+      } />
+      <Route path="/pengajuan/:pengajuanId/audit-log" element={
+        <MaintenanceRoute>
+          <AdminRoute>
+            <Suspense fallback={<PageLoading />}>
+              <AuditLogPage />
+            </Suspense>
+          </AdminRoute>
         </MaintenanceRoute>
       } />
       <Route path="/job-type-configuration" element={

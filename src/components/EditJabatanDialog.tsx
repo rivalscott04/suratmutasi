@@ -18,7 +18,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Loader2, AlertCircle, CheckCircle, FileText, XCircle } from 'lucide-react';
 import { apiGet, apiPut } from '@/lib/api';
 
 interface JobType {
@@ -55,6 +56,8 @@ export const EditJabatanDialog: React.FC<EditJabatanDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showFileValidationModal, setShowFileValidationModal] = useState(false);
+  const [fileValidationData, setFileValidationData] = useState<any>(null);
 
   useEffect(() => {
     if (open) {
@@ -114,6 +117,12 @@ export const EditJabatanDialog: React.FC<EditJabatanDialogProps> = ({
       );
 
       if (response.success) {
+        const { file_validation } = response.data;
+        
+        // Always show modal after successful jabatan change
+        setFileValidationData(file_validation);
+        setShowFileValidationModal(true);
+        
         onSuccess();
         onOpenChange(false);
       } else {
@@ -128,6 +137,7 @@ export const EditJabatanDialog: React.FC<EditJabatanDialogProps> = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -208,6 +218,7 @@ export const EditJabatanDialog: React.FC<EditJabatanDialogProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={submitting || !selectedJabatanId || !reason.trim()}
+            className="bg-green-600 hover:bg-green-700 text-white"
           >
             {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Simpan Perubahan
@@ -215,5 +226,96 @@ export const EditJabatanDialog: React.FC<EditJabatanDialogProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* File Validation Modal */}
+    <AlertDialog open={showFileValidationModal} onOpenChange={setShowFileValidationModal}>
+      <AlertDialogContent className="max-w-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            Jabatan Berhasil Diubah
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-base">
+            Jabatan telah berhasil diubah, namun berkas perlu disesuaikan dengan jabatan baru.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        
+        <div className="space-y-4">
+          {/* Status Info - Always show */}
+          <Alert className="border-blue-200 bg-blue-50">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              Status pengajuan telah diubah ke <strong>Draft</strong>. Silakan sesuaikan berkas yang diupload sesuai dengan jabatan baru.
+            </AlertDescription>
+          </Alert>
+
+          {/* File Adjustment Info */}
+          {fileValidationData?.needs_adjustment ? (
+            <>
+              {/* Missing Files */}
+              {fileValidationData?.missing_files && fileValidationData.missing_files.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <XCircle className="h-4 w-4 text-red-600" />
+                <span className="font-medium text-red-800">
+                  Berkas yang Kurang ({fileValidationData.missing_files.length} file)
+                </span>
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <ul className="space-y-1">
+                  {fileValidationData.missing_files.map((file: string, index: number) => (
+                    <li key={index} className="text-sm text-red-700 flex items-center gap-2">
+                      <FileText className="h-3 w-3" />
+                      {file}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Extra Files */}
+          {fileValidationData?.extra_files && fileValidationData.extra_files.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <span className="font-medium text-yellow-800">
+                  Berkas yang Tidak Diperlukan ({fileValidationData.extra_files.length} file)
+                </span>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <ul className="space-y-1">
+                  {fileValidationData.extra_files.map((file: string, index: number) => (
+                    <li key={index} className="text-sm text-yellow-700 flex items-center gap-2">
+                      <FileText className="h-3 w-3" />
+                      {file}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+            </>
+          ) : (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                Berkas yang diupload sudah sesuai dengan jabatan baru. Tidak ada berkas yang perlu disesuaikan.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogAction 
+            onClick={() => setShowFileValidationModal(false)}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Mengerti
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

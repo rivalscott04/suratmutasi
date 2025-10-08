@@ -1371,6 +1371,8 @@ const PengajuanDetail: React.FC = () => {
               pengajuanId={pengajuanId || ''}
               token={token}
               isAdmin={isAdmin}
+              showOnlyLatest={true}
+              onViewAll={() => navigate(`/pengajuan/${pengajuanId}/audit-log`)}
             />
           )}
 
@@ -1904,13 +1906,7 @@ const PengajuanDetail: React.FC = () => {
                 <CardTitle>Catatan</CardTitle>
               </CardHeader>
               <CardContent>
-                                 {pengajuan.catatan && (
-                   <div className="mb-6">
-                                           <p className="text-sm font-medium text-gray-700 mb-3">Catatan Persetujuan:</p>
-                     <p className="text-sm text-gray-900 bg-green-50 p-4 rounded-lg leading-relaxed">{pengajuan.catatan}</p>
-                   </div>
-                 )}
-                 {pengajuan.rejection_reason && (
+                {pengajuan.rejection_reason && (
                    <div>
                                            <p className="text-sm font-medium text-gray-700 mb-3">Alasan Penolakan:</p>
                      <p className="text-sm text-gray-900 bg-red-50 p-4 rounded-lg leading-relaxed">{pengajuan.rejection_reason}</p>
@@ -1999,16 +1995,6 @@ const PengajuanDetail: React.FC = () => {
                    </Button>
                  )}
 
-                {canDelete && (
-                  <Button
-                    onClick={() => setShowDeleteDialog(true)}
-                    variant="destructive"
-                    className="w-full"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Hapus Pengajuan
-                  </Button>
-                )}
                 
                 {pengajuan.status === 'approved' && isAdmin && (
                   <Button

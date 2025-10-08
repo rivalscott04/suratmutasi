@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Clock, User, FileEdit, AlertCircle, Loader2 } from 'lucide-react';
@@ -28,14 +29,29 @@ interface AuditLogCardProps {
   pengajuanId: string;
   token: string | null;
   isAdmin: boolean;
+  showOnlyLatest?: boolean; // New prop untuk cuma tampil 1 terbaru
+  onViewAll?: () => void; // Callback untuk buka halaman detail
+}
+
+interface PaginationInfo {
+  current_page: number;
+  total_pages: number;
+  total_count: number;
+  limit: number;
+  has_next: boolean;
+  has_prev: boolean;
 }
 
 export const AuditLogCard: React.FC<AuditLogCardProps> = ({
   pengajuanId,
   token,
   isAdmin,
+  showOnlyLatest = false,
+  onViewAll,
 }) => {
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,15 +59,20 @@ export const AuditLogCard: React.FC<AuditLogCardProps> = ({
     if (isAdmin && pengajuanId) {
       fetchAuditLogs();
     }
-  }, [isAdmin, pengajuanId]);
+  }, [isAdmin, pengajuanId, currentPage]);
 
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiGet(`/api/pengajuan/${pengajuanId}/audit-log`, token);
+      
+      // Jika showOnlyLatest, cuma ambil 1 data terbaru
+      const limit = showOnlyLatest ? 1 : 10;
+      const response = await apiGet(`/api/pengajuan/${pengajuanId}/audit-log?page=${currentPage}&limit=${limit}`, token);
+      
       if (response.success) {
-        setAuditLogs(response.data);
+        setAuditLogs(response.data.audit_logs);
+        setPagination(response.data.pagination);
       } else {
         setError(response.message || 'Gagal memuat audit log');
       }
@@ -161,12 +182,21 @@ export const AuditLogCard: React.FC<AuditLogCardProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Audit Log
-          <Badge variant="outline" className="ml-2">
-            {auditLogs.length} perubahan
-          </Badge>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            {showOnlyLatest ? 'Perubahan Terbaru' : 'Audit Log'}
+            {!showOnlyLatest && (
+              <Badge variant="outline" className="ml-2">
+                {pagination?.total_count || auditLogs.length} perubahan
+              </Badge>
+            )}
+          </div>
+          {showOnlyLatest && pagination && pagination.total_count > 1 && onViewAll && (
+            <Button variant="outline" size="sm" onClick={onViewAll}>
+              Lihat Semua
+            </Button>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -199,38 +229,32 @@ export const AuditLogCard: React.FC<AuditLogCardProps> = ({
                   {oldValue && newValue && (
                     <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                       <div className="text-sm">
-                        <span className="text-gray-500">Dari:</span>
-                        <div className="mt-1 font-mono text-xs bg-red-50 border border-red-200 rounded p-2">
-                          {typeof oldValue === 'object' ? (
-                            <pre className="whitespace-pre-wrap">
-                              {JSON.stringify(oldValue, null, 2)}
-                            </pre>
-                          ) : (
-                            oldValue
-                          )}
+                        <span className="text-gray-500 font-medium">Dari:</span>
+                        <div className="mt-1 text-sm bg-white border border-gray-200 rounded p-2">
+                          {typeof oldValue === 'object' && oldValue.jenis_jabatan ? 
+                            oldValue.jenis_jabatan : 
+                            (typeof oldValue === 'object' ? JSON.stringify(oldValue) : oldValue)
+                          }
                         </div>
                       </div>
                       <div className="text-sm">
-                        <span className="text-gray-500">Ke:</span>
-                        <div className="mt-1 font-mono text-xs bg-green-50 border border-green-200 rounded p-2">
-                          {typeof newValue === 'object' ? (
-                            <pre className="whitespace-pre-wrap">
-                              {JSON.stringify(newValue, null, 2)}
-                            </pre>
-                          ) : (
-                            newValue
-                          )}
+                        <span className="text-gray-500 font-medium">Ke:</span>
+                        <div className="mt-1 text-sm bg-white border border-gray-200 rounded p-2">
+                          {typeof newValue === 'object' && newValue.jenis_jabatan ? 
+                            newValue.jenis_jabatan : 
+                            (typeof newValue === 'object' ? JSON.stringify(newValue) : newValue)
+                          }
                         </div>
                       </div>
                     </div>
                   )}
 
                   {log.reason && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <p className="text-sm font-medium text-yellow-800 mb-1">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <p className="text-sm font-medium text-gray-800 mb-1">
                         Alasan:
                       </p>
-                      <p className="text-sm text-yellow-700">{log.reason}</p>
+                      <p className="text-sm text-gray-700">{log.reason}</p>
                     </div>
                   )}
                 </div>
@@ -238,6 +262,34 @@ export const AuditLogCard: React.FC<AuditLogCardProps> = ({
             );
           })}
         </div>
+
+        {/* Pagination Controls - hanya tampil jika bukan showOnlyLatest */}
+        {!showOnlyLatest && pagination && pagination.total_pages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t">
+            <div className="text-sm text-gray-500">
+              Halaman {pagination.current_page} dari {pagination.total_pages}
+              {' '}({pagination.total_count} total)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={!pagination.has_prev || loading}
+              >
+                Sebelumnya
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={!pagination.has_next || loading}
+              >
+                Selanjutnya
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
