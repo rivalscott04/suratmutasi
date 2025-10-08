@@ -175,7 +175,9 @@ const PengajuanDetail: React.FC = () => {
   const fetchPengajuanData = async () => {
     try {
       setLoading(true);
-      const response = await apiGet(`/api/pengajuan/${pengajuanId}`, token);
+      // Add timestamp to force fresh data
+      const timestamp = new Date().getTime();
+      const response = await apiGet(`/api/pengajuan/${pengajuanId}?t=${timestamp}`, token);
       if (response.success) {
         setPengajuan(response.data.pengajuan);
         // simpan daftar required kab/kota dari job type
@@ -896,6 +898,14 @@ const PengajuanDetail: React.FC = () => {
   };
 
   const handleGantiFile = (file: PengajuanFile) => {
+    console.log('🔍 handleGantiFile called with file:', {
+      fileId: file.id,
+      fileName: file.file_name,
+      fileType: file.file_type,
+      fileCategory: file.file_category,
+      pengajuanId
+    });
+    
     // Trigger file input langsung
     const input = document.createElement('input');
     input.type = 'file';
@@ -903,6 +913,11 @@ const PengajuanDetail: React.FC = () => {
     input.onchange = (e) => {
       const newFile = (e.target as HTMLInputElement).files?.[0];
       if (newFile) {
+        console.log('🔍 About to replace file:', {
+          fileId: file.id,
+          newFileName: newFile.name,
+          newFileSize: newFile.size
+        });
         uploadFilePengganti(file.id, newFile, file.file_category);
       }
     };
