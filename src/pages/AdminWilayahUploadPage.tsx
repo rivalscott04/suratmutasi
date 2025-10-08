@@ -324,6 +324,7 @@ const AdminWilayahUploadPage: React.FC = () => {
                 onFilesUploaded={() => fetchDetail()}
                 onProgressChange={(uploaded, total) => setUploadProgress({ required: uploaded, total, isComplete: uploaded >= total && total > 0 })}
                 pengajuanStatus={pengajuan.status}
+                pengajuanData={pengajuan}
               />
             )}
           </CardContent>

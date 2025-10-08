@@ -51,6 +51,7 @@ interface AdminWilayahFileUploadProps {
   onFilesUploaded: (files: PengajuanFile[]) => void;
   onProgressChange?: (uploaded: number, total: number) => void;
   pengajuanStatus?: string;
+  pengajuanData?: any; // Data pengajuan untuk validasi jabatan
 }
 
 const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
@@ -58,7 +59,8 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   jenisJabatanId,
   onFilesUploaded,
   onProgressChange,
-  pengajuanStatus
+  pengajuanStatus,
+  pengajuanData
 }) => {
   const { token, user } = useAuth();
   const { toast } = useToast();
@@ -77,6 +79,11 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   // Drag and drop state
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
+  
+  // Error modal state
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [errorTitle, setErrorTitle] = useState<string>('Error');
 
   // Fetch admin wilayah file configuration
   const fetchFileConfigs = async () => {
@@ -203,6 +210,12 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     setUploadProgress(prev => ({ ...prev, [fileType]: 0 }));
     
     try {
+      // Block upload if jabatan mismatch
+      if (!guardJabatanMatch()) {
+        setUploading(prev => ({ ...prev, [fileType]: false }));
+        setUploadProgress(prev => ({ ...prev, [fileType]: 0 }));
+        return;
+      }
       // Debug logging
       console.log('🔍 Uploading file:', {
         fileType,
@@ -282,21 +295,12 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
           duration: 3000
         });
       } else {
-        toast({
-          title: "Error",
-          description: response.message || "Gagal upload file",
-          variant: "destructive",
-          duration: 3000
-        });
+        const errorMsg = response.message || "Terjadi kesalahan saat mengupload file. Silakan coba lagi.";
+        showErrorModalHandler('Upload Gagal', errorMsg);
       }
     } catch (error) {
       console.error('Error uploading file:', error);
-      toast({
-        title: "Error",
-        description: "Gagal upload file",
-        variant: "destructive",
-        duration: 3000
-      });
+      showErrorModalHandler('Upload Gagal', 'Terjadi kesalahan saat mengupload file. Periksa koneksi internet Anda dan coba lagi.');
     } finally {
       setUploading(prev => ({ ...prev, [fileType]: false }));
       setUploadProgress(prev => ({ ...prev, [fileType]: 0 }));
@@ -530,6 +534,31 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     if (input) input.click();
   };
 
+  // Guard: ensure selected job type matches operator's submitted job
+  const guardJabatanMatch = (): boolean => {
+    if (!pengajuanData?.jabatan_name || !jenisJabatanId) return true;
+    const operatorJabatan = String(pengajuanData.jabatan_name).toLowerCase();
+    const adminSelectedJabatan = String(jenisJabatanId).toLowerCase();
+    if (operatorJabatan !== adminSelectedJabatan) {
+      showErrorModalHandler(
+        'Jabatan Tidak Sesuai',
+        `Jenis jabatan yang Anda pilih tidak sama dengan yang diajukan oleh operator.\n\n` +
+          `• Diajukan operator: ${pengajuanData.jabatan_name}\n` +
+          `• Dipilih admin wilayah: ${jenisJabatanId}\n\n` +
+          `Silakan pilih jenis jabatan yang sesuai terlebih dahulu, lalu ulangi upload.`
+      );
+      return false;
+    }
+    return true;
+  };
+
+  // Function to show error modal
+  const showErrorModalHandler = (title: string, message: string) => {
+    setErrorTitle(title);
+    setErrorMessage(message);
+    setShowErrorModal(true);
+  };
+
   // Drag and drop handlers
   const handleDragEnter = (fileType: string, event: React.DragEvent) => {
     event.preventDefault();
@@ -557,6 +586,13 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
     event.preventDefault();
     event.stopPropagation();
     
+    // Block upload if jabatan mismatch
+    if (!guardJabatanMatch()) {
+      setDragOver(null);
+      setIsDragActive(false);
+      return;
+    }
+
     const files = event.dataTransfer.files;
     if (files && files.length > 0) {
       const file = files[0];
@@ -566,7 +602,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
       
       if (!allowedTypes.includes(fileExtension)) {
-        showError('INVALID_FILE_TYPE', 'Hanya file PDF, DOC, dan DOCX yang diizinkan');
+        showErrorModalHandler('Format File Tidak Didukung', 'Hanya file PDF, DOC, dan DOCX yang diizinkan untuk diupload.');
         setDragOver(null);
         setIsDragActive(false);
         return;
@@ -576,7 +612,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       const maxSize = fileType === 'skp_2_tahun_terakhir' ? 1.6 * 1024 * 1024 : 500 * 1024; // 1.6MB or 500KB
       if (file.size > maxSize) {
         const maxSizeText = fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB';
-        showError('FILE_TOO_LARGE', `Ukuran file maksimal ${maxSizeText}`);
+        showErrorModalHandler('Ukuran File Terlalu Besar', `Ukuran file maksimal ${maxSizeText}. Silakan kompres file atau pilih file yang lebih kecil.`);
         setDragOver(null);
         setIsDragActive(false);
         return;
@@ -843,6 +879,29 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
               >
                 Ajukan
               </SubmitButton>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Modal */}
+      <AlertDialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600 text-lg">
+              <XCircle className="h-5 w-5" />
+              {errorTitle}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-700 whitespace-pre-line leading-relaxed">
+              {errorMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setShowErrorModal(false)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Tutup
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
