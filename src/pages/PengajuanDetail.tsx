@@ -900,10 +900,14 @@ const PengajuanDetail: React.FC = () => {
   const handleGantiFile = (file: PengajuanFile) => {
     console.log('🔍 handleGantiFile called with file:', {
       fileId: file.id,
+      fileIdLength: file.id.length,
+      fileIdType: typeof file.id,
       fileName: file.file_name,
       fileType: file.file_type,
       fileCategory: file.file_category,
-      pengajuanId
+      pengajuanId,
+      pengajuanIdLength: pengajuanId?.length,
+      userRole: user?.role
     });
     
     // Trigger file input langsung
