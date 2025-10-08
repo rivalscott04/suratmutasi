@@ -929,11 +929,18 @@ const PengajuanDetail: React.FC = () => {
       console.log('🔍 Debug replace file:', {
         pengajuanId,
         fileId,
+        fileIdLength: fileId.length,
+        fileIdType: typeof fileId,
         fileName: newFile.name,
         fileCategory,
         userRole: user?.role,
         token: token ? 'exists' : 'missing'
       });
+      
+      // Validate file ID format
+      if (!fileId || fileId.length < 10) {
+        throw new Error(`Invalid file ID: ${fileId}`);
+      }
       
       const result = await replaceFile(pengajuanId!, fileId, newFile, token!, user?.role || '', fileCategory);
       
@@ -942,8 +949,10 @@ const PengajuanDetail: React.FC = () => {
         description: "File berhasil diganti",
       });
       
-      // Refresh data pengajuan
-      fetchPengajuanData();
+      // Force refresh data pengajuan dengan delay untuk memastikan backend sudah selesai
+      setTimeout(() => {
+        fetchPengajuanData();
+      }, 1000);
     } catch (error) {
       console.error('Error replacing file:', error);
       toast({
@@ -1028,6 +1037,46 @@ const PengajuanDetail: React.FC = () => {
     if (nextIdx < 0 || nextIdx >= files.length) return;
     handlePreviewFile(files[nextIdx]);
   };
+
+  // Keyboard navigation handler
+  const handleKeyboardNavigation = (event: KeyboardEvent) => {
+    // Only handle keyboard navigation when modal is open
+    if (!showPreview || !previewFile) return;
+    
+    // Check if we're not in an input field or textarea
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+      return;
+    }
+
+    const files = getCurrentPreviewFiles();
+    const currentIdx = files.findIndex(f => f.id === previewFile.id);
+    
+    switch (event.key) {
+      case 'ArrowLeft':
+        event.preventDefault();
+        if (currentIdx > 0) {
+          goToAdjacentPreview(-1);
+        }
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        if (currentIdx < files.length - 1) {
+          goToAdjacentPreview(1);
+        }
+        break;
+    }
+  };
+
+  // Add keyboard event listener when modal is open
+  useEffect(() => {
+    if (showPreview) {
+      document.addEventListener('keydown', handleKeyboardNavigation);
+      return () => {
+        document.removeEventListener('keydown', handleKeyboardNavigation);
+      };
+    }
+  }, [showPreview, previewFile]);
 
   const isAdmin = user?.role === 'admin';
   const isAdminWilayah = user?.role === 'admin_wilayah';
@@ -2257,7 +2306,7 @@ const PengajuanDetail: React.FC = () => {
                <div className="min-w-0 flex-1">
                  <div className="text-lg font-bold text-gray-900 mb-1">{previewFile ? getFileDisplayName(previewFile.file_type) : 'Dokumen'}</div>
                  <div className="text-base font-semibold truncate text-gray-700" title={previewFile?.file_name}>{previewFile?.file_name}</div>
-                 <div className="text-xs text-gray-500 truncate">Preview dokumen PDF</div>
+                 <div className="text-xs text-gray-500 truncate">Preview dokumen PDF • Gunakan ← → untuk navigasi</div>
                </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {/* PDF Zoom Controls */}
@@ -2358,10 +2407,22 @@ const PengajuanDetail: React.FC = () => {
                   </>
                 )}
                 
-                <button type="button" onClick={() => goToAdjacentPreview(-1)} className="text-sm px-2 py-1 rounded bg-green-50 text-green-700 disabled:opacity-50" disabled={!getCurrentPreviewFiles().length || getCurrentPreviewFiles().findIndex(f => f.id === previewFile?.id) <= 0}>
+                <button 
+                  type="button" 
+                  onClick={() => goToAdjacentPreview(-1)} 
+                  className="text-sm px-2 py-1 rounded bg-green-50 text-green-700 disabled:opacity-50 hover:bg-green-100 transition-colors" 
+                  disabled={!getCurrentPreviewFiles().length || getCurrentPreviewFiles().findIndex(f => f.id === previewFile?.id) <= 0}
+                  title="Sebelumnya (←)"
+                >
                   <ChevronLeft className="inline h-4 w-4 mr-1" />Sebelumnya
                 </button>
-                <button type="button" onClick={() => goToAdjacentPreview(1)} className="text-sm px-2 py-1 rounded bg-green-50 text-green-700 disabled:opacity-50" disabled={!getCurrentPreviewFiles().length || getCurrentPreviewFiles().findIndex(f => f.id === previewFile?.id) >= getCurrentPreviewFiles().length - 1}>
+                <button 
+                  type="button" 
+                  onClick={() => goToAdjacentPreview(1)} 
+                  className="text-sm px-2 py-1 rounded bg-green-50 text-green-700 disabled:opacity-50 hover:bg-green-100 transition-colors" 
+                  disabled={!getCurrentPreviewFiles().length || getCurrentPreviewFiles().findIndex(f => f.id === previewFile?.id) >= getCurrentPreviewFiles().length - 1}
+                  title="Selanjutnya (→)"
+                >
                   Selanjutnya<ChevronRight className="inline h-4 w-4 ml-1" />
                 </button>
               </div>
