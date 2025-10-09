@@ -1155,6 +1155,16 @@ const PengajuanDetail: React.FC = () => {
     }).filter(f => f.verification_status !== 'approved');
   })();
   
+  // Cek apakah ada file kabupaten yang "rejected" atau belum ada
+  const hasRejectedKabupatenFiles = (() => {
+    if (!pengajuan) return false;
+    for (const t of requiredKabupaten) {
+      const f = pengajuan.files.find((x) => x.file_type === t);
+      if (!f || f.verification_status === 'rejected') return true;
+    }
+    return false;
+  })();
+
   // File yang rejected = file yang masih bermasalah dan tidak bisa diajukan ulang
   const hasRejectedFiles = (() => {
     if (!pengajuan) return false;
@@ -1972,7 +1982,7 @@ const PengajuanDetail: React.FC = () => {
                 {canApprove && (
                   // SUPERADMIN di tab Admin Wilayah: cek apakah semua dokumen admin wilayah sesuai
                   // ADMIN WILAYAH: cek apakah semua dokumen kabupaten sesuai
-                  (isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || (isAdminWilayah && allFilesApproved)
+                  (isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || (isAdminWilayah && allKabupatenFilesApproved)
                 ) && (
                   <Button
                     onClick={() => setShowApproveDialog(true)}
@@ -1986,7 +1996,7 @@ const PengajuanDetail: React.FC = () => {
                 {canReject && (
                   // SUPERADMIN di tab Admin Wilayah: reject jika ada dokumen tidak sesuai
                   // ADMIN WILAYAH: reject jika ada file bermasalah
-                  (isAdmin && activeTab === 'admin_wilayah' && !allFilesApproved) || (isAdminWilayah && (hasRejectedFiles || !allFilesApproved))
+                  (isAdmin && activeTab === 'admin_wilayah' && !allFilesApproved) || (isAdminWilayah && (hasRejectedKabupatenFiles || !allKabupatenFilesApproved))
                 ) && (
                   <Button
                     onClick={() => setShowRejectDialog(true)}
