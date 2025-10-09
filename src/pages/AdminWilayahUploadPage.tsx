@@ -357,9 +357,12 @@ const AdminWilayahUploadPage: React.FC = () => {
               <span className="text-sm text-gray-600 mr-2">{uploadProgress.required}/{uploadProgress.total} berkas wajib</span>
               <SubmitButton 
                 onClick={pengajuan.status === 'admin_wilayah_submitted' ? () => {} : submitToSuperadmin} 
-                className="bg-green-600 hover:bg-green-700 text-white"
-                isProcessing={isSubmitting || pengajuan.status === 'admin_wilayah_submitted' || (uploadProgress.required < uploadProgress.total)}
+                className={`bg-green-600 hover:bg-green-700 text-white ${pengajuan.status === 'admin_wilayah_submitted' || !uploadProgress.isComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                isProcessing={isSubmitting}
                 processingText="Mengirim..."
+                // Guard click when not eligible
+                onError={() => {}}
+                onSuccess={() => {}}
               >
                 <Send className="h-4 w-4 mr-2" />
                 {pengajuan.status === 'admin_wilayah_submitted' ? 'Sudah Diajukan' : 'Ajukan ke Superadmin'}
