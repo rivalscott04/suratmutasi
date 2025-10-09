@@ -1110,8 +1110,8 @@ const PengajuanDetail: React.FC = () => {
                    !hasPendingFiles; // Tidak bisa delete jika ada file pending
   // SUPERADMIN: tombol aksi hanya di tab Admin Wilayah untuk verifikasi dokumen tambahan
   // ADMIN WILAYAH: tombol aksi untuk verifikasi dokumen kabupaten
-  const canApprove = (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
-  const canReject = (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
+  const canApprove = (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted' || pengajuan?.status === 'resubmitted'));
+  const canReject = (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted' || pengajuan?.status === 'resubmitted'));
   // Tampilkan tombol Ajukan Ulang saat status ditolak atau draft, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
   const canShowResubmit = (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft' || pengajuan?.status === 'admin_wilayah_rejected') && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
   
@@ -2441,7 +2441,7 @@ const PengajuanDetail: React.FC = () => {
                   
                   // Admin Wilayah hanya bisa verifikasi berkas kabupaten
                   const canAdminWilayahVerify = isAdminWilayah && isKabupatenFile && 
-                    (pengajuan.status === 'submitted' || pengajuan.status === 'approved' || pengajuan.status === 'rejected');
+                    (pengajuan.status === 'submitted' || pengajuan.status === 'approved' || pengajuan.status === 'rejected' || pengajuan.status === 'resubmitted');
                   
                   // Superadmin bisa verifikasi semua berkas
                   const canAdminVerify = isAdmin && 
