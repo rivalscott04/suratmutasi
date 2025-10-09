@@ -37,7 +37,7 @@ interface PengajuanData {
   };
   jenis_jabatan: string;
   total_dokumen: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'final_approved' | 'final_rejected';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'admin_wilayah_submitted' | 'final_approved' | 'final_rejected';
   catatan?: string;
   rejection_reason?: string;
   resubmitted_at?: string;
@@ -245,6 +245,7 @@ const PengajuanIndex: React.FC = () => {
       resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock },
       admin_wilayah_approved: { label: 'Disetujui Admin Wilayah', className: 'bg-green-200 text-green-800 hover:bg-green-300', icon: CheckCircle },
       admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800 hover:bg-red-300', icon: XCircle },
+      admin_wilayah_submitted: { label: 'Diajukan Admin Wilayah', className: 'bg-blue-200 text-blue-800 hover:bg-blue-300', icon: FileText },
       final_approved: { label: 'Final Approved', className: 'bg-green-600 text-white', icon: CheckCircle },
       final_rejected: { label: 'Final Rejected', className: 'bg-red-600 text-white', icon: XCircle }
     } as const;
@@ -626,7 +627,7 @@ const PengajuanIndex: React.FC = () => {
                                         <Eye className="h-4 w-4 mr-2" />
                                         Lihat Detail
                                       </DropdownMenuItem>
-                                      {isAdmin && pengajuan.status === 'submitted' && (
+                                      {isAdmin && pengajuan.status === 'admin_wilayah_submitted' && (
                                         <>
                                           <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
                                             <CheckCircle className="h-4 w-4 mr-2" />
@@ -893,7 +894,7 @@ const PengajuanIndex: React.FC = () => {
                                   )}
                                 </>
                               )}
-                               {isAdmin && pengajuan.status === 'submitted' && (
+                               {isAdmin && pengajuan.status === 'admin_wilayah_submitted' && (
                                  <>
                                    <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
                                      <CheckCircle className="h-4 w-4 mr-2" />

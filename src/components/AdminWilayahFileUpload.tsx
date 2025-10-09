@@ -10,8 +10,6 @@ import FileUploadProgress from '@/components/FileUploadProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { useFormSubmissionProtection } from '@/hooks/useDoubleClickProtection';
-import { SubmitButton } from '@/components/ui/protected-button';
 import { showSuccess, showError, showUploadSuccess, showUploadError, showDownloadError } from '@/lib/messageUtils';
 
 // Normalize any text to a safe DOM id segment
@@ -70,9 +68,6 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   const [uploading, setUploading] = useState<{ [key: string]: boolean }>({});
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
-  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const { submitForm, isSubmitting } = useFormSubmissionProtection();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -832,57 +827,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
 
 
 
-      {/* Submit Button */}
-      {(() => {
-        const allRequiredUploaded = requiredFiles.every(fileConfig => 
-          uploadedFiles.some(uploadedFile => uploadedFile.file_type === fileConfig.file_type)
-        );
-        const isAlreadySubmitted = pengajuanStatus === 'submitted';
-        
-        return (
-          <div className="flex justify-end">
-            {allRequiredUploaded ? (
-              <Button 
-                onClick={() => !isAlreadySubmitted && setShowSubmitDialog(true)} 
-                className="bg-green-600 hover:bg-green-700"
-                disabled={submitting || isAlreadySubmitted}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {isAlreadySubmitted ? 'Sudah Dikirim' : 'Ajukan ke Superadmin'}
-              </Button>
-            ) : (
-              <div className="text-sm text-gray-500 text-center">
-                Tombol ajukan akan muncul setelah semua berkas wajib diupload
-              </div>
-            )}
-          </div>
-        );
-      })()}
 
-      {/* Submit Confirmation Dialog - Menggunakan AlertDialog sesuai tema */}
-      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ajukan ke Superadmin</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin mengajukan semua file yang telah diupload ke Superadmin? Tindakan ini tidak dapat dibatalkan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <SubmitButton
-                onClick={handleSubmitForReview}
-                className="bg-green-600 hover:bg-green-700"
-                isProcessing={isSubmitting}
-                processingText="Mengajukan..."
-              >
-                Ajukan
-              </SubmitButton>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Error Modal */}
       <AlertDialog open={showErrorModal} onOpenChange={setShowErrorModal}>

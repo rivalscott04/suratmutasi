@@ -215,10 +215,10 @@ const Dashboard = () => {
     },
     {
       title: 'Pengajuan Terbaru',
-      value: pengajuan.filter(p => p.status === 'submitted' && p.files?.some(f => f.file_category === 'admin_wilayah')).length,
+      value: pengajuan.filter(p => p.status === 'admin_wilayah_submitted').length,
       change: calculatePercentageChange(
-        pengajuan.filter(p => p.status === 'submitted' && p.files?.some(f => f.file_category === 'admin_wilayah')).length,
-        lastMonthPengajuan.filter(p => p.status === 'submitted' && p.files?.some(f => f.file_category === 'admin_wilayah')).length
+        pengajuan.filter(p => p.status === 'admin_wilayah_submitted').length,
+        lastMonthPengajuan.filter(p => p.status === 'admin_wilayah_submitted').length
       ),
       icon: Users,
       color: 'text-purple-600'
@@ -411,6 +411,7 @@ const Dashboard = () => {
                                 resubmitted: 'Diajukan Ulang',
                                 admin_wilayah_approved: 'Disetujui Admin Wilayah',
                                 admin_wilayah_rejected: 'Ditolak Admin Wilayah',
+                                admin_wilayah_submitted: 'Diajukan Admin Wilayah',
                                 final_approved: 'Selesai',
                                 final_rejected: 'Ditolak Final'
                               };

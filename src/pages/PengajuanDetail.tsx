@@ -79,7 +79,7 @@ interface PengajuanData {
   jenis_jabatan: string;
   jabatan_id?: number;
   total_dokumen: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'final_approved' | 'final_rejected';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'admin_wilayah_submitted' | 'final_approved' | 'final_rejected';
   catatan?: string;
   rejection_reason?: string;
   rejected_by?: string;
@@ -189,8 +189,8 @@ const PengajuanDetail: React.FC = () => {
         } else {
           setRequiredKabupaten([]);
         }
-        // jika admin wilayah, ambil konfigurasi kanwil untuk daftar file wajib
-        if (user?.role === 'admin_wilayah') {
+        // ambil konfigurasi kanwil untuk daftar file wajib (untuk admin wilayah dan superadmin)
+        if (user?.role === 'admin_wilayah' || user?.role === 'admin') {
           try {
             const awRes = await apiGet(`/api/admin-wilayah/pengajuan/${pengajuanId}`, token);
             const reqList = (awRes?.adminWilayahFileConfig?.required || awRes?.data?.adminWilayahFileConfig?.required || []) as Array<{ file_type: string }>;
@@ -381,6 +381,7 @@ const PengajuanDetail: React.FC = () => {
       resubmitted: { label: 'RESUBMITTED', className: 'bg-yellow-100 text-yellow-800' },
       admin_wilayah_approved: { label: 'ADMIN_WILAYAH_APPROVED', className: 'bg-green-200 text-green-800' },
       admin_wilayah_rejected: { label: 'ADMIN_WILAYAH_REJECTED', className: 'bg-red-200 text-red-800' },
+      admin_wilayah_submitted: { label: 'DIAJUKAN ADMIN WILAYAH', className: 'bg-blue-200 text-blue-800' },
       final_approved: { label: 'FINAL_APPROVED', className: 'bg-green-600 text-white' },
       final_rejected: { label: 'FINAL_REJECTED', className: 'bg-red-600 text-white' },
     };
@@ -1107,8 +1108,10 @@ const PengajuanDetail: React.FC = () => {
   const canDelete = pengajuan?.status === 'draft' && 
                    (isAdmin || pengajuan?.created_by === user?.id) && 
                    !hasPendingFiles; // Tidak bisa delete jika ada file pending
-  const canApprove = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
-  const canReject = (isAdmin && pengajuan?.status === 'submitted') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
+  // SUPERADMIN: tombol aksi hanya di tab Admin Wilayah untuk verifikasi dokumen tambahan
+  // ADMIN WILAYAH: tombol aksi untuk verifikasi dokumen kabupaten
+  const canApprove = (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
+  const canReject = (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted'));
   // Tampilkan tombol Ajukan Ulang saat status ditolak atau draft, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
   const canShowResubmit = (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft' || pengajuan?.status === 'admin_wilayah_rejected') && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
   
@@ -1125,6 +1128,31 @@ const PengajuanDetail: React.FC = () => {
       if (f.verification_status !== 'approved') return false; // harus sesuai
     }
     return true;
+  })();
+
+  // Cek kelengkapan file kabupaten saja (untuk badge di tab Kabupaten/Kota)
+  const allKabupatenFilesApproved = (() => {
+    if (!pengajuan) return false;
+    if (requiredKabupaten.length === 0) return false;
+    for (const t of requiredKabupaten) {
+      const f = pengajuan.files.find((x) => x.file_type === t);
+      if (!f) return false; // wajib: harus ada
+      if (f.verification_status !== 'approved') return false; // harus sesuai
+    }
+    return true;
+  })();
+
+  // Debug: cek file kabupaten yang tidak approved
+  const notApprovedKabupatenFiles = (() => {
+    if (!pengajuan) return [];
+    return requiredKabupaten.map(t => {
+      const f = pengajuan.files.find((x) => x.file_type === t);
+      return {
+        file_type: t,
+        file_name: f?.file_name || 'TIDAK ADA',
+        verification_status: f?.verification_status || 'TIDAK ADA'
+      };
+    }).filter(f => f.verification_status !== 'approved');
   })();
   
   // File yang rejected = file yang masih bermasalah dan tidak bisa diajukan ulang
@@ -1397,13 +1425,21 @@ const PengajuanDetail: React.FC = () => {
                     </Badge>
                   ) : null;
                 })()}
-                {isAdmin && pengajuan.status === 'submitted' && (
-                  <Badge 
-                    variant={allFilesApproved ? 'default' : 'destructive'}
-                    className={`ml-2 ${allFilesApproved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                  >
-                    {allFilesApproved ? 'Semua Dokumen Sesuai' : 'Ada Dokumen Tidak Sesuai'}
-                  </Badge>
+                {/* Badge selalu ditampilkan untuk menunjukkan status dokumen kabupaten */}
+                {isAdmin && pengajuan.status === 'admin_wilayah_submitted' && (
+                  <>
+                    <Badge 
+                      variant={allKabupatenFilesApproved ? 'default' : 'destructive'}
+                      className={`ml-2 ${allKabupatenFilesApproved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                    >
+                      {allKabupatenFilesApproved ? 'Semua Dokumen Kabupaten Sesuai' : 'Ada Dokumen Kabupaten Tidak Sesuai'}
+                    </Badge>
+                    {!allKabupatenFilesApproved && notApprovedKabupatenFiles.length > 0 && (
+                      <div className="ml-2 text-xs text-red-600">
+                        Debug: {notApprovedKabupatenFiles.map(f => `${f.file_type}(${f.verification_status})`).join(', ')}
+                      </div>
+                    )}
+                  </>
                 )}
               </CardTitle>
             </CardHeader>
@@ -1485,7 +1521,7 @@ const PengajuanDetail: React.FC = () => {
                             )}
                           </Badge>
                         </div>
-                        {((isAdmin && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved')) || (isAdminWilayah && (pengajuan.status === 'submitted' || pengajuan.status === 'approved' || pengajuan.status === 'rejected'))) && (
+                        {((isAdmin && (pengajuan.status === 'admin_wilayah_submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved')) || (isAdminWilayah && (pengajuan.status === 'submitted' || pengajuan.status === 'approved' || pengajuan.status === 'rejected'))) && (
                           <div className="mt-1 flex items-center justify-between">
                             <span className={`text-xs ${file.verification_status === 'approved' ? 'text-green-700' : file.verification_status === 'rejected' ? 'text-red-700' : 'text-gray-700'}`}>
                               {file.verification_status === 'approved' ? 'Sesuai' : file.verification_status === 'rejected' ? 'Tidak Sesuai' : 'Belum Diverifikasi'}
@@ -1543,6 +1579,15 @@ const PengajuanDetail: React.FC = () => {
                     </Badge>
                   ) : null;
                 })()}
+                {/* Badge untuk SUPERADMIN: menunjukkan status dokumen admin wilayah yang perlu diverifikasi */}
+                {isAdmin && pengajuan.status === 'admin_wilayah_submitted' && (
+                  <Badge 
+                    variant="secondary"
+                    className="ml-2 bg-blue-100 text-blue-800"
+                  >
+                    Menunggu Verifikasi SUPERADMIN
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1638,7 +1683,7 @@ const PengajuanDetail: React.FC = () => {
                             - rejected: verifikasi berkas operator yang ditolak
                             - admin_wilayah_approved: verifikasi berkas admin wilayah untuk final approval
                           */}
-                          {isAdmin && (pengajuan.status === 'submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved') ? (
+                          {isAdmin && (pengajuan.status === 'admin_wilayah_submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved') ? (
                             <div className="flex items-center gap-3 mr-3">
                               {verifyingFile === file.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin text-green-600" />
@@ -1850,24 +1895,26 @@ const PengajuanDetail: React.FC = () => {
                    </div>
                  )}
 
-                 {/* Submit ke Superadmin */}
+                 {/* Admin Wilayah Submit ke Superadmin */}
+                 {pengajuan.status === 'admin_wilayah_submitted' && (
+                   <div className="flex items-start gap-4">
+                     <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                     <div className="flex-1 space-y-1">
+                       <p className="font-medium">Diajukan Admin Wilayah ke Superadmin</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
+                       <p className="text-xs text-gray-500">Admin Wilayah mengajukan ke Superadmin untuk review final</p>
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Submit ke Superadmin (dari operator) */}
                  {pengajuan.status === 'submitted' && (
                    <div className="flex items-start gap-4">
                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                      <div className="flex-1 space-y-1">
-                       <p className="font-medium">
-                         {pengajuan.files?.some(f => f.file_category === 'admin_wilayah') 
-                           ? 'Diajukan Admin Wilayah ke Superadmin' 
-                           : 'Diajukan ke Superadmin'
-                         }
-                       </p>
+                       <p className="font-medium">Diajukan ke Superadmin</p>
                        <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
-                       <p className="text-xs text-gray-500">
-                         {pengajuan.files?.some(f => f.file_category === 'admin_wilayah')
-                           ? 'Admin Wilayah mengajukan ke Superadmin untuk review final'
-                           : 'Pengajuan diajukan ke Superadmin untuk review'
-                         }
-                       </p>
+                       <p className="text-xs text-gray-500">Pengajuan diajukan ke Superadmin untuk review</p>
                      </div>
                    </div>
                  )}
@@ -1922,7 +1969,11 @@ const PengajuanDetail: React.FC = () => {
                <CardTitle>Aksi</CardTitle>
              </CardHeader>
                            <CardContent className="space-y-3">
-                {canApprove && allFilesApproved && (
+                {canApprove && (
+                  // SUPERADMIN di tab Admin Wilayah: cek apakah semua dokumen admin wilayah sesuai
+                  // ADMIN WILAYAH: cek apakah semua dokumen kabupaten sesuai
+                  (isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || (isAdminWilayah && allFilesApproved)
+                ) && (
                   <Button
                     onClick={() => setShowApproveDialog(true)}
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -1932,7 +1983,11 @@ const PengajuanDetail: React.FC = () => {
                   </Button>
                 )}
                 
-                {canReject && (hasRejectedFiles || !allFilesApproved) && (
+                {canReject && (
+                  // SUPERADMIN di tab Admin Wilayah: reject jika ada dokumen tidak sesuai
+                  // ADMIN WILAYAH: reject jika ada file bermasalah
+                  (isAdmin && activeTab === 'admin_wilayah' && !allFilesApproved) || (isAdminWilayah && (hasRejectedFiles || !allFilesApproved))
+                ) && (
                   <Button
                     onClick={() => setShowRejectDialog(true)}
                     variant="destructive"
@@ -2390,7 +2445,7 @@ const PengajuanDetail: React.FC = () => {
                   
                   // Superadmin bisa verifikasi semua berkas
                   const canAdminVerify = isAdmin && 
-                    (pengajuan.status === 'submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved');
+                    (pengajuan.status === 'admin_wilayah_submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved');
                   
                   return (canAdminVerify || canAdminWilayahVerify);
                 })() && (

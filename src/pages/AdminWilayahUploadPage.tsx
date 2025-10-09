@@ -12,6 +12,7 @@ import AdminWilayahFileUpload from '@/components/AdminWilayahFileUpload';
 import UploadProgressTracker from '@/components/UploadProgressTracker';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface PengajuanDetail {
   id: string;
@@ -31,6 +32,9 @@ const AdminWilayahUploadPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const { submitForm, isSubmitting } = useFormSubmissionProtection();
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
   const [availableJobTypes, setAvailableJobTypes] = useState<string[]>([]);
   const [selectedJobType, setSelectedJobType] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<{ required: number; total: number; isComplete: boolean }>({ required: 0, total: 0, isComplete: false });
@@ -126,10 +130,10 @@ const AdminWilayahUploadPage: React.FC = () => {
         return <Badge className="bg-green-700 text-white">Disetujui Admin Wilayah</Badge>;
       case 'admin_wilayah_rejected':
         return <Badge className="bg-red-600 text-white">Ditolak Admin Wilayah</Badge>;
+      case 'admin_wilayah_submitted':
+        return <Badge className="bg-blue-600 text-white">Diajukan Admin Wilayah</Badge>;
       case 'submitted':
-        return <Badge className="bg-blue-600 text-white">
-          {isSubmittedAfterAdminWilayah(status, pengajuan) ? 'Diajukan Admin Wilayah' : 'Dikirim ke Superadmin'}
-        </Badge>;
+        return <Badge className="bg-blue-600 text-white">Dikirim ke Superadmin</Badge>;
       default:
         return <Badge className="bg-gray-600 text-white">{status}</Badge>;
     }
@@ -162,14 +166,30 @@ const AdminWilayahUploadPage: React.FC = () => {
     
     submitForm(
       async () => {
-        await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/submit-to-superadmin`, {}, token);
-        await fetchDetail();
+        try {
+          const response = await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/submit-to-superadmin`, {}, token);
+          
+          if (response?.success !== false) {
+            setDialogMessage("Pengajuan berhasil diajukan ke Superadmin");
+            setShowSuccessDialog(true);
+            // Update status immediately from response
+            if (response.pengajuan) {
+              setPengajuan(response.pengajuan);
+            }
+          }
+          
+          await fetchDetail();
+        } catch (error: any) {
+          console.error('Error submitting to superadmin:', error);
+          setDialogMessage(error?.message || "Terjadi kesalahan saat mengajukan ke Superadmin");
+          setShowErrorDialog(true);
+        }
       },
       () => {
         // onSuccess - already handled above
       },
       (error) => {
-        // onError - you can add error handling here if needed
+        // onError - already handled in try-catch above
         console.error('Error submitting to superadmin:', error);
       }
     );
@@ -332,22 +352,68 @@ const AdminWilayahUploadPage: React.FC = () => {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3">
-          {(pengajuan.status === 'approved' || pengajuan.status === 'submitted') && (
+          {(pengajuan.status === 'admin_wilayah_approved' || pengajuan.status === 'admin_wilayah_submitted') && (
             <>
               <span className="text-sm text-gray-600 mr-2">{uploadProgress.required}/{uploadProgress.total} berkas wajib</span>
               <SubmitButton 
-                onClick={submitToSuperadmin} 
+                onClick={pengajuan.status === 'admin_wilayah_submitted' ? () => {} : submitToSuperadmin} 
                 className="bg-green-600 hover:bg-green-700 text-white"
-                isProcessing={isSubmitting || pengajuan.status === 'submitted' || (uploadProgress.required < uploadProgress.total)}
+                isProcessing={isSubmitting || pengajuan.status === 'admin_wilayah_submitted' || (uploadProgress.required < uploadProgress.total)}
                 processingText="Mengirim..."
               >
                 <Send className="h-4 w-4 mr-2" />
-                {pengajuan.status === 'submitted' ? 'Sudah Dikirim' : 'Submit ke Superadmin'}
+                {pengajuan.status === 'admin_wilayah_submitted' ? 'Sudah Diajukan' : 'Ajukan ke Superadmin'}
               </SubmitButton>
             </>
           )}
         </div>
       </div>
+
+      {/* Success Dialog */}
+      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-green-600 text-lg">
+            <CheckCircle className="h-5 w-5" />
+            Berhasil!
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-700">
+            {dialogMessage}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction 
+            onClick={() => setShowSuccessDialog(false)}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            OK
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Dialog */}
+      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-red-600 text-lg">
+            <XCircle className="h-5 w-5" />
+            Gagal Mengajukan
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-700">
+            {dialogMessage}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction 
+            onClick={() => setShowErrorDialog(false)}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            OK
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

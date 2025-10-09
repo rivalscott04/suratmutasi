@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from '@/hooks/useNavigation';
 import { apiGet } from '@/lib/api';
@@ -45,12 +45,13 @@ import {
   CheckCircle,
   Search,
   ArrowLeft,
-  User
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+
 
 
 interface User {
@@ -254,6 +255,7 @@ const NavigationBar = () => {
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">

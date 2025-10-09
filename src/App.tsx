@@ -9,6 +9,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import SessionManager from "@/components/SessionManager";
 import { Lock } from 'lucide-react';
 
+
 // Lazy load all pages for code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Settings = lazy(() => import("./pages/Settings"));
