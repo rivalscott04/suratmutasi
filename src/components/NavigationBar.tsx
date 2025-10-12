@@ -269,8 +269,10 @@ const NavigationBar = () => {
                           <span className="animate-pulse w-6 h-6 block bg-green-200 rounded-full mx-auto" />
                         ) : user?.full_name ? (
                           user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+                        ) : user?.email ? (
+                          user.email.charAt(0).toUpperCase()
                         ) : (
-                          '?'
+                          'U'
                         )}
                       </AvatarFallback>
                     </Avatar>
