@@ -47,7 +47,7 @@ import {
   ArrowLeft,
   User,
   UserCircle,
-  Shield,
+  UserStar,
   Building2,
   RefreshCw,
 } from 'lucide-react';
@@ -276,33 +276,22 @@ const NavigationBar = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-72" align="end">
+                <DropdownMenuContent className="w-64" align="end">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                          {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold leading-none text-gray-900">{user?.full_name}</p>
-                          <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
-                        </div>
+                      <div>
+                        <p className="text-sm font-semibold leading-none text-gray-900">{user?.full_name}</p>
+                        <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
                       </div>
                       
                       <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                         {isAdminKanwil ? (
-                          <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-blue-600" />
-                            <span className="text-xs font-medium text-blue-600">Administrator Kanwil</span>
-                          </div>
+                          <span className="text-xs font-medium text-blue-600">Administrator Kanwil</span>
                         ) : (
-                          <div className="flex items-center gap-2">
-                            <UserCircle className="h-4 w-4 text-gray-500" />
-                            <span className="text-xs text-gray-600">
-                              {user?.role === 'admin_wilayah' ? 'Admin Wilayah' : 
-                               user?.role === 'operator' ? 'Operator' : 'Pengguna'}
-                            </span>
-                          </div>
+                          <span className="text-xs text-gray-600">
+                            {user?.role === 'admin_wilayah' ? 'Admin Wilayah' : 
+                             user?.role === 'operator' ? 'Operator' : 'Pengguna'}
+                          </span>
                         )}
                         
                         {user?.wilayah && (

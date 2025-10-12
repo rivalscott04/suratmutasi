@@ -284,7 +284,7 @@ const Dashboard = () => {
                           user?.role === 'operator' ? 'Operator' :
                           user?.role === 'user' ? 'Pengguna' : 'Pengguna';
           
-          return `Selamat datang, ${user?.full_name || 'User'} sebagai ${roleText}`;
+          return `Selamat datang, ${roleText}`;
         })()}
         showBreadcrumb={false}
         actions={
