@@ -524,7 +524,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         gap: '8px',
         padding: '12px 16px',
         minWidth: 'fit-content',
-        width: 'auto'
+        width: 'auto',
+        maxWidth: 'none'
       }}>
         <div style={{
           width: '24px',
@@ -544,7 +545,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           fontSize: '16px', 
           color: '#fff', 
           fontWeight: '500',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+          minWidth: 'fit-content'
         }}>
           Selamat Datang, {userData?.full_name || userData?.email?.split('@')[0] || 'User'}
         </span>
