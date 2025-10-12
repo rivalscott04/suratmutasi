@@ -47,9 +47,23 @@ const Login = () => {
     try {
       await login(email, password);
       setShowSuccessModal(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      setErrorMessage('Email atau password yang Anda masukkan tidak sesuai. Silakan periksa kembali kredensial Anda.');
+      
+      // Handle different types of errors
+      let errorMsg = 'Email atau password yang Anda masukkan tidak sesuai. Silakan periksa kembali kredensial Anda.';
+      
+      if (error.message) {
+        if (error.message.includes('Terlalu banyak percobaan login')) {
+          errorMsg = error.message; // Use the specific rate limit message
+        } else if (error.message.includes('Email atau password salah')) {
+          errorMsg = 'Email atau password salah. Silakan periksa kembali kredensial Anda.';
+        } else {
+          errorMsg = error.message;
+        }
+      }
+      
+      setErrorMessage(errorMsg);
       // Use setTimeout to ensure state update happens after current execution
       setTimeout(() => {
         setShowErrorModal(true);

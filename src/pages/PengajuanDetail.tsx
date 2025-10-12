@@ -2651,14 +2651,19 @@ const PengajuanDetail: React.FC = () => {
                  {allVerified && (
                    <div className="flex items-center justify-between gap-3">
                      <div className="text-xs text-gray-600">
-                       {allFilesApproved ? (
+                       {(isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || (isAdminWilayah && allKabupatenFilesApproved) ? (
                          <span className="text-green-600 font-medium">✓ Semua dokumen sesuai, siap disetujui</span>
                        ) : (
                          <span className="text-red-600 font-medium">⚠ Ada dokumen tidak sesuai</span>
                        )}
                      </div>
                      <div className="flex items-center gap-2">
-                       {canApprove && allFilesApproved && (
+                       {canApprove && (
+                         // SUPERADMIN di tab Admin Wilayah: cek apakah semua dokumen admin wilayah sesuai
+                         // ADMIN WILAYAH: cek apakah semua dokumen kabupaten sesuai
+                         (isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || 
+                         (isAdminWilayah && allKabupatenFilesApproved)
+                       ) && (
                          <Button
                            onClick={() => {
                              setShowPreview(false);
@@ -2672,7 +2677,12 @@ const PengajuanDetail: React.FC = () => {
                          </Button>
                        )}
                        
-                       {canReject && (hasRejectedFiles || !allFilesApproved) && (
+                       {canReject && (
+                         // SUPERADMIN di tab Admin Wilayah: reject jika ada dokumen tidak sesuai
+                         // ADMIN WILAYAH: reject jika ada file bermasalah
+                         (isAdmin && activeTab === 'admin_wilayah' && !allFilesApproved) || 
+                         (isAdminWilayah && (hasRejectedKabupatenFiles || !allKabupatenFilesApproved))
+                       ) && (
                          <Button
                            onClick={() => {
                              setShowPreview(false);

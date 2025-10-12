@@ -296,6 +296,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const res = await apiPost('/api/auth/login', { email, password });
+      
+      // Check if response indicates success
+      if (res.success === false) {
+        throw new Error(res.message || 'Login gagal');
+      }
+      
       setToken(res.token);
       setUser(res.user);
       setOriginalUser(res.user); // Set original user saat login
@@ -309,6 +315,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Dynamic Island will be shown automatically by useEffect when user data is set
       console.log('Login successful, user data:', res.user);
       
+    } catch (error: any) {
+      // Handle rate limit error specifically
+      if (error.message && error.message.includes('Rate limit')) {
+        throw new Error('Terlalu banyak percobaan login. Coba lagi dalam 30 menit.');
+      }
+      
+      // Handle other login errors
+      if (error.message && error.message.includes('Email atau password salah')) {
+        throw new Error('Email atau password salah');
+      }
+      
+      // Generic error handling
+      throw new Error(error.message || 'Terjadi kesalahan saat login');
     } finally {
       setLoading(false);
     }
