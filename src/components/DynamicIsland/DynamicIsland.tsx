@@ -111,8 +111,8 @@ const DynamicIslandInternal = <Name extends string, T extends IslandScene<Name>>
   // Measure content width dynamically
   useEffect(() => {
     if (currentMode === IslandMode.LARGE && contentRef.current) {
-      // Wait for next frame to ensure DOM is ready
-      requestAnimationFrame(() => {
+      // Use multiple attempts to ensure measurement works
+      const measureContent = () => {
         if (contentRef.current) {
           const leftElement = contentRef.current.querySelector('.expanded-mode-left-item-wrapper')
           const rightElement = contentRef.current.querySelector('.expanded-mode-right-item-wrapper')
@@ -122,22 +122,38 @@ const DynamicIslandInternal = <Name extends string, T extends IslandScene<Name>>
           if (leftElement) {
             const leftContent = leftElement.querySelector('.left')
             if (leftContent) {
-              totalWidth += leftContent.scrollWidth
+              // Force layout calculation
+              leftContent.style.width = 'auto'
+              leftContent.style.minWidth = 'fit-content'
+              totalWidth += leftContent.scrollWidth || leftContent.offsetWidth
             }
           }
           
           if (rightElement) {
             const rightContent = rightElement.querySelector('.right')
             if (rightContent) {
-              totalWidth += rightContent.scrollWidth
+              rightContent.style.width = 'auto'
+              rightContent.style.minWidth = 'fit-content'
+              totalWidth += rightContent.scrollWidth || rightContent.offsetWidth
             }
           }
           
-          // Add padding and margin buffer (40px per side = 80px total)
-          const calculatedWidth = Math.max(280, Math.min(600, totalWidth + 80))
+          // Add more generous padding buffer (60px per side = 120px total)
+          const calculatedWidth = Math.max(320, Math.min(700, totalWidth + 120))
+          console.log('📏 Dynamic Island measurement:', {
+            totalContentWidth: totalWidth,
+            calculatedWidth,
+            leftWidth: leftElement?.querySelector('.left')?.scrollWidth,
+            rightWidth: rightElement?.querySelector('.right')?.scrollWidth
+          })
           setDynamicWidth(calculatedWidth)
         }
-      })
+      }
+      
+      // Multiple measurement attempts with delays
+      requestAnimationFrame(measureContent)
+      setTimeout(measureContent, 100)
+      setTimeout(measureContent, 300)
     } else {
       setDynamicWidth(352) // Default width for non-LARGE modes
     }
