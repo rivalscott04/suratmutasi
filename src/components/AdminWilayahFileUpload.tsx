@@ -7,9 +7,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Send, RefreshCw, Eye, Download, Edit, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import FileUploadProgress from '@/components/FileUploadProgress';
+import UploadProgressIndicator from '@/components/UploadProgressIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useFormSubmissionProtection } from '@/hooks/useDoubleClickProtection';
 import { showSuccess, showError, showUploadSuccess, showUploadError, showDownloadError } from '@/lib/messageUtils';
 
 // Normalize any text to a safe DOM id segment
@@ -62,6 +64,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
 }) => {
   const { token, user } = useAuth();
   const { toast } = useToast();
+  const { submitForm, isSubmitting } = useFormSubmissionProtection();
   const [requiredFiles, setRequiredFiles] = useState<AdminWilayahFileConfig[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<PengajuanFile[]>([]);
   const [availableJobTypes, setAvailableJobTypes] = useState<string[]>([]);
@@ -79,6 +82,9 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [errorTitle, setErrorTitle] = useState<string>('Error');
+  
+  // Submit dialog state
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   // Fetch admin wilayah file configuration
   const fetchFileConfigs = async () => {
@@ -718,12 +724,11 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                       </p>
                       
                       {/* Upload Progress */}
-                      {uploading[fileConfig.file_type] && (
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="animate-spin h-3 w-3 border border-green-600 border-t-transparent rounded-full" />
-                          <span className="text-green-600">Uploading... {uploadProgress[fileConfig.file_type] || 0}%</span>
-                        </div>
-                      )}
+                      <UploadProgressIndicator 
+                        progress={uploadProgress[fileConfig.file_type] || 0}
+                        isUploading={uploading[fileConfig.file_type]}
+                        className="mt-2"
+                      />
                       
                       {/* Uploaded File Info */}
                       {status === 'uploaded' && uploadedFile && (
@@ -779,10 +784,12 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                         >
                           <div className="flex flex-col items-center justify-center h-full text-center">
                             {uploading[fileConfig.file_type] ? (
-                              <>
-                                <div className="animate-spin h-6 w-6 border-2 border-green-600 border-t-transparent rounded-full mb-2" />
-                                <p className="text-sm text-green-600 font-medium">Uploading...</p>
-                              </>
+                              <div className="w-full max-w-xs">
+                                <UploadProgressIndicator 
+                                  progress={uploadProgress[fileConfig.file_type] || 0}
+                                  isUploading={uploading[fileConfig.file_type]}
+                                />
+                              </div>
                             ) : dragOver === fileConfig.file_type ? (
                               <>
                                 <Upload className="h-8 w-8 text-green-500 mb-2" />
