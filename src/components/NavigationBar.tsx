@@ -46,6 +46,10 @@ import {
   Search,
   ArrowLeft,
   User,
+  UserCircle,
+  Shield,
+  Building2,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -272,35 +276,67 @@ const NavigationBar = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64" align="end">
+                <DropdownMenuContent className="w-72" align="end">
                   <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-semibold leading-none">{user?.full_name}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                      {isAdminKanwil ? (
-                        <p className="text-xs leading-none text-blue-600 font-medium">
-                          👑 Admin Kanwil (All Access)
-                        </p>
-                      ) : (
-                        <p className="text-xs leading-none text-gray-500">Role: {user?.role}</p>
-                      )}
-                      {user?.office_id && !isAdminKanwil && <p className="text-xs leading-none text-gray-500">Office ID: {user.office_id}</p>}
-                      {isImpersonating && (
-                        <p className="text-xs leading-none text-blue-600">
-                          Impersonating as {user?.full_name}
-                        </p>
-                      )}
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold leading-none text-gray-900">{user?.full_name}</p>
+                          <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                        {isAdminKanwil ? (
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-blue-600" />
+                            <span className="text-xs font-medium text-blue-600">Administrator Kanwil</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <UserCircle className="h-4 w-4 text-gray-500" />
+                            <span className="text-xs text-gray-600">
+                              {user?.role === 'admin_wilayah' ? 'Admin Wilayah' : 
+                               user?.role === 'operator' ? 'Operator' : 'Pengguna'}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {user?.wilayah && (
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-gray-500" />
+                            <span className="text-xs text-gray-600">{user.wilayah}</span>
+                          </div>
+                        )}
+                        
+                        {isImpersonating && (
+                          <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
+                            <RefreshCw className="h-4 w-4 text-blue-600" />
+                            <span className="text-xs text-blue-600 font-medium">
+                              Sedang bertindak sebagai {user?.full_name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </DropdownMenuLabel>
                   
                   {/* Session Status */}
-                  <DropdownMenuItem className="flex items-center justify-between py-2 cursor-default">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                      <span className="text-gray-600">Session Aktif</span>
+                  <DropdownMenuItem className="flex items-center justify-between py-3 cursor-default hover:bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">Sesi Aktif</span>
+                      </div>
                     </div>
                     <button 
-                      className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-all duration-200 font-medium"
                       onClick={async (e) => {
                         e.stopPropagation();
                         try {
@@ -317,13 +353,23 @@ const NavigationBar = () => {
                                 window.dispatchTokenUpdate(data.token);
                               }
                             }
+                            toast({
+                              title: "Sesi Diperpanjang",
+                              description: "Sesi Anda telah berhasil diperpanjang.",
+                            });
                           }
                         } catch (error) {
                           console.error('Refresh failed:', error);
+                          toast({
+                            title: "Gagal Memperpanjang Sesi",
+                            description: "Terjadi kesalahan saat memperpanjang sesi.",
+                            variant: "destructive",
+                          });
                         }
                       }}
                     >
-                      Refresh
+                      <RefreshCw className="h-3 w-3" />
+                      Perpanjang
                     </button>
                   </DropdownMenuItem>
                   
@@ -331,9 +377,9 @@ const NavigationBar = () => {
                   {/* Stop Impersonating option */}
                   {isImpersonating && (
                     <>
-                      <DropdownMenuItem onClick={handleStopImpersonatingClick} className="text-blue-600">
-                        <UserX className="mr-2 h-4 w-4" />
-                        <span>Stop Impersonating</span>
+                      <DropdownMenuItem onClick={handleStopImpersonatingClick} className="text-blue-600 hover:bg-blue-50 py-2.5">
+                        <UserX className="mr-3 h-4 w-4" />
+                        <span className="font-medium">Kembali ke Akun Asli</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
@@ -341,16 +387,16 @@ const NavigationBar = () => {
                   {/* Impersonate option hanya untuk admin kanwil */}
                   {isAdminKanwil && !isImpersonating && (
                     <>
-                      <DropdownMenuItem onClick={handleImpersonateClick} className="text-blue-600">
-                        <Users className="mr-2 h-4 w-4" />
-                        <span>Impersonate User</span>
+                      <DropdownMenuItem onClick={handleImpersonateClick} className="text-blue-600 hover:bg-blue-50 py-2.5">
+                        <Users className="mr-3 h-4 w-4" />
+                        <span className="font-medium">Masuk sebagai Pengguna Lain</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <DropdownMenuItem onClick={handleLogoutClick} className="text-red-600">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
+                  <DropdownMenuItem onClick={handleLogoutClick} className="text-red-600 hover:bg-red-50 py-2.5">
+                    <LogOut className="mr-3 h-4 w-4" />
+                    <span className="font-medium">Keluar</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -278,7 +278,14 @@ const Dashboard = () => {
       {/* Header with Breadcrumb */}
       <PageHeader
         title={user?.role === 'user' ? 'Dashboard Admin Pusat' : 'Dashboard'}
-        subtitle={`Selamat datang, ${user?.full_name || user?.email || 'User'} - ${user?.role || 'Operator'}`}
+        subtitle={(() => {
+          const roleText = user?.role === 'admin_wilayah' ? 'Admin Wilayah' :
+                          user?.role === 'admin' ? 'Administrator Kanwil' :
+                          user?.role === 'operator' ? 'Operator' :
+                          user?.role === 'user' ? 'Pengguna' : 'Pengguna';
+          
+          return `Selamat datang, ${user?.full_name || 'User'} sebagai ${roleText}`;
+        })()}
         showBreadcrumb={false}
         actions={
           <div className="flex items-center space-x-2 text-sm text-gray-500">
