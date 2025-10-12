@@ -546,28 +546,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           fontWeight: '500',
           whiteSpace: 'nowrap'
         }}>
-          Selamat Datang
+          Selamat Datang, {userData?.full_name || userData?.email?.split('@')[0] || 'User'}
         </span>
       </div>
     ),
-    right: (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        padding: '12px 16px',
-        minWidth: 'fit-content',
-        width: 'auto'
-      }}>
-        <span style={{ 
-          fontSize: '16px', 
-          color: '#fff', 
-          fontWeight: '600',
-          whiteSpace: 'nowrap'
-        }}>
-          {userData?.full_name || userData?.email?.split('@')[0] || 'User'}
-        </span>
-      </div>
-    ),
+    right: null,
   });
 
   // Only create WelcomeScene when user data is available
