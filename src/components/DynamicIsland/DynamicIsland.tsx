@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from 'react'
+import { ReactNode, useEffect, useRef, useState, useCallback } from 'react'
 import { SpringConfig, animated, useSpring } from 'react-spring'
 
 export enum IslandMode {
@@ -98,12 +98,50 @@ const DynamicIslandInternal = <Name extends string, T extends IslandScene<Name>>
 }: DynamicIslandProps<Name, T>) => {
   const transitionModeRef = useRef<TransitionMode | null>(null)
   const previousSceneRef = useRef<IslandScene | null>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const currentScene = scenes.find(({ name }) => name === currentSceneName)
 
   const [currentMode, setCurrentMode] = useState<IslandMode>(
     currentScene?.mode ?? IslandMode.DEFAULT
   )
+  
+  const [dynamicWidth, setDynamicWidth] = useState<number>(352)
+  
+  // Measure content width dynamically
+  useEffect(() => {
+    if (currentMode === IslandMode.LARGE && contentRef.current) {
+      // Wait for next frame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        if (contentRef.current) {
+          const leftElement = contentRef.current.querySelector('.expanded-mode-left-item-wrapper')
+          const rightElement = contentRef.current.querySelector('.expanded-mode-right-item-wrapper')
+          
+          let totalWidth = 0
+          
+          if (leftElement) {
+            const leftContent = leftElement.querySelector('.left')
+            if (leftContent) {
+              totalWidth += leftContent.scrollWidth
+            }
+          }
+          
+          if (rightElement) {
+            const rightContent = rightElement.querySelector('.right')
+            if (rightContent) {
+              totalWidth += rightContent.scrollWidth
+            }
+          }
+          
+          // Add padding and margin buffer (40px per side = 80px total)
+          const calculatedWidth = Math.max(280, Math.min(600, totalWidth + 80))
+          setDynamicWidth(calculatedWidth)
+        }
+      })
+    } else {
+      setDynamicWidth(352) // Default width for non-LARGE modes
+    }
+  }, [currentMode, currentScene])
 
   useEffect(() => {
     const previousScene = previousSceneRef.current
@@ -141,7 +179,7 @@ const DynamicIslandInternal = <Name extends string, T extends IslandScene<Name>>
             mass: 1.5,
           },
           from: { opacity: 0, scale: 0.8, width: 112, height: 32 }, // START HIDDEN
-          width: 352,
+          width: dynamicWidth,
           height: 72,
           opacity: 1,
           scale: 1,
@@ -180,7 +218,7 @@ const DynamicIslandInternal = <Name extends string, T extends IslandScene<Name>>
             mass: 1.5,
           },
           transform: 'translateX(0px)',
-          width: 352,
+          width: dynamicWidth,
           height: 72,
           delay: transitionModeRef.current === 'fromSplitToLarge' ? 50 : 0,
         }
@@ -199,7 +237,7 @@ const DynamicIslandInternal = <Name extends string, T extends IslandScene<Name>>
           config: {
             duration: 200,
           },
-          width: 271,
+          width: dynamicWidth - 81,
           height: 55,
           filter: 'blur(0px)',
           opacity: 1,
@@ -300,7 +338,7 @@ const DynamicIslandInternal = <Name extends string, T extends IslandScene<Name>>
   }
 
   return (
-    <animated.div className="dynamic-island" style={dynamicIslandStyles}>
+    <animated.div className="dynamic-island" style={dynamicIslandStyles} ref={contentRef}>
       <animated.div className="darkroom" style={darkRoomStyles}>
         {/* Expanded mode left item */}
         <div className="expanded-mode-item-wrapper expanded-mode-left-item-wrapper">
