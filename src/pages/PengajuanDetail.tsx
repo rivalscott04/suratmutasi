@@ -215,16 +215,35 @@ const PengajuanDetail: React.FC = () => {
   const handleApprove = async () => {
     try {
       setSubmitting(true);
-      const response = isAdminWilayah
-        ? await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/approve`, { notes: approvalNote }, token)
-        : await apiPut(`/api/pengajuan/${pengajuanId}/approve`, { catatan: approvalNote }, token);
+      
+      let response;
+      if (isAdminWilayah) {
+        // Admin wilayah menggunakan endpoint admin-wilayah
+        response = await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/approve`, { notes: approvalNote }, token);
+      } else {
+        // Superadmin: cek status pengajuan untuk menentukan endpoint yang tepat
+        if (pengajuan?.status === 'admin_wilayah_submitted') {
+          // Untuk status admin_wilayah_submitted, gunakan final approval
+          response = await apiPost(`/api/pengajuan/${pengajuanId}/final-approve`, { notes: approvalNote }, token);
+        } else {
+          // Untuk status lainnya (submitted, rejected), gunakan approve biasa
+          response = await apiPut(`/api/pengajuan/${pengajuanId}/approve`, { catatan: approvalNote }, token);
+        }
+      }
       
       if (response.success) {
-        setSuccessMessage('Pengajuan berhasil disetujui!');
+        const successMessage = pengajuan?.status === 'admin_wilayah_submitted' 
+          ? 'Pengajuan berhasil disetujui final!' 
+          : 'Pengajuan berhasil disetujui!';
+        const toastMessage = pengajuan?.status === 'admin_wilayah_submitted' 
+          ? 'Pengajuan disetujui final.' 
+          : 'Pengajuan disetujui.';
+        
+        setSuccessMessage(successMessage);
         setShowSuccessDialog(true);
         setShowApproveDialog(false);
         setApprovalNote('');
-        toast({ title: 'Berhasil', description: 'Pengajuan disetujui.' });
+        toast({ title: 'Berhasil', description: toastMessage });
         await fetchPengajuanData();
       } else {
         setError(response.message || 'Gagal approve pengajuan');
@@ -242,16 +261,35 @@ const PengajuanDetail: React.FC = () => {
   const handleReject = async () => {
     try {
       setSubmitting(true);
-      const response = isAdminWilayah
-        ? await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/reject`, { rejection_reason: rejectionReason }, token)
-        : await apiPut(`/api/pengajuan/${pengajuanId}/reject`, { rejection_reason: rejectionReason }, token);
+      
+      let response;
+      if (isAdminWilayah) {
+        // Admin wilayah menggunakan endpoint admin-wilayah
+        response = await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/reject`, { rejection_reason: rejectionReason }, token);
+      } else {
+        // Superadmin: cek status pengajuan untuk menentukan endpoint yang tepat
+        if (pengajuan?.status === 'admin_wilayah_submitted') {
+          // Untuk status admin_wilayah_submitted, gunakan final rejection
+          response = await apiPost(`/api/pengajuan/${pengajuanId}/final-reject`, { rejection_reason: rejectionReason }, token);
+        } else {
+          // Untuk status lainnya (submitted, rejected), gunakan reject biasa
+          response = await apiPut(`/api/pengajuan/${pengajuanId}/reject`, { rejection_reason: rejectionReason }, token);
+        }
+      }
       
       if (response.success) {
-        setSuccessMessage('Pengajuan berhasil ditolak!');
+        const successMessage = pengajuan?.status === 'admin_wilayah_submitted' 
+          ? 'Pengajuan berhasil ditolak final!' 
+          : 'Pengajuan berhasil ditolak!';
+        const toastMessage = pengajuan?.status === 'admin_wilayah_submitted' 
+          ? 'Pengajuan ditolak final.' 
+          : 'Pengajuan ditolak.';
+        
+        setSuccessMessage(successMessage);
         setShowSuccessDialog(true);
         setShowRejectDialog(false);
         setRejectionReason('');
-        toast({ title: 'Berhasil', description: 'Pengajuan ditolak.' });
+        toast({ title: 'Berhasil', description: toastMessage });
         await fetchPengajuanData();
       } else {
         setError(response.message || 'Gagal reject pengajuan');
