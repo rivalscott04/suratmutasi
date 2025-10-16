@@ -131,7 +131,7 @@ function SKMutasiContent({ formData }: any) {
               <td></td>
               <td></td>
               <td className="font pr-2">3.</td>
-              <td className="text-justify">Peraturan Menteri Agama Republik Indonesia Nomor 1 Tahun 2022 tentang Pemberian Kuasa Kepada Pejabat Pimpinan Tinggi Madya di Lingkungan Kementerian Agama untuk melaksanakan sebagian kewenangan di bidang kepegawaian;</td>
+              <td className="text-justify">Keputusan Menteri Agama No. 550 Tahun 2022 tentang Pemberian Kuasa Pengangkatan, Pemindahan dan Pemberhentian PNS pada Kementerian Agama;</td>
             </tr>
           </tbody>
         </table>
