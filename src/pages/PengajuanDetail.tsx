@@ -672,23 +672,27 @@ const PengajuanDetail: React.FC = () => {
   };
 
   // Generate HTML untuk cetak laporan FINAL (setelah final approval)
-  // Helper function to format verifier display (now using backend formatted data)
+  // Helper function to format verifier display with smart mapping
   const formatVerifierDisplay = (file: any): string => {
-    // Use the verifier_display field from backend if available
-    if (file.verifier_display) {
-      return file.verifier_display;
-    }
-    
-    // Fallback to old logic for backward compatibility
     const verifiedBy = file.verified_by;
     if (!verifiedBy) return '-';
     
-    // If it's an email, show the email
+    // If it's an email, show user-friendly format
     if (verifiedBy.includes('@')) {
-      return verifiedBy;
+      // Map common email patterns to user-friendly names
+      if (verifiedBy.includes('admin.kanwil') || verifiedBy.includes('kanwil')) {
+        return 'Admin Kanwil';
+      } else if (verifiedBy.includes('admin.wilayah') || verifiedBy.includes('wilayah')) {
+        return 'Admin Wilayah';
+      } else if (verifiedBy.includes('admin.mataram')) {
+        return 'Admin Wilayah Mataram';
+      } else if (verifiedBy.includes('admin.')) {
+        return 'Admin System';
+      }
+      return verifiedBy; // Keep original email if no pattern matches
     }
     
-    // If it's a UUID, show a more user-friendly format
+    // If it's a UUID, show generic message
     if (verifiedBy.length === 36 && verifiedBy.includes('-')) {
       return 'Admin System';
     }
