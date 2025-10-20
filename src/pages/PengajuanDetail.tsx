@@ -672,6 +672,35 @@ const PengajuanDetail: React.FC = () => {
   };
 
   // Generate HTML untuk cetak laporan FINAL (setelah final approval)
+  // Helper function to format verifier display with smart mapping
+  const formatVerifierDisplay = (file: any): string => {
+    const verifiedBy = file.verified_by;
+    if (!verifiedBy) return '-';
+    
+    // If it's an email, show user-friendly format
+    if (verifiedBy.includes('@')) {
+      // Map common email patterns to user-friendly names
+      if (verifiedBy.includes('admin.kanwil') || verifiedBy.includes('kanwil')) {
+        return 'Admin Kanwil';
+      } else if (verifiedBy.includes('admin.wilayah') || verifiedBy.includes('wilayah')) {
+        return 'Admin Wilayah';
+      } else if (verifiedBy.includes('admin.mataram')) {
+        return 'Admin Wilayah Mataram';
+      } else if (verifiedBy.includes('admin.')) {
+        return 'Admin System';
+      }
+      return verifiedBy; // Keep original email if no pattern matches
+    }
+    
+    // If it's a UUID, show generic message
+    if (verifiedBy.length === 36 && verifiedBy.includes('-')) {
+      return 'Admin System';
+    }
+    
+    // Fallback to original value
+    return verifiedBy;
+  };
+
   const generateFinalPrintReport = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -764,7 +793,7 @@ const PengajuanDetail: React.FC = () => {
                         '○ Belum Diverifikasi'}
                     </span>
                   </td>
-                  <td>${file.verified_by || '-'}</td>
+                  <td>${formatVerifierDisplay(file)}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -795,7 +824,7 @@ const PengajuanDetail: React.FC = () => {
                         '○ Belum Diverifikasi'}
                     </span>
                   </td>
-                  <td>${file.verified_by || '-'}</td>
+                  <td>${formatVerifierDisplay(file)}</td>
                 </tr>
               `).join('')}
             </tbody>
