@@ -116,6 +116,43 @@ export async function apiFetch(method: string, url: string, options: { data?: an
           return responseData;
         }
       }
+      // Jika refresh gagal, coba lagi sekali dengan delay
+      console.log('⚠️ Token refresh failed, retrying once...');
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const retryRefreshRes = await fetch(getBaseUrl() + '/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (retryRefreshRes.ok) {
+          const retryRefreshData = await retryRefreshRes.json();
+          if (retryRefreshData.token) {
+            localStorage.setItem('token', retryRefreshData.token);
+            if (window.dispatchTokenUpdate) {
+              window.dispatchTokenUpdate(retryRefreshData.token);
+            }
+            // Retry request dengan token baru
+            fetchOptions.headers = {
+              ...fetchOptions.headers,
+              Authorization: `Bearer ${retryRefreshData.token}`,
+            };
+            res = await fetch(fullUrl, fetchOptions);
+            contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              responseData = await res.json();
+            } else {
+              responseData = await res.text();
+            }
+            if (!res.ok) throw new Error(responseData?.message || res.statusText);
+            return responseData;
+          }
+        }
+      } catch (retryError) {
+        console.log('❌ Retry refresh also failed:', retryError);
+      }
+      
       // Jika refresh gagal, trigger modal sesi berakhir global
       if (window.showSessionExpiredModal) {
         window.showSessionExpiredModal();
@@ -154,8 +191,12 @@ export const replaceFile = async (pengajuanId: string, fileId: string, file: Fil
     // Admin wilayah selalu menggunakan endpoint admin-wilayah
     baseUrl = '/api/admin-wilayah';
   } else if (userRole === 'admin') {
-    // Super admin menggunakan endpoint biasa untuk semua file (termasuk admin wilayah)
-    baseUrl = '/api';
+    // Super admin: gunakan endpoint admin-wilayah untuk file admin_wilayah, endpoint biasa untuk file kabupaten
+    if (fileCategory === 'admin_wilayah') {
+      baseUrl = '/api/admin-wilayah';
+    } else {
+      baseUrl = '/api';
+    }
   }
   
   const url = `${baseUrl}/pengajuan/${pengajuanId}/files/${fileId}/replace`;
