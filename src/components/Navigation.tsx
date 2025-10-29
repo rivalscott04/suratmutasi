@@ -155,7 +155,44 @@ export const Navigation: React.FC<NavigationProps> = ({
   // Desktop variant
   return (
     <nav className={cn("hidden lg:flex items-center space-x-1", className)}>
-      {navigationItems.map((item, index) => renderNavigationItem(item, index))}
+      {navigationItems.map((item, index) => {
+        if (item.children && item.children.length > 0) {
+          const Icon = item.icon;
+          const isActive = isActivePath(item.href);
+          return (
+            <div key={index} className="relative group">
+              <Link
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200",
+                  isActive ? "bg-primary text-primary-foreground" : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.name}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Link>
+              <div className="absolute left-0 top-full mt-1 hidden group-hover:block min-w-[220px] rounded-md border bg-white shadow-lg z-50">
+                <div className="py-1">
+                  {item.children.map((child: any, idx: number) => (
+                    <Link
+                      key={idx}
+                      to={child.href}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50",
+                      )}
+                    >
+                      {child.icon ? <child.icon className="h-4 w-4" /> : null}
+                      <span>{child.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return renderNavigationItem(item, index);
+      })}
     </nav>
   );
 };

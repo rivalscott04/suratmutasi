@@ -88,7 +88,7 @@ export const navigationConfig: NavigationItem[] = [
     roles: ['user', 'admin'],
     children: [
       {
-        name: 'Konfigurasi Status Tracking',
+        name: 'Setting Status Tracking',
         href: '/tracking-status-settings',
         icon: Settings,
         description: 'Kelola status tracking untuk admin pusat',

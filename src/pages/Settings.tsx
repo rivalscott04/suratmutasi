@@ -816,7 +816,9 @@ const Settings = () => {
       }
 
       setShowJobConfigDialog(false);
-      fetchJobConfigs();
+      // Refresh both job configs list and available job types for Admin Wilayah
+      await fetchJobConfigs();
+      await fetchAvailableJobTypes();
     } catch (error: any) {
       console.error('Error saving job config:', error);
       toast({
@@ -836,7 +838,9 @@ const Settings = () => {
         title: "Sukses",
         description: "Konfigurasi jabatan berhasil dihapus",
       });
-      fetchJobConfigs();
+      // Refresh lists after delete
+      await fetchJobConfigs();
+      await fetchAvailableJobTypes();
     } catch (error: any) {
       console.error('Error deleting job config:', error);
       toast({
