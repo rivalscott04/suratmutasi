@@ -237,6 +237,53 @@ const NavigationBar = () => {
             <div className="hidden md:flex items-center space-x-8">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
+                
+                // Jika item memiliki children, render sebagai dropdown
+                if (item.children && item.children.length > 0) {
+                  return (
+                    <DropdownMenu key={item.name}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                            isActivePath(item.href) || item.children.some(child => isActivePath(child.href))
+                              ? "bg-green-100 text-green-700"
+                              : "text-gray-600 hover:text-green-700 hover:bg-green-50"
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{item.name}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56">
+                        <DropdownMenuLabel>{item.name}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {item.children.map((child) => {
+                          const ChildIcon = child.icon;
+                          return (
+                            <DropdownMenuItem key={child.name} asChild>
+                              <Link
+                                to={child.href}
+                                className={cn(
+                                  "flex items-center space-x-2 w-full",
+                                  isActivePath(child.href)
+                                    ? "bg-green-100 text-green-700"
+                                    : ""
+                                )}
+                              >
+                                <ChildIcon className="h-4 w-4" />
+                                <span>{child.name}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                }
+                
+                // Jika tidak ada children, render sebagai link biasa
                 return (
                   <Link
                     key={item.name}
@@ -416,6 +463,46 @@ const NavigationBar = () => {
                 
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
+                  
+                  // Jika item memiliki children, render sebagai expandable section
+                  if (item.children && item.children.length > 0) {
+                    return (
+                      <div key={item.name} className="space-y-1">
+                        <div className={cn(
+                          "flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium",
+                          isActivePath(item.href) || item.children.some(child => isActivePath(child.href))
+                            ? "bg-green-100 text-green-700"
+                            : "text-gray-600"
+                        )}>
+                          <Icon className="h-5 w-5" />
+                          <span>{item.name}</span>
+                        </div>
+                        <div className="ml-6 space-y-1">
+                          {item.children.map((child) => {
+                            const ChildIcon = child.icon;
+                            return (
+                              <Link
+                                key={child.name}
+                                to={child.href}
+                                className={cn(
+                                  "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium",
+                                  isActivePath(child.href)
+                                    ? "bg-green-100 text-green-700"
+                                    : "text-gray-500 hover:text-green-700 hover:bg-green-50"
+                                )}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                              >
+                                <ChildIcon className="h-4 w-4" />
+                                <span>{child.name}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Jika tidak ada children, render sebagai link biasa
                   return (
                     <Link
                       key={item.name}

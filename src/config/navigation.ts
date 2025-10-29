@@ -7,7 +7,10 @@ import {
   Users,
   BarChart3,
   FileCheck,
-  FolderOpen
+  FolderOpen,
+  TrendingUp,
+  Eye,
+  Cog
 } from 'lucide-react';
 
 export type UserRole = 'admin' | 'admin_wilayah' | 'operator' | 'user';
@@ -24,6 +27,7 @@ export interface NavigationItem {
   children?: NavigationItem[];
   requiresAuth?: boolean;
   isExternal?: boolean;
+  requiresSuperadmin?: boolean; // Only for admin with office_id === null
 }
 
 export interface BreadcrumbItem {
@@ -77,6 +81,36 @@ export const navigationConfig: NavigationItem[] = [
     roles: ['admin', 'admin_wilayah', 'operator', 'user']
   },
   {
+    name: 'Tracking',
+    href: '/tracking',
+    icon: TrendingUp,
+    description: 'Kelola tracking dokumen dan konfigurasi',
+    roles: ['user', 'admin'],
+    children: [
+      {
+        name: 'Konfigurasi Status Tracking',
+        href: '/tracking-status-settings',
+        icon: Settings,
+        description: 'Kelola status tracking untuk admin pusat',
+        roles: ['user']
+      },
+      {
+        name: 'Tracking Dokumen',
+        href: '/tracking',
+        icon: TrendingUp,
+        description: 'Input status tracking berkas di pusat',
+        roles: ['user']
+      },
+      {
+        name: 'Monitor Tracking',
+        href: '/tracking-monitor',
+        icon: Eye,
+        description: 'Monitor progress tracking berkas',
+        roles: ['admin']
+      }
+    ]
+  },
+  {
     name: 'Management User',
     href: '/users',
     icon: UserCog,
@@ -88,7 +122,7 @@ export const navigationConfig: NavigationItem[] = [
     href: '/settings',
     icon: Settings,
     description: 'Pengaturan sistem dan profil',
-    excludeRoles: ['user']
+    roles: ['admin', 'admin_wilayah', 'operator']
   }
 ];
 
@@ -222,6 +256,24 @@ export const routeConfig: Record<string, {
     roles: ['admin_wilayah'],
     parent: '/admin-wilayah/dashboard'
   },
+  '/tracking': {
+    title: 'Tracking Dokumen',
+    breadcrumbs: [
+      { name: 'Tracking', href: '/tracking' },
+      { name: 'Tracking Dokumen', current: true }
+    ],
+    roles: ['user'],
+    parent: '/tracking'
+  },
+  '/tracking-monitor': {
+    title: 'Monitor Tracking',
+    breadcrumbs: [
+      { name: 'Tracking', href: '/tracking' },
+      { name: 'Monitor Tracking', current: true }
+    ],
+    roles: ['admin'],
+    parent: '/tracking'
+  },
   '/users': {
     title: 'Management User',
     breadcrumbs: [
@@ -236,19 +288,19 @@ export const routeConfig: Record<string, {
     ],
     roles: ['admin', 'admin_wilayah', 'operator']
   },
-  '/job-type-configuration': {
-    title: 'Konfigurasi Jenis Jabatan',
+  '/tracking-status-settings': {
+    title: 'Konfigurasi Status Tracking',
     breadcrumbs: [
-      { name: 'Settings', href: '/settings' },
-      { name: 'Konfigurasi Jenis Jabatan', current: true }
+      { name: 'Tracking', href: '/tracking' },
+      { name: 'Konfigurasi Status Tracking', current: true }
     ],
-    roles: ['admin'],
-    parent: '/settings'
+    roles: ['user'],
+    parent: '/tracking'
   }
 };
 
 // Helper functions
-export const getNavigationItems = (userRole: UserRole): NavigationItem[] => {
+export const getNavigationItems = (userRole: UserRole, userOfficeId?: string | null): NavigationItem[] => {
   return navigationConfig.filter(item => {
     // Check if role is explicitly included
     if (item.roles && !item.roles.includes(userRole)) {
@@ -258,6 +310,39 @@ export const getNavigationItems = (userRole: UserRole): NavigationItem[] => {
     // Check if role is explicitly excluded
     if (item.excludeRoles && item.excludeRoles.includes(userRole)) {
       return false;
+    }
+    
+    // Check superadmin requirement
+    if (item.requiresSuperadmin) {
+      const isSuperadmin = userRole === 'admin' && userOfficeId === null;
+      if (!isSuperadmin) {
+        return false;
+      }
+    }
+    
+    // Filter children items based on role
+    if (item.children) {
+      item.children = item.children.filter(child => {
+        // Check if role is explicitly included for child
+        if (child.roles && !child.roles.includes(userRole)) {
+          return false;
+        }
+        
+        // Check if role is explicitly excluded for child
+        if (child.excludeRoles && child.excludeRoles.includes(userRole)) {
+          return false;
+        }
+        
+        // Check superadmin requirement for child
+        if (child.requiresSuperadmin) {
+          const isSuperadmin = userRole === 'admin' && userOfficeId === null;
+          if (!isSuperadmin) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
     }
     
     return true;

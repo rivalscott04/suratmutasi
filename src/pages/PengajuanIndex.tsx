@@ -60,6 +60,7 @@ const PengajuanIndex: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createdByFilter, setCreatedByFilter] = useState<string>('all');
+  const [jenisJabatanFilter, setJenisJabatanFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -69,7 +70,8 @@ const PengajuanIndex: React.FC = () => {
   const [filterOptions, setFilterOptions] = useState<{
     users: Array<{ id: string; email: string; full_name: string }>;
     statuses: Array<{ value: string; label: string; count: number }>;
-  }>({ users: [], statuses: [] });
+    jenisJabatan: Array<{ value: string; label: string; count: number }>;
+  }>({ users: [], statuses: [], jenisJabatan: [] });
   const [groupedByKabkota, setGroupedByKabkota] = useState<Record<string, PengajuanData[]>>({});
 
   const itemsPerPage = 50;
@@ -114,7 +116,7 @@ const PengajuanIndex: React.FC = () => {
       setStatusFilter('final_approved');
     }
     fetchPengajuanData();
-  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter, isReadOnlyUser, searchTerm]);
+  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter, jenisJabatanFilter, isReadOnlyUser, searchTerm]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -130,6 +132,7 @@ const PengajuanIndex: React.FC = () => {
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
         ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(jenisJabatanFilter !== 'all' && { jenis_jabatan: jenisJabatanFilter }),
         ...(searchTerm && { search: searchTerm }),
         ...(isAdmin && createdByFilter !== 'all' && { created_by: createdByFilter })
       });
@@ -198,6 +201,11 @@ const PengajuanIndex: React.FC = () => {
 
   const handleCreatedByFilter = (value: string) => {
     setCreatedByFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleJenisJabatanFilter = (value: string) => {
+    setJenisJabatanFilter(value);
     setCurrentPage(1);
   };
 
@@ -532,6 +540,28 @@ const PengajuanIndex: React.FC = () => {
                  </Select>
                </div>
                
+                               {/* User Only Filter - Jenis Jabatan */}
+                {isReadOnlyUser && (
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-400" />
+                    <Select value={jenisJabatanFilter} onValueChange={handleJenisJabatanFilter}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filter Jenis Jabatan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Jenis Jabatan</SelectItem>
+                        {filterOptions.jenisJabatan
+                          .filter(jabatan => jabatan.count > 0)
+                          .map((jabatan) => (
+                            <SelectItem key={jabatan.value} value={jabatan.value}>
+                              {jabatan.label} ({jabatan.count})
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                                {/* Admin Only Filters */}
                 {isAdmin && (
                   <div className="flex items-center gap-2">

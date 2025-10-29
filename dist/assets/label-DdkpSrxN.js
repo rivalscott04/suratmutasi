@@ -1,7 +1,0 @@
-<<<<<<<< HEAD:dist/assets/label-DdkpSrxN.js
-import{j as r,bo as a,m as t}from"./ui-vendor-Cjkg25QM.js";import{r as m}from"./react-vendor-BNG1zHOu.js";import{w as i}from"./index-CQ3np5WT.js";const l=t("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"),p=m.forwardRef(({className:o,...s},e)=>r.jsx(a,{ref:e,className:i(l(),o),...s}));p.displayName=a.displayName;export{p as L};
-//# sourceMappingURL=label-DdkpSrxN.js.map
-========
-import{j as r,bo as a,m as t}from"./ui-vendor-Cjkg25QM.js";import{r as m}from"./react-vendor-BNG1zHOu.js";import{w as i}from"./index-KhaKPB1p.js";const l=t("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"),p=m.forwardRef(({className:o,...s},e)=>r.jsx(a,{ref:e,className:i(l(),o),...s}));p.displayName=a.displayName;export{p as L};
-//# sourceMappingURL=label-DIo5pIuL.js.map
->>>>>>>> 0ec0513530501c07893c1397f84884579ca85356:dist/assets/label-DIo5pIuL.js

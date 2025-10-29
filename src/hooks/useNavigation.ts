@@ -26,8 +26,8 @@ export const useNavigation = () => {
 
   // Get navigation items for current role
   const navigationItems = useMemo(() => {
-    return getNavigationItems(currentRole);
-  }, [currentRole]);
+    return getNavigationItems(currentRole, user?.office_id);
+  }, [currentRole, user?.office_id]);
 
   // Get breadcrumbs for current path
   const breadcrumbs = useMemo(() => {
@@ -70,7 +70,8 @@ export const useNavigation = () => {
       '/generator': ['/generator/sk', '/generator/create'],
       '/pengajuan': ['/pengajuan/select', '/pengajuan/edit'],
       '/letters': ['/letters/preview'],
-      '/admin-wilayah': ['/admin-wilayah/dashboard', '/admin-wilayah/upload']
+      '/admin-wilayah': ['/admin-wilayah/dashboard', '/admin-wilayah/upload'],
+      '/tracking': ['/tracking-status-settings', '/tracking-monitor']
     };
     
     // Check if current path is a sub-route of the href

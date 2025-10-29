@@ -677,24 +677,38 @@ const PengajuanDetail: React.FC = () => {
     const verifiedBy = file.verified_by;
     if (!verifiedBy) return '-';
     
+    // Determine verifier based on file category
+    if (file.file_category === 'admin_wilayah') {
+      // For admin wilayah files, verifier should be Superadmin
+      return 'Superadmin';
+    } else {
+      // For kabupaten files, verifier should be Admin Wilayah
+      return 'Admin Wilayah Lombok Barat';
+    }
+  };
+
+  // Helper function to get verifier name for display
+  const getVerifierName = (verifiedBy: string): string => {
+    if (!verifiedBy) return '';
+    
     // If it's an email, show user-friendly format
     if (verifiedBy.includes('@')) {
       // Map common email patterns to user-friendly names
       if (verifiedBy.includes('admin.kanwil') || verifiedBy.includes('kanwil')) {
-        return 'Admin Kanwil';
+        return 'Superadmin';
       } else if (verifiedBy.includes('admin.wilayah') || verifiedBy.includes('wilayah')) {
         return 'Admin Wilayah';
       } else if (verifiedBy.includes('admin.mataram')) {
         return 'Admin Wilayah Mataram';
       } else if (verifiedBy.includes('admin.')) {
-        return 'Admin System';
+        return 'Superadmin';
       }
       return verifiedBy; // Keep original email if no pattern matches
     }
     
     // If it's a UUID, show generic message
     if (verifiedBy.length === 36 && verifiedBy.includes('-')) {
-      return 'Admin System';
+      return 'Superadmin';
     }
     
     // Fallback to original value
@@ -709,19 +723,8 @@ const PengajuanDetail: React.FC = () => {
     const kabupatenFiles = pengajuan.files.filter(f => f.file_category === 'kabupaten');
     const adminWilayahFiles = pengajuan.files.filter(f => f.file_category === 'admin_wilayah');
     
-    // Filter berkas admin wilayah yang seharusnya ditampilkan (sesuai narasi)
-    const validAdminWilayahFiles = adminWilayahFiles.filter(file => {
-      const validTypes = [
-        'surat_pengantar_permohonan_rekomendasi',
-        'surat_rekomendasi_kanwil_khusus', 
-        'surat_persetujuan_kepala_wilayah',
-        'surat_pernyataan_tidak_ikatan_dinas',
-        'surat_pernyataan_tidak_tugas_belajar',
-        'hasil_evaluasi_pertimbangan_baperjakat',
-        'surat_rekomendasi_kanwil'
-      ];
-      return validTypes.includes(file.file_type);
-    });
+    // Semua file admin wilayah sudah valid, tidak perlu filter hardcoded
+    const validAdminWilayahFiles = adminWilayahFiles;
     
     // Gabungkan semua file yang sudah diverifikasi
     const allVerifiedFiles = [...kabupatenFiles, ...validAdminWilayahFiles];
@@ -1729,7 +1732,7 @@ const PengajuanDetail: React.FC = () => {
                               ) : (
                                 <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Belum Diverifikasi</span>
                               )}
-                              {file.verified_by && ` - ${file.verified_by}`}
+                              {file.verified_by && ` - ${getVerifierName(file.verified_by)}`}
                             </Badge>
                             {file.verification_notes && (
                               <p className="text-xs text-gray-600">{file.verification_notes}</p>

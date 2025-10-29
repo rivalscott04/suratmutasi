@@ -30,6 +30,9 @@ const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
 const JobTypeConfiguration = lazy(() => import("./pages/JobTypeConfiguration"));
 const AdminWilayahDashboard = lazy(() => import("./pages/AdminWilayahDashboard"));
 const AdminWilayahUploadPage = lazy(() => import("./pages/AdminWilayahUploadPage"));
+const AdminPusatTracking = lazy(() => import("./pages/AdminPusatTracking"));
+const AdminTrackingMonitor = lazy(() => import("./pages/SuperadminTracking"));
+const TrackingStatusSettings = lazy(() => import("./pages/TrackingStatusSettings"));
 const SKForm = lazy(() => import("./components/SKForm"));
 const MaintenancePage = lazy(() => import("./pages/MaintenancePage"));
 
@@ -106,6 +109,20 @@ const AdminWilayahRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (!user || user.role !== 'admin_wilayah') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <AppLayout>{children}</AppLayout>;
+};
+
+const AdminPusatRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!user || user.role !== 'user') {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -277,6 +294,15 @@ const AppRoutes = () => {
           </AdminRoute>
         </MaintenanceRoute>
       } />
+      <Route path="/tracking-status-settings" element={
+        <MaintenanceRoute>
+          <AdminOrUserRoute>
+            <Suspense fallback={<PageLoading />}>
+              <TrackingStatusSettings />
+            </Suspense>
+          </AdminOrUserRoute>
+        </MaintenanceRoute>
+      } />
       
       {/* Admin Wilayah Routes */}
       <Route path="/admin-wilayah/dashboard" element={
@@ -298,6 +324,25 @@ const AppRoutes = () => {
         </MaintenanceRoute>
       } />
       
+      {/* Tracking Routes */}
+      <Route path="/tracking" element={
+        <MaintenanceRoute>
+          <AdminPusatRoute>
+            <Suspense fallback={<PageLoading />}>
+              <AdminPusatTracking />
+            </Suspense>
+          </AdminPusatRoute>
+        </MaintenanceRoute>
+      } />
+      <Route path="/tracking-monitor" element={
+        <MaintenanceRoute>
+          <AdminRoute>
+            <Suspense fallback={<PageLoading />}>
+              <AdminTrackingMonitor />
+            </Suspense>
+          </AdminRoute>
+        </MaintenanceRoute>
+      } />
       
       <Route path="*" element={
         <Suspense fallback={<PageLoading />}>
