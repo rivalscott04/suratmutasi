@@ -1715,7 +1715,7 @@ const PengajuanDetail: React.FC = () => {
                                 const withoutParens = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
                                 const withoutUuid = withoutParens.replace(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/g, '').trim();
                                 const officeText = withoutUuid ? ` ${withoutUuid}` : '';
-                                return `Upload oleh: ${file.uploaded_by_name}${officeText}`;
+                                return `Diupload oleh: ${file.uploaded_by_name}${officeText}`;
                               })()}
                             </div>
                           )}

@@ -910,7 +910,7 @@ const AdminWilayahDashboard: React.FC = () => {
                         const withoutParens = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
                         const withoutUuid = withoutParens.replace(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/g, '').trim();
                         const officeText = withoutUuid ? ` ${withoutUuid}` : '';
-                        return `Uploaded by: ${upload.uploaded_by_name}${officeText} - ${formatDate(upload.uploaded_at)}`;
+                        return `Diupload oleh: ${upload.uploaded_by_name}${officeText} - ${formatDate(upload.uploaded_at)}`;
                       })()}
                     </div>
                   </div>
