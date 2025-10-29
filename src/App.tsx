@@ -296,11 +296,11 @@ const AppRoutes = () => {
       } />
       <Route path="/tracking-status-settings" element={
         <MaintenanceRoute>
-          <AdminOrUserRoute>
-            <Suspense fallback={<PageLoading />}>
+          <AdminPusatRoute>
+            <Suspense fallback={<PageLoading />}> 
               <TrackingStatusSettings />
             </Suspense>
-          </AdminOrUserRoute>
+          </AdminPusatRoute>
         </MaintenanceRoute>
       } />
       

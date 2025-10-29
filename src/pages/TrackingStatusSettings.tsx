@@ -245,19 +245,7 @@ const TrackingStatusSettings: React.FC = () => {
                       />
                     </div>
                     
-                    <div className="grid gap-2">
-                      <Label htmlFor="status_code">Kode Status</Label>
-                      <Input
-                        id="status_code"
-                        value={formData.status_code}
-                        onChange={(e) => setFormData(prev => ({ ...prev, status_code: e.target.value }))}
-                        placeholder="Akan di-generate otomatis"
-                        disabled={!editingStatus}
-                      />
-                      {!editingStatus && (
-                        <p className="text-xs text-gray-500">Kode status akan dibuat otomatis saat menyimpan</p>
-                      )}
-                    </div>
+                    {/* Kode Status disembunyikan baik saat tambah maupun edit */}
                     
                     <div className="grid gap-2">
                       <Label htmlFor="description">Deskripsi</Label>
