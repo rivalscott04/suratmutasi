@@ -1709,7 +1709,12 @@ const PengajuanDetail: React.FC = () => {
                           {/* Info uploader */}
                           {file.uploaded_by_name && (
                             <div className="text-xs text-gray-500">
-                              Upload oleh: {file.uploaded_by_name} ({file.uploaded_by_office || 'Admin Wilayah'})
+                              {(() => {
+                                const officeRaw = (file.uploaded_by_office || '').toString();
+                                const officeClean = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
+                                const officeText = officeClean ? ` ${officeClean}` : '';
+                                return `Upload oleh: ${file.uploaded_by_name}${officeText}`;
+                              })()}
                             </div>
                           )}
                           

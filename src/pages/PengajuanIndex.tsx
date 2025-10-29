@@ -605,7 +605,7 @@ const PengajuanIndex: React.FC = () => {
                               <TableHead>Pegawai</TableHead>
                               <TableHead>Jenis Jabatan</TableHead>
                               <TableHead>Status</TableHead>
-                              <TableHead>Dokumen</TableHead>
+                              <TableHead>Jumlah Dokumen</TableHead>
                               {isAdmin && <TableHead>Pembuat</TableHead>}
                               <TableHead>Tanggal Dibuat</TableHead>
                               <TableHead className="text-right">Aksi</TableHead>
@@ -627,8 +627,6 @@ const PengajuanIndex: React.FC = () => {
                                 <TableCell>
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm">{pengajuan.files.length}</span>
-                                    <span className="text-gray-500">/</span>
-                                    <span className="text-sm">{pengajuan.total_dokumen}</span>
                                   </div>
                                 </TableCell>
                                 {isAdmin && (
@@ -774,7 +772,7 @@ const PengajuanIndex: React.FC = () => {
                       <TableHead>Pegawai</TableHead>
                       <TableHead>Jenis Jabatan</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Dokumen</TableHead>
+                      <TableHead>Jumlah Dokumen</TableHead>
                       <TableHead>Tanggal Dibuat</TableHead>
                       <TableHead>Aksi</TableHead>
                     </TableRow>
@@ -868,13 +866,11 @@ const PengajuanIndex: React.FC = () => {
                                                  <TableCell>
                            {getStatusBadge(pengajuan.status, pengajuan)}
                          </TableCell>
-                                                 <TableCell>
-                           <div className="flex items-center gap-2">
-                             <span className="text-sm">{pengajuan.files.length}</span>
-                             <span className="text-gray-500">/</span>
-                             <span className="text-sm">{pengajuan.total_dokumen}</span>
-                           </div>
-                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{pengajuan.files.length}</span>
+                          </div>
+                        </TableCell>
                                                    {isAdmin && (
                             <TableCell>
                               <div className="text-sm text-gray-600">
