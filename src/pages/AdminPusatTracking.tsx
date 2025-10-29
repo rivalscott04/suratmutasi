@@ -92,6 +92,9 @@ const AdminPusatTracking: React.FC = () => {
   const [selectedPengajuan, setSelectedPengajuan] = useState<PengajuanData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Paging state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -224,6 +227,35 @@ const AdminPusatTracking: React.FC = () => {
     
     return matchesSearch && matchesJabatan && matchesStatus;
   });
+
+  // Reset ke halaman 1 saat filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedJabatan, selectedStatus]);
+
+  // Paging calculations
+  const totalItems = filteredPengajuan.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedPengajuan = filteredPengajuan.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const maxPagesToShow = 5;
+    if (totalPages <= maxPagesToShow) {
+      return Array.from({ length: totalPages }, (_, idx) => idx + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, currentPage + 2);
+    if (currentPage <= 3) {
+      end = maxPagesToShow;
+      start = 1;
+    } else if (currentPage >= totalPages - 2) {
+      end = totalPages;
+      start = totalPages - maxPagesToShow + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+  };
 
   const getUniqueJabatan = () => {
     const jabatanSet = new Set(pengajuan.map(p => p.jenis_jabatan));
@@ -426,7 +458,7 @@ const AdminPusatTracking: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          filteredPengajuan.map((pengajuanData) => {
+          paginatedPengajuan.map((pengajuanData) => {
             const latestTracking = getLatestTracking(pengajuanData);
             const hasTracking = latestTracking !== null;
             
@@ -435,21 +467,19 @@ const AdminPusatTracking: React.FC = () => {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      {/* Header dengan NIP dan Badge */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <h3 className="font-bold text-xl text-gray-900">{pengajuanData.pegawai_nip}</h3>
-                        <Badge variant="outline" className="bg-gray-100 text-gray-700">
-                          {pengajuanData.jenis_jabatan}
-                        </Badge>
+                      {/* Header dengan Nama sebagai fokus utama */}
+                      <div className="mb-3">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-bold text-xl text-gray-900">{pengajuanData.pegawai?.nama || 'Nama tidak tersedia'}</h3>
+                          <Badge variant="outline" className="bg-gray-100 text-gray-700">
+                            {pengajuanData.jenis_jabatan}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">NIP: {pengajuanData.pegawai_nip}</p>
                       </div>
                       
                       {/* Informasi Detail */}
                       <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <User className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium">{pengajuanData.pegawai?.nama || 'Nama tidak tersedia'}</span>
-                        </div>
-                        
                         <div className="flex items-center gap-2 text-gray-700">
                           <Building2 className="h-4 w-4 text-gray-500" />
                           <span>{pengajuanData.office?.kabkota || pengajuanData.office?.nama_kantor || 'Lokasi tidak tersedia'}</span>
@@ -509,6 +539,46 @@ const AdminPusatTracking: React.FC = () => {
           })
         )}
       </div>
+
+      {/* Pagination controls */}
+      {filteredPengajuan.length > 0 && (
+        <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="text-sm text-gray-600">
+            Menampilkan {Math.min(totalItems, startIndex + 1)}–{Math.min(totalItems, endIndex)} dari {totalItems} data
+          </div>
+          <div className="flex items-center gap-3">
+            <Select value={pageSize.toString()} onValueChange={(v) => { setPageSize(parseInt(v)); setCurrentPage(1); }}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="Jumlah" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 / halaman</SelectItem>
+                <SelectItem value="25">25 / halaman</SelectItem>
+                <SelectItem value="50">50 / halaman</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-1">
+              <Button variant="outline" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                Prev
+              </Button>
+              {getPageNumbers().map((n) => (
+                <Button
+                  key={n}
+                  variant={n === currentPage ? 'default' : 'outline'}
+                  className={n === currentPage ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+                  onClick={() => setCurrentPage(n)}
+                >
+                  {n}
+                </Button>
+              ))}
+              <Button variant="outline" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tracking Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Search, 
@@ -40,6 +41,11 @@ interface PengajuanData {
   jenis_jabatan: string;
   total_dokumen: number;
   final_approved_at: string;
+  pegawai?: {
+    id?: string;
+    nip?: string;
+    nama?: string;
+  };
   office?: {
     id: string;
     name: string;
@@ -55,10 +61,12 @@ const AdminTrackingMonitor: React.FC = () => {
   const [pengajuan, setPengajuan] = useState<PengajuanData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedPengajuan, setSelectedPengajuan] = useState<PengajuanData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [stats, setStats] = useState({
-    total: 0,
+    tracked: 0,
     completed: 0,
     inProgress: 0,
     overdue: 0
@@ -96,13 +104,14 @@ const AdminTrackingMonitor: React.FC = () => {
   };
 
   const calculateStats = (data: PengajuanData[]) => {
-    const total = data.length;
+    let tracked = 0;
     let completed = 0;
     let inProgress = 0;
     let overdue = 0;
 
     data.forEach(p => {
       if (p.tracking && p.tracking.length > 0) {
+        tracked++;
         const latestTracking = p.tracking[0]; // Assuming sorted by created_at DESC
         
         if (latestTracking.status_name.includes('Selesai')) {
@@ -123,7 +132,7 @@ const AdminTrackingMonitor: React.FC = () => {
       }
     });
 
-    setStats({ total, completed, inProgress, overdue });
+    setStats({ tracked, completed, inProgress, overdue });
   };
 
   const handleViewDetails = (pengajuanData: PengajuanData) => {
@@ -137,10 +146,18 @@ const AdminTrackingMonitor: React.FC = () => {
     p.office?.kabkota.toLowerCase().includes(search.toLowerCase())
   );
 
+  useEffect(() => {
+    // reset ke halaman pertama saat filter berubah
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPengajuan.length / pageSize));
+  const firstIndex = (currentPage - 1) * pageSize;
+  const lastIndex = firstIndex + pageSize;
+  const paginatedPengajuan = filteredPengajuan.slice(firstIndex, lastIndex);
+
   const getStatusBadgeVariant = (statusName: string) => {
-    if (statusName.includes('Selesai')) return 'default';
-    if (statusName.includes('Diproses')) return 'secondary';
-    if (statusName.includes('Disposisi')) return 'outline';
+    // kept for compatibility, not used for color anymore
     return 'secondary';
   };
 
@@ -149,6 +166,14 @@ const AdminTrackingMonitor: React.FC = () => {
     if (statusName.includes('Diproses')) return <Clock className="h-4 w-4 text-blue-600" />;
     if (statusName.includes('Disposisi')) return <TrendingUp className="h-4 w-4 text-orange-600" />;
     return <AlertCircle className="h-4 w-4 text-gray-600" />;
+  };
+
+  const getStatusBadgeClasses = (statusName: string, overdue = false) => {
+    if (statusName.includes('Selesai')) return 'bg-green-100 text-green-700 border-green-200';
+    if (statusName.includes('Diproses')) return `bg-blue-100 text-blue-700 border-blue-200 ${overdue ? 'border-red-400 text-red-700' : ''}`;
+    if (statusName.includes('Disposisi')) return 'bg-orange-100 text-orange-700 border-orange-200';
+    if (statusName.includes('Menunggu')) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    return 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const isOverdue = (tracking: TrackingRecord) => {
@@ -188,15 +213,15 @@ const AdminTrackingMonitor: React.FC = () => {
         subtitle="Monitor progress berkas di pusat" 
       />
 
-      {/* Stats Cards */}
+      {/* Stats Cards (tracking-focused) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
               <FileText className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Berkas</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-sm font-medium text-gray-600">Memiliki riwayat tracking</p>
+                <p className="text-2xl font-bold">{stats.tracked}</p>
               </div>
             </div>
           </CardContent>
@@ -254,108 +279,99 @@ const AdminTrackingMonitor: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Pengajuan List */}
-      <div className="space-y-4">
-        {filteredPengajuan.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center">
+      {/* Datatable */}
+      <Card>
+        <CardContent className="p-0">
+          {filteredPengajuan.length === 0 ? (
+            <div className="p-6 text-center">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">Tidak ada data tracking</p>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredPengajuan.map((pengajuanData) => {
-            const latestTracking = pengajuanData.tracking && pengajuanData.tracking.length > 0 
-              ? pengajuanData.tracking[0] 
-              : null;
-            
-            return (
-              <Card key={pengajuanData.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-2">
-                        <h3 className="font-semibold text-lg">{pengajuanData.pegawai_nip}</h3>
-                        <Badge variant="outline">{pengajuanData.jenis_jabatan}</Badge>
-                        {latestTracking && (
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(latestTracking.status_name)}
-                            <Badge 
-                              variant={getStatusBadgeVariant(latestTracking.status_name)}
-                              className={isOverdue(latestTracking) ? 'border-red-500 text-red-700' : ''}
-                            >
-                              {latestTracking.status_name}
-                            </Badge>
-                            {isOverdue(latestTracking) && (
-                              <Badge variant="destructive" className="text-xs">
-                                <Timer className="h-3 w-3 mr-1" />
-                                Terlambat
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>NIP</TableHead>
+                    <TableHead>Nama Pegawai</TableHead>
+                    <TableHead>Jabatan</TableHead>
+                    <TableHead>Kab/Kota</TableHead>
+                    <TableHead>Status Terakhir</TableHead>
+                    <TableHead>Estimasi</TableHead>
+                    <TableHead>Tgl Final</TableHead>
+                    <TableHead>Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedPengajuan.map((p) => {
+                    const latest = p.tracking && p.tracking.length > 0 ? p.tracking[0] : null;
+                    const finalDate = p.final_approved_at ? new Date(p.final_approved_at).toLocaleDateString('id-ID') : 'Belum ditentukan';
+                    return (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">{p.pegawai_nip}</TableCell>
+                        <TableCell>{p.pegawai?.nama || '—'}</TableCell>
+                        <TableCell><Badge variant="outline">{p.jenis_jabatan}</Badge></TableCell>
+                        <TableCell>{p.office?.kabkota || 'N/A'}</TableCell>
+                        <TableCell>
+                          {latest ? (
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(latest.status_name)}
+                              <Badge title={latest.status_name} className={`cursor-default hover:brightness-95 ${getStatusBadgeClasses(latest.status_name, isOverdue(latest))}`}>
+                                {latest.status_name}
                               </Badge>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4" />
-                          {pengajuanData.office?.kabkota || 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          {pengajuanData.total_dokumen} dokumen
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(pengajuanData.final_approved_at).toLocaleDateString('id-ID')}
-                        </div>
-                        {latestTracking && (
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            {latestTracking.tracked_by_name}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Latest tracking info */}
-                      {latestTracking && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center justify-between text-sm">
-                            <div>
-                              <span className="font-medium">Catatan: </span>
-                              <span className="text-gray-600">
-                                {latestTracking.notes || 'Tidak ada catatan'}
-                              </span>
                             </div>
-                            {latestTracking.estimated_days && (
-                              <div className="flex items-center gap-1 text-gray-600">
-                                <Clock className="h-3 w-3" />
-                                Estimasi: {latestTracking.estimated_days} hari
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleViewDetails(pengajuanData)}
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Lihat Detail
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
+                          ) : (
+                            <span className="text-gray-500">Belum ada</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{latest?.estimated_days ? `${latest.estimated_days} hari` : '-'}</TableCell>
+                        <TableCell>{finalDate}</TableCell>
+                        <TableCell>
+                          <Button size="sm" variant="outline" className="flex items-center gap-2" onClick={() => handleViewDetails(p)}>
+                            <Eye className="h-4 w-4" /> Detail
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {filteredPengajuan.length > 0 && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-gray-600">
+            Menampilkan {firstIndex + 1}-{Math.min(lastIndex, filteredPengajuan.length)} dari {filteredPengajuan.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-sm text-gray-600 mr-2">
+              <span>Tampilkan</span>
+              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                <SelectTrigger className="h-8 w-[84px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+              <span>per halaman</span>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+              Sebelumnya
+            </Button>
+            <span className="text-sm">Hal {currentPage} / {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+              Berikutnya
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -368,14 +384,17 @@ const AdminTrackingMonitor: React.FC = () => {
             <div className="space-y-6">
               {/* Pengajuan Info */}
               <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">{selectedPengajuan.pegawai_nip}</h3>
+                <div className="mb-2">
+                  <h3 className="font-semibold text-xl leading-tight">{selectedPengajuan.pegawai?.nama || '-'}</h3>
+                  <div className="text-xs text-gray-500 mt-1 font-mono">NIP: {selectedPengajuan.pegawai_nip}</div>
+                </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Jenis Jabatan:</span>
                     <p className="text-gray-600">{selectedPengajuan.jenis_jabatan}</p>
                   </div>
                   <div>
-                    <span className="font-medium">Kabupaten:</span>
+                    <span className="font-medium">Kabupaten/Kota:</span>
                     <p className="text-gray-600">{selectedPengajuan.office?.kabkota || 'N/A'}</p>
                   </div>
                   <div>
@@ -385,7 +404,7 @@ const AdminTrackingMonitor: React.FC = () => {
                   <div>
                     <span className="font-medium">Final Approved:</span>
                     <p className="text-gray-600">
-                      {new Date(selectedPengajuan.final_approved_at).toLocaleDateString('id-ID')}
+                      {selectedPengajuan.final_approved_at ? new Date(selectedPengajuan.final_approved_at).toLocaleDateString('id-ID') : 'Belum ditentukan'}
                     </p>
                   </div>
                 </div>
@@ -395,55 +414,38 @@ const AdminTrackingMonitor: React.FC = () => {
               {selectedPengajuan.tracking && selectedPengajuan.tracking.length > 0 ? (
                 <div>
                   <h4 className="font-semibold mb-4">Riwayat Tracking</h4>
-                  <div className="space-y-3">
-                    {selectedPengajuan.tracking.map((track, index) => (
-                      <Card key={track.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                {getStatusIcon(track.status_name)}
-                                <Badge 
-                                  variant={getStatusBadgeVariant(track.status_name)}
-                                  className={isOverdue(track) ? 'border-red-500 text-red-700' : ''}
-                                >
-                                  {track.status_name}
+                  <div className="relative pl-6">
+                    <div className="absolute left-2 top-0 bottom-0 w-px bg-gray-200" />
+                    <div className="space-y-6">
+                      {selectedPengajuan.tracking.map((track) => (
+                        <div key={track.id} className="relative">
+                          <div className="absolute -left-[7px] top-1 h-3 w-3 rounded-full bg-green-600 ring-2 ring-white" />
+                          <div className="rounded-md border p-3">
+                          <div className="flex items-center gap-2 mb-1">
+                              {getStatusIcon(track.status_name)}
+                              <Badge title={track.status_name} className={`cursor-default hover:brightness-95 ${getStatusBadgeClasses(track.status_name, isOverdue(track))}`}>
+                                {track.status_name}
+                              </Badge>
+                              {isOverdue(track) && (
+                                <Badge variant="destructive" className="text-xs">
+                                  <Timer className="h-3 w-3 mr-1" /> Terlambat
                                 </Badge>
-                                {isOverdue(track) && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    <Timer className="h-3 w-3 mr-1" />
-                                    Terlambat
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="text-sm text-gray-600 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-3 w-3" />
-                                  {track.tracked_by_name}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-3 w-3" />
-                                  {new Date(track.created_at).toLocaleString('id-ID')}
-                                </div>
-                                {track.estimated_days && (
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="h-3 w-3" />
-                                    Estimasi: {track.estimated_days} hari
-                                  </div>
-                                )}
-                                {track.notes && (
-                                  <div className="mt-2">
-                                    <span className="font-medium">Catatan:</span>
-                                    <p className="text-gray-600">{track.notes}</p>
-                                  </div>
-                                )}
-                              </div>
+                              )}
                             </div>
+                            <div className="text-xs text-gray-600 flex flex-wrap gap-4">
+                              <div className="flex items-center gap-1"><User className="h-3 w-3" />{track.tracked_by_name}</div>
+                              <div className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(track.created_at).toLocaleString('id-ID')}</div>
+                              {track.estimated_days && (
+                                <div className="flex items-center gap-1"><Clock className="h-3 w-3" />Estimasi: {track.estimated_days} hari</div>
+                              )}
+                            </div>
+                            {track.notes && (
+                              <div className="mt-2 text-sm text-gray-700">{track.notes}</div>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : (
