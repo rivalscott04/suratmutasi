@@ -138,8 +138,9 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
                         <p className="text-sm text-gray-500">
                           {(() => {
                             const officeRaw = (uploadedFile.uploaded_by_office || '').toString();
-                            const officeClean = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
-                            const officeText = officeClean ? ` ${officeClean}` : '';
+                            const withoutParens = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
+                            const withoutUuid = withoutParens.replace(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/g, '').trim();
+                            const officeText = withoutUuid ? ` ${withoutUuid}` : '';
                             return `${formatFileSize(uploadedFile.file_size)} • Uploaded by ${uploadedFile.uploaded_by_name}${officeText}`;
                           })()}
                         </p>

@@ -1711,8 +1711,10 @@ const PengajuanDetail: React.FC = () => {
                             <div className="text-xs text-gray-500">
                               {(() => {
                                 const officeRaw = (file.uploaded_by_office || '').toString();
-                                const officeClean = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
-                                const officeText = officeClean ? ` ${officeClean}` : '';
+                                // 1) remove trailing parenthetical segments; 2) remove any UUID-like token anywhere; 3) collapse spaces
+                                const withoutParens = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
+                                const withoutUuid = withoutParens.replace(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/g, '').trim();
+                                const officeText = withoutUuid ? ` ${withoutUuid}` : '';
                                 return `Upload oleh: ${file.uploaded_by_name}${officeText}`;
                               })()}
                             </div>

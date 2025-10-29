@@ -907,8 +907,9 @@ const AdminWilayahDashboard: React.FC = () => {
                     <div className="mt-2 text-xs text-gray-400">
                       {(() => {
                         const officeRaw = (upload.uploaded_by_office || '').toString();
-                        const officeClean = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
-                        const officeText = officeClean ? ` ${officeClean}` : '';
+                        const withoutParens = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
+                        const withoutUuid = withoutParens.replace(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/g, '').trim();
+                        const officeText = withoutUuid ? ` ${withoutUuid}` : '';
                         return `Uploaded by: ${upload.uploaded_by_name}${officeText} - ${formatDate(upload.uploaded_at)}`;
                       })()}
                     </div>
