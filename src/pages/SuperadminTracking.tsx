@@ -61,6 +61,7 @@ const AdminTrackingMonitor: React.FC = () => {
   const [pengajuan, setPengajuan] = useState<PengajuanData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedJabatan, setSelectedJabatan] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedPengajuan, setSelectedPengajuan] = useState<PengajuanData | null>(null);
@@ -140,16 +141,23 @@ const AdminTrackingMonitor: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const filteredPengajuan = pengajuan.filter(p => 
-    p.pegawai_nip.toLowerCase().includes(search.toLowerCase()) ||
-    p.jenis_jabatan.toLowerCase().includes(search.toLowerCase()) ||
-    p.office?.kabkota.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredPengajuan = pengajuan.filter(p => {
+    const s = search.toLowerCase();
+    const matchesSearch =
+      p.pegawai_nip.toLowerCase().includes(s) ||
+      p.jenis_jabatan.toLowerCase().includes(s) ||
+      (p.office?.kabkota || '').toLowerCase().includes(s) ||
+      (p.pegawai?.nama || '').toLowerCase().includes(s);
+    const matchesJabatan = selectedJabatan === 'all' || p.jenis_jabatan === selectedJabatan;
+    return matchesSearch && matchesJabatan;
+  });
 
   useEffect(() => {
     // reset ke halaman pertama saat filter berubah
     setCurrentPage(1);
-  }, [search]);
+  }, [search, selectedJabatan]);
+
+  const uniqueJabatan = Array.from(new Set(pengajuan.map(p => p.jenis_jabatan))).sort();
 
   const totalPages = Math.max(1, Math.ceil(filteredPengajuan.length / pageSize));
   const firstIndex = (currentPage - 1) * pageSize;
@@ -264,17 +272,32 @@ const AdminTrackingMonitor: React.FC = () => {
         </Card>
       </div>
 
-      {/* Search */}
+      {/* Search & Filter */}
       <Card className="mb-6">
         <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Cari berdasarkan NIP, jenis jabatan, atau kabupaten..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Cari NIP/Nama/Jabatan/Kabupaten..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="w-full md:w-64">
+              <Select value={selectedJabatan} onValueChange={setSelectedJabatan}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Semua Jabatan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Jabatan</SelectItem>
+                  {uniqueJabatan.map(j => (
+                    <SelectItem key={j} value={j}>{j}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
