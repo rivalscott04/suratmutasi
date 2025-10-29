@@ -136,7 +136,12 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
                       <div>
                         <p className="font-medium text-gray-900">{uploadedFile.file_name}</p>
                         <p className="text-sm text-gray-500">
-                          {formatFileSize(uploadedFile.file_size)} • Uploaded by {uploadedFile.uploaded_by_name} ({uploadedFile.uploaded_by_office})
+                          {(() => {
+                            const officeRaw = (uploadedFile.uploaded_by_office || '').toString();
+                            const officeClean = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
+                            const officeText = officeClean ? ` ${officeClean}` : '';
+                            return `${formatFileSize(uploadedFile.file_size)} • Uploaded by ${uploadedFile.uploaded_by_name}${officeText}`;
+                          })()}
                         </p>
                         <p className="text-xs text-gray-400">
                           {formatDate(uploadedFile.created_at)}

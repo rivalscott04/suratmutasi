@@ -905,8 +905,12 @@ const AdminWilayahDashboard: React.FC = () => {
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-gray-400">
-                      Uploaded by: <strong>{upload.uploaded_by_name}</strong> 
-                      ({upload.uploaded_by_office}) - {formatDate(upload.uploaded_at)}
+                      {(() => {
+                        const officeRaw = (upload.uploaded_by_office || '').toString();
+                        const officeClean = officeRaw.replace(/\s*\([^)]*\)\s*$/, '');
+                        const officeText = officeClean ? ` ${officeClean}` : '';
+                        return `Uploaded by: ${upload.uploaded_by_name}${officeText} - ${formatDate(upload.uploaded_at)}`;
+                      })()}
                     </div>
                   </div>
                 ))
