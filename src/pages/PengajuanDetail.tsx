@@ -1193,7 +1193,18 @@ const PengajuanDetail: React.FC = () => {
     const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
     if (requiredAll.size === 0) return false;
     for (const t of requiredAll) {
-      const f = pengajuan.files.find((x) => x.file_type === t);
+      // Cari file yang sesuai dengan kategori (kabupaten untuk requiredKabupaten, admin_wilayah untuk requiredKanwil)
+      const isKabupatenFile = requiredKabupaten.includes(t);
+      const f = pengajuan.files.find((x) => {
+        if (x.file_type !== t) return false;
+        if (isKabupatenFile) {
+          // File kabupaten harus memiliki file_category null, 'kabupaten', atau tidak ada
+          return !x.file_category || x.file_category === 'kabupaten';
+        } else {
+          // File kanwil harus memiliki file_category 'admin_wilayah'
+          return x.file_category === 'admin_wilayah';
+        }
+      });
       if (!f) return false; // wajib: harus ada
       if (f.verification_status !== 'approved') return false; // harus sesuai
     }
@@ -1205,7 +1216,10 @@ const PengajuanDetail: React.FC = () => {
     if (!pengajuan) return false;
     if (requiredKabupaten.length === 0) return false;
     for (const t of requiredKabupaten) {
-      const f = pengajuan.files.find((x) => x.file_type === t);
+      // Cari file kabupaten yang sesuai (file_category null, 'kabupaten', atau tidak ada)
+      const f = pengajuan.files.find((x) => 
+        x.file_type === t && (!x.file_category || x.file_category === 'kabupaten')
+      );
       if (!f) return false; // wajib: harus ada
       if (f.verification_status !== 'approved') return false; // harus sesuai
     }
@@ -1216,7 +1230,10 @@ const PengajuanDetail: React.FC = () => {
   const notApprovedKabupatenFiles = (() => {
     if (!pengajuan) return [];
     return requiredKabupaten.map(t => {
-      const f = pengajuan.files.find((x) => x.file_type === t);
+      // Cari file kabupaten yang sesuai (file_category null, 'kabupaten', atau tidak ada)
+      const f = pengajuan.files.find((x) => 
+        x.file_type === t && (!x.file_category || x.file_category === 'kabupaten')
+      );
       return {
         file_type: t,
         file_name: f?.file_name || 'TIDAK ADA',
@@ -1229,7 +1246,10 @@ const PengajuanDetail: React.FC = () => {
   const hasRejectedKabupatenFiles = (() => {
     if (!pengajuan) return false;
     for (const t of requiredKabupaten) {
-      const f = pengajuan.files.find((x) => x.file_type === t);
+      // Cari file kabupaten yang sesuai (file_category null, 'kabupaten', atau tidak ada)
+      const f = pengajuan.files.find((x) => 
+        x.file_type === t && (!x.file_category || x.file_category === 'kabupaten')
+      );
       if (!f || f.verification_status === 'rejected') return true;
     }
     return false;
@@ -1365,12 +1385,21 @@ const PengajuanDetail: React.FC = () => {
 
       {/* Progress Tracker */}
       {(() => {
-        const operatorFiles = pengajuan.files.filter(f => !f.file_category || f.file_category === 'kabupaten');
-        const adminWilayahFiles = pengajuan.files.filter(f => f.file_category === 'admin_wilayah');
+        // Filter files berdasarkan required files untuk jabatan saat ini
+        const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
+        const operatorFiles = pengajuan.files.filter(f => 
+          (!f.file_category || f.file_category === 'kabupaten') && 
+          requiredKabupaten.includes(f.file_type)
+        );
+        const adminWilayahFiles = pengajuan.files.filter(f => 
+          f.file_category === 'admin_wilayah' && 
+          requiredKanwil.includes(f.file_type)
+        );
         const operatorApproved = operatorFiles.filter(f => f.verification_status === 'approved').length;
         const adminApproved = adminWilayahFiles.filter(f => f.verification_status === 'approved').length;
-        const operatorTotal = requiredKabupaten.length || operatorFiles.length;
-        const adminTotal = requiredKanwil.length || adminWilayahFiles.length;
+        // Selalu gunakan requiredKabupaten.length dan requiredKanwil.length (jabatan saat ini)
+        const operatorTotal = requiredKabupaten.length;
+        const adminTotal = requiredKanwil.length;
         const totalApproved = operatorApproved + adminApproved;
         const totalRequired = operatorTotal + adminTotal;
         const pct = totalRequired > 0 ? (totalApproved / totalRequired) * 100 : 0;
@@ -2653,11 +2682,13 @@ const PengajuanDetail: React.FC = () => {
                     {/* Progress Summary - Always Visible */}
                     {(() => {
                       const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
+                      // Total files harus berdasarkan requiredAll.size (jumlah file wajib untuk jabatan saat ini)
+                      const totalFiles = requiredAll.size;
+                      // Hitung approved dan rejected hanya dari file yang ada di requiredAll
                       const allFiles = Array.from(requiredAll).map(fileType => 
                         pengajuan?.files.find(f => f.file_type === fileType)
                       ).filter(Boolean);
                       
-                      const totalFiles = allFiles.length;
                       const approvedCount = allFiles.filter(f => f?.verification_status === 'approved').length;
                       const rejectedCount = allFiles.filter(f => f?.verification_status === 'rejected').length;
                       const verifiedCount = approvedCount + rejectedCount;
