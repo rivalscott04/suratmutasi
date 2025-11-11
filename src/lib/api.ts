@@ -41,7 +41,7 @@ const getBaseUrl = () => {
   // PRIORITY 3: Localhost fallback
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     console.log('✅ Using localhost fallback');
-    return 'http://localhost:3001';
+    return 'http://localhost:3000';
   }
 
   // PRIORITY 4: Default fallback - use relative URL for same-origin

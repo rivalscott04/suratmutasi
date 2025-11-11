@@ -898,7 +898,7 @@ const PengajuanDetail: React.FC = () => {
     console.log('🔍 Preview file:', file);
     console.log('🔍 File name:', file.file_name);
     console.log('🔍 File type:', file.file_type);
-    const baseUrl = (import.meta as any).env?.VITE_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3001' : '');
+    const baseUrl = (import.meta as any).env?.VITE_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3000' : '');
 
     const fetchWithToken = async (jwt?: string) => {
       return fetch(`${baseUrl}/api/pengajuan/files/${file.id}`, {
