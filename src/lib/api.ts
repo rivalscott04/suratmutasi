@@ -3,26 +3,33 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // Environment configuration - simplified
 const getBaseUrl = () => {
-  // Use environment variable if available, otherwise detect based on hostname
-  let apiUrl = import.meta.env.VITE_API_URL;
+  const hostname = window.location.hostname;
+  const href = window.location.href;
   
   // Debug logging
   console.log('🔍 API Base URL Detection:', {
-    envVar: apiUrl,
-    hostname: window.location.hostname,
+    envVar: import.meta.env.VITE_API_URL,
+    hostname,
     protocol: window.location.protocol,
-    href: window.location.href,
+    href,
     mode: import.meta.env.MODE
   });
   
-  // If API URL is set, match the protocol with current page to avoid mixed content
-  if (apiUrl) {
+  // PRIORITY 1: If frontend and backend are on the same server (path-based routing)
+  // Use relative URL to avoid CORS issues completely
+  if (hostname === '103.41.207.103' || hostname.includes('103.41.207.103')) {
+    console.log('✅ Frontend and backend on same server, using relative URL (no CORS needed)');
+    return ''; // Empty string = relative URL, will use /api/... directly
+  }
+  
+  // PRIORITY 2: Use environment variable if set (but not for same-server deployment)
+  let apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl && apiUrl.trim() !== '') {
     const currentProtocol = window.location.protocol;
     const apiProtocol = apiUrl.startsWith('https://') ? 'https:' : 'http:';
     
     // If protocols don't match and we're on HTTP, try to use HTTP version
     if (currentProtocol === 'http:' && apiProtocol === 'https:') {
-      // Try to convert HTTPS URL to HTTP if accessing via HTTP
       apiUrl = apiUrl.replace('https://', 'http://');
       console.warn('⚠️ Protocol mismatch detected, using HTTP version:', apiUrl);
     } else {
@@ -31,27 +38,15 @@ const getBaseUrl = () => {
     return apiUrl;
   }
   
-  // Fallback: detect based on hostname
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // PRIORITY 3: Localhost fallback
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
     console.log('✅ Using localhost fallback');
     return 'http://localhost:3001';
   }
 
-  // Production fallback: use same protocol as current page
-  const protocol = window.location.protocol;
-  const hostname = window.location.hostname;
-  
-  // If accessing via IP, try to use bemutasi.rivaldev.site with matching protocol
-  if (hostname === '103.41.207.103' || hostname.includes('103.41.207.103')) {
-    const defaultUrl = `${protocol}//bemutasi.rivaldev.site`;
-    console.warn('⚠️ VITE_API_URL not found, using production fallback with matching protocol:', defaultUrl);
-    return defaultUrl;
-  }
-  
-  // Default fallback
-  const defaultProductionUrl = `${protocol}//bemutasi.rivaldev.site`;
-  console.warn('⚠️ VITE_API_URL not found, using production fallback:', defaultProductionUrl);
-  return defaultProductionUrl;
+  // PRIORITY 4: Default fallback - use relative URL for same-origin
+  console.log('✅ Using relative URL (same-origin, no CORS)');
+  return ''; // Empty string = relative URL
 };
 
 // Get current environment for logging
