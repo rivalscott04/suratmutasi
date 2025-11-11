@@ -4,18 +4,30 @@ import { useAuth } from '@/contexts/AuthContext';
 // Environment configuration - simplified
 const getBaseUrl = () => {
   // Use environment variable if available, otherwise detect based on hostname
-  const apiUrl = import.meta.env.VITE_API_URL;
+  let apiUrl = import.meta.env.VITE_API_URL;
   
   // Debug logging
   console.log('🔍 API Base URL Detection:', {
     envVar: apiUrl,
     hostname: window.location.hostname,
+    protocol: window.location.protocol,
     href: window.location.href,
     mode: import.meta.env.MODE
   });
   
+  // If API URL is set, match the protocol with current page to avoid mixed content
   if (apiUrl) {
-    console.log('✅ Using VITE_API_URL:', apiUrl);
+    const currentProtocol = window.location.protocol;
+    const apiProtocol = apiUrl.startsWith('https://') ? 'https:' : 'http:';
+    
+    // If protocols don't match and we're on HTTP, try to use HTTP version
+    if (currentProtocol === 'http:' && apiProtocol === 'https:') {
+      // Try to convert HTTPS URL to HTTP if accessing via HTTP
+      apiUrl = apiUrl.replace('https://', 'http://');
+      console.warn('⚠️ Protocol mismatch detected, using HTTP version:', apiUrl);
+    } else {
+      console.log('✅ Using VITE_API_URL:', apiUrl);
+    }
     return apiUrl;
   }
   
@@ -25,9 +37,19 @@ const getBaseUrl = () => {
     return 'http://localhost:3001';
   }
 
-  // Production fallback: use bemutasi.rivaldev.site as default
-  // This handles cases where env var is not loaded in production build
-  const defaultProductionUrl = 'https://bemutasi.rivaldev.site';
+  // Production fallback: use same protocol as current page
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  
+  // If accessing via IP, try to use bemutasi.rivaldev.site with matching protocol
+  if (hostname === '103.41.207.103' || hostname.includes('103.41.207.103')) {
+    const defaultUrl = `${protocol}//bemutasi.rivaldev.site`;
+    console.warn('⚠️ VITE_API_URL not found, using production fallback with matching protocol:', defaultUrl);
+    return defaultUrl;
+  }
+  
+  // Default fallback
+  const defaultProductionUrl = `${protocol}//bemutasi.rivaldev.site`;
   console.warn('⚠️ VITE_API_URL not found, using production fallback:', defaultProductionUrl);
   return defaultProductionUrl;
 };
