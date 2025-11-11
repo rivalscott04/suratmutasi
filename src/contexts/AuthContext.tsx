@@ -74,31 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check maintenance status
   const checkMaintenanceStatus = async () => {
     try {
-      // Use relative URL to avoid CORS issues if frontend and backend are on same domain
-      // Otherwise use apiGet which will use the configured base URL
-      const baseUrl = window.location.origin;
-      const isSameOrigin = baseUrl.includes('bemutasi.rivaldev.site') || baseUrl.includes('103.41.207.103');
-      
-      let data;
-      if (isSameOrigin) {
-        // Try relative URL first to avoid CORS
-        try {
-          const response = await fetch('/api/maintenance/status', {
-            credentials: 'include',
-          });
-          if (response.ok) {
-            data = await response.json();
-          } else {
-            throw new Error('Failed to fetch maintenance status');
-          }
-        } catch (relativeError) {
-          // Fallback to apiGet if relative URL fails
-          console.warn('Relative URL failed, trying with base URL:', relativeError);
-          data = await apiGet('/api/maintenance/status');
-        }
-      } else {
-        data = await apiGet('/api/maintenance/status');
-      }
+      // Always use apiGet which handles CORS, redirects, and error handling properly
+      // This is a non-critical check, so we silently fail if it doesn't work
+      const data = await apiGet('/api/maintenance/status');
       
       // Check if user is superadmin (can bypass maintenance)
       const currentUser = user || JSON.parse(localStorage.getItem('user') || 'null');
@@ -113,7 +91,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setMaintenanceMessage(data.message || '');
       }
     } catch (error) {
-      console.error('Error checking maintenance status:', error);
+      // Silently fail - maintenance check is non-critical
+      // Only log in development mode
+      if (import.meta.env.DEV) {
+        console.warn('Maintenance status check failed (non-critical):', error);
+      }
       // Set default values if API fails - don't block the app
       setIsMaintenanceMode(false);
       setMaintenanceMessage('');

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Wrench, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { apiGet } from '../lib/api';
 
 interface MaintenanceInfo {
   isMaintenanceMode: boolean;
@@ -49,8 +50,7 @@ const MaintenancePage: React.FC = () => {
   const fetchMaintenanceStatus = async () => {
     try {
       setIsRefreshing(true);
-      const response = await fetch('/api/maintenance/status');
-      const data = await response.json();
+      const data = await apiGet('/api/maintenance/status');
       setMaintenanceInfo(data);
     } catch (error) {
       console.error('Error fetching maintenance status:', error);
