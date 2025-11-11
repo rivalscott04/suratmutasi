@@ -74,8 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check maintenance status
   const checkMaintenanceStatus = async () => {
     try {
-      const response = await fetch('/api/maintenance/status');
-      const data = await response.json();
+      const data = await apiGet('/api/maintenance/status');
       
       // Check if user is superadmin (can bypass maintenance)
       const currentUser = user || JSON.parse(localStorage.getItem('user') || 'null');
