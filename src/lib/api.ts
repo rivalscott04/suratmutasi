@@ -65,7 +65,17 @@ const getCurrentEnvironment = () => {
 export async function apiFetch(method: string, url: string, options: { data?: any; token?: string; headers?: any } = {}) {
   const { data, token, headers = {} } = options;
   
-  const fullUrl = getBaseUrl() + url;
+  const baseUrl = getBaseUrl();
+  const fullUrl = baseUrl + url;
+  
+  // Log the request for debugging
+  console.log('📤 API Request:', {
+    method,
+    url,
+    fullUrl,
+    baseUrl,
+    hasToken: !!token
+  });
   const fetchOptions: RequestInit = {
     method,
     headers: {
@@ -223,7 +233,27 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   }
   
   if (!res.ok) {
-    throw new Error(responseData?.message || res.statusText);
+    // Better error handling for 404
+    if (res.status === 404) {
+      const errorMsg = responseData?.message || 'Endpoint tidak ditemukan';
+      console.error('❌ 404 Not Found:', {
+        url: fullUrl,
+        method,
+        status: res.status,
+        responseData
+      });
+      throw new Error(errorMsg);
+    }
+    
+    // For other errors, use the message from response or status text
+    const errorMsg = responseData?.message || responseData || res.statusText || 'Terjadi kesalahan';
+    console.error('❌ API Error:', {
+      url: fullUrl,
+      method,
+      status: res.status,
+      error: errorMsg
+    });
+    throw new Error(errorMsg);
   }
   return responseData;
 }
