@@ -99,7 +99,32 @@ export async function apiFetch(method: string, url: string, options: { data?: an
     }
   }
 
-  let res = await fetch(fullUrl, fetchOptions);
+  // Try fetch with error handling for CORS and redirects
+  let res;
+  try {
+    res = await fetch(fullUrl, {
+      ...fetchOptions,
+      redirect: 'follow', // Follow redirects automatically
+    });
+  } catch (fetchError: any) {
+    // If CORS error and we're using HTTP, try HTTPS version
+    if (fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
+      if (fullUrl.startsWith('http://')) {
+        const httpsUrl = fullUrl.replace('http://', 'https://');
+        console.warn('⚠️ CORS error with HTTP, trying HTTPS:', httpsUrl);
+        try {
+          res = await fetch(httpsUrl, fetchOptions);
+        } catch (httpsError) {
+          throw fetchError; // Throw original error
+        }
+      } else {
+        throw fetchError;
+      }
+    } else {
+      throw fetchError;
+    }
+  }
+  
   let contentType = res.headers.get('content-type');
   let responseData;
 
