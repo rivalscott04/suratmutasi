@@ -6,18 +6,30 @@ const getBaseUrl = () => {
   // Use environment variable if available, otherwise detect based on hostname
   const apiUrl = import.meta.env.VITE_API_URL;
   
+  // Debug logging
+  console.log('🔍 API Base URL Detection:', {
+    envVar: apiUrl,
+    hostname: window.location.hostname,
+    href: window.location.href,
+    mode: import.meta.env.MODE
+  });
+  
   if (apiUrl) {
+    console.log('✅ Using VITE_API_URL:', apiUrl);
     return apiUrl;
   }
   
   // Fallback: detect based on hostname
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('✅ Using localhost fallback');
     return 'http://localhost:3001';
   }
 
-  // Production default: use same-origin with relative path (to be reverse-proxied, e.g., /api)
-  // This avoids mixed content when the app is served over HTTPS
-  return '';
+  // Production fallback: use bemutasi.rivaldev.site as default
+  // This handles cases where env var is not loaded in production build
+  const defaultProductionUrl = 'https://bemutasi.rivaldev.site';
+  console.warn('⚠️ VITE_API_URL not found, using production fallback:', defaultProductionUrl);
+  return defaultProductionUrl;
 };
 
 // Get current environment for logging

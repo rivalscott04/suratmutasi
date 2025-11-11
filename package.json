@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode development",
-    "build": "tsc && vite build",
+    "dev:prod": "vite --mode production",
+    "build": "tsc && vite build --mode production",
+    "build:dev": "tsc && vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "backend:dev": "cd backend && npm run dev",
