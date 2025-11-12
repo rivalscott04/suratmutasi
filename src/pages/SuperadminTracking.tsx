@@ -215,6 +215,11 @@ const AdminTrackingMonitor: React.FC = () => {
   };
 
   const getStatusBadgeClasses = (statusName: string, overdue = false) => {
+    // Khusus untuk status BTS, gunakan warna kuning/warning
+    const normalizedStatus = statusName?.trim().toUpperCase();
+    if (normalizedStatus === 'BTS') {
+      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    }
     if (statusName.includes('Selesai')) return 'bg-green-100 text-green-700 border-green-200';
     if (statusName.includes('Diproses')) return `bg-blue-100 text-blue-700 border-blue-200 ${overdue ? 'border-red-400 text-red-700' : ''}`;
     if (statusName.includes('Disposisi')) return 'bg-orange-100 text-orange-700 border-orange-200';
