@@ -322,6 +322,7 @@ export const getNavigationItems = (userRole: UserRole, userOfficeId?: string | n
     
     // Filter children items based on role
     if (item.children) {
+      const originalChildrenCount = item.children.length;
       item.children = item.children.filter(child => {
         // Check if role is explicitly included for child
         if (child.roles && !child.roles.includes(userRole)) {
@@ -343,6 +344,10 @@ export const getNavigationItems = (userRole: UserRole, userOfficeId?: string | n
         
         return true;
       });
+      
+      // Note: We keep the parent menu even if all children are filtered out
+      // because the parent might have a direct href that can be accessed
+      // The NavigationBar component will handle rendering appropriately
     }
     
     return true;
