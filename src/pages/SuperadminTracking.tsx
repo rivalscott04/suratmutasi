@@ -198,6 +198,15 @@ const AdminTrackingMonitor: React.FC = () => {
     return 'secondary';
   };
 
+  const getJabatanBadgeClasses = (jenisJabatan: string) => {
+    // Khusus untuk BTS, gunakan warna kuning/warning
+    if (jenisJabatan.toUpperCase() === 'BTS') {
+      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    }
+    // Default untuk jenis jabatan lain
+    return 'bg-gray-100 text-gray-700 border-gray-200';
+  };
+
   const getStatusIcon = (statusName: string) => {
     if (statusName.includes('Selesai')) return <CheckCircle className="h-4 w-4 text-green-600" />;
     if (statusName.includes('Diproses')) return <Clock className="h-4 w-4 text-blue-600" />;
@@ -362,7 +371,11 @@ const AdminTrackingMonitor: React.FC = () => {
                       <TableRow key={p.id}>
                         <TableCell className="font-medium">{p.pegawai_nip}</TableCell>
                         <TableCell>{p.pegawai?.nama || '—'}</TableCell>
-                        <TableCell><Badge variant="outline">{p.jenis_jabatan}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getJabatanBadgeClasses(p.jenis_jabatan)}>
+                            {p.jenis_jabatan}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{p.office?.kabkota || 'N/A'}</TableCell>
                         <TableCell>
                           {latest ? (
@@ -443,7 +456,11 @@ const AdminTrackingMonitor: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Jenis Jabatan:</span>
-                    <p className="text-gray-600">{selectedPengajuan.jenis_jabatan}</p>
+                    <div className="mt-1">
+                      <Badge variant="outline" className={getJabatanBadgeClasses(selectedPengajuan.jenis_jabatan)}>
+                        {selectedPengajuan.jenis_jabatan}
+                      </Badge>
+                    </div>
                   </div>
                   <div>
                     <span className="font-medium">Kabupaten/Kota:</span>
