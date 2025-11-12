@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -152,6 +152,35 @@ const AdminTrackingMonitor: React.FC = () => {
     return matchesSearch && matchesJabatan;
   });
 
+  // Sort untuk superadmin: prioritas yang ada tracking dan update tracking terbaru
+  const sortedPengajuan = useMemo(() => {
+    const isSuperadmin = user?.office_id === null;
+    
+    if (!isSuperadmin) {
+      return filteredPengajuan;
+    }
+
+    // Untuk superadmin: sort berdasarkan tracking
+    return [...filteredPengajuan].sort((a, b) => {
+      const aHasTracking = a.tracking && a.tracking.length > 0;
+      const bHasTracking = b.tracking && b.tracking.length > 0;
+
+      // Prioritas 1: Yang ada tracking di atas
+      if (aHasTracking && !bHasTracking) return -1;
+      if (!aHasTracking && bHasTracking) return 1;
+
+      // Jika keduanya ada tracking, sort berdasarkan update terbaru
+      if (aHasTracking && bHasTracking) {
+        const aLatestDate = a.tracking[0]?.created_at ? new Date(a.tracking[0].created_at).getTime() : 0;
+        const bLatestDate = b.tracking[0]?.created_at ? new Date(b.tracking[0].created_at).getTime() : 0;
+        return bLatestDate - aLatestDate; // Terbaru di atas
+      }
+
+      // Jika keduanya tidak ada tracking, tetap urutan asal
+      return 0;
+    });
+  }, [filteredPengajuan, user?.office_id]);
+
   useEffect(() => {
     // reset ke halaman pertama saat filter berubah
     setCurrentPage(1);
@@ -159,10 +188,10 @@ const AdminTrackingMonitor: React.FC = () => {
 
   const uniqueJabatan = Array.from(new Set(pengajuan.map(p => p.jenis_jabatan))).sort();
 
-  const totalPages = Math.max(1, Math.ceil(filteredPengajuan.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(sortedPengajuan.length / pageSize));
   const firstIndex = (currentPage - 1) * pageSize;
   const lastIndex = firstIndex + pageSize;
-  const paginatedPengajuan = filteredPengajuan.slice(firstIndex, lastIndex);
+  const paginatedPengajuan = sortedPengajuan.slice(firstIndex, lastIndex);
 
   const getStatusBadgeVariant = (statusName: string) => {
     // kept for compatibility, not used for color anymore
@@ -305,7 +334,7 @@ const AdminTrackingMonitor: React.FC = () => {
       {/* Datatable */}
       <Card>
         <CardContent className="p-0">
-          {filteredPengajuan.length === 0 ? (
+          {sortedPengajuan.length === 0 ? (
             <div className="p-6 text-center">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">Tidak ada data tracking</p>
@@ -365,10 +394,10 @@ const AdminTrackingMonitor: React.FC = () => {
       </Card>
 
       {/* Pagination */}
-      {filteredPengajuan.length > 0 && (
+      {sortedPengajuan.length > 0 && (
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-gray-600">
-            Menampilkan {firstIndex + 1}-{Math.min(lastIndex, filteredPengajuan.length)} dari {filteredPengajuan.length}
+            Menampilkan {firstIndex + 1}-{Math.min(lastIndex, sortedPengajuan.length)} dari {sortedPengajuan.length}
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 text-sm text-gray-600 mr-2">
