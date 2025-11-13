@@ -613,12 +613,14 @@ const Letters: React.FC = () => {
 
         const nip = letter.recipient_employee_nip || '';
         const nama = parsedFormData.namapegawai || letter.recipient?.nama || '';
+        const jabatan = parsedFormData.jabatan || letter.recipient?.jabatan || '';
         const templateName = letter.template_name || '';
         
         if (!groupedByNip[nip]) {
           groupedByNip[nip] = {
             'NIP': nip,
             'Nama': nama,
+            'Jabatan Pegawai': jabatan,
             'NIP Penandatangan': letter.signing_official_nip || '',
             'Nama Penandatangan': letter.signing_official?.nama || ''
           };
@@ -649,6 +651,7 @@ const Letters: React.FC = () => {
         const row: any = {
           'NIP': '',
           'Nama': '',
+          'Jabatan Pegawai': '',
           'NIP Penandatangan': letter.signing_official_nip || '',
           'Nama Penandatangan': letter.signing_official?.nama || ''
         };
@@ -675,6 +678,7 @@ const Letters: React.FC = () => {
       const colWidths = [
         { wch: 20 }, // NIP
         { wch: 40 }, // Nama
+        { wch: 40 }, // Jabatan Pegawai
         ...allTemplateNames.map(() => ({ wch: 50 })), // Kolom template (dinamis)
         { wch: 20 }, // NIP Penandatangan
         { wch: 40 }  // Nama Penandatangan
