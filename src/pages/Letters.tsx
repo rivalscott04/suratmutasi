@@ -4,7 +4,7 @@ import { apiGet, apiDelete, apiPut } from '@/lib/api';
 import { generateUrl } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw, Users, ClipboardList, Info, Edit3, X } from 'lucide-react';
+import { FileText, Printer, ExternalLink, Eye, ChevronRight, Building2, Inbox, Search, Filter, Lock, Trash2, RefreshCw, Users, ClipboardList, Info, Edit3, X, Download } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -26,6 +26,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PegawaiSearchInput } from '@/components/PegawaiSearchInput';
+import * as XLSX from 'xlsx';
+import { Label } from '@/components/ui/label';
 
 const Letters: React.FC = () => {
   const { token, user } = useAuth();
@@ -72,6 +74,13 @@ const Letters: React.FC = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // Export Excel state
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportTemplateFilter, setExportTemplateFilter] = useState<string>('all');
+  const [exportOfficeFilter, setExportOfficeFilter] = useState<string>('all');
+  const [offices, setOffices] = useState<any[]>([]);
+  const [exporting, setExporting] = useState(false);
 
   // Filter letters berdasarkan search
   const filteredLetters = letters.filter(l =>
@@ -147,13 +156,18 @@ const Letters: React.FC = () => {
     apiGet('/api/offices', token)
       .then(res => {
         const map: Record<string, { namakantor?: string; kabkota?: string }> = {};
-        (res.offices || []).forEach((office: any) => {
+        const officesList = res.offices || [];
+        officesList.forEach((office: any) => {
           map[office.id] = { namakantor: office.namakantor, kabkota: office.kabkota };
         });
         setOfficeMap(map);
+        setOffices(officesList);
       })
       .catch(() => {});
   }, [token]);
+
+  // Get unique templates for export filter
+  const uniqueTemplates = Array.from(new Set(letters.map(l => l.template_name))).sort();
 
   // Ringkasan
   const byStatus = (status: string) => letters.filter(l => l.status === status).length;
@@ -560,6 +574,103 @@ const Letters: React.FC = () => {
     }
   };
 
+  // Export Excel function
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      // Filter letters berdasarkan filter yang dipilih
+      let filteredData = [...letters];
+
+      // Filter by template
+      if (exportTemplateFilter !== 'all') {
+        filteredData = filteredData.filter(l => l.template_name === exportTemplateFilter);
+      }
+
+      // Filter by office (hanya untuk admin)
+      if (user?.role === 'admin' && exportOfficeFilter !== 'all') {
+        filteredData = filteredData.filter(l => l.office_id === exportOfficeFilter);
+      }
+
+      // Prepare data untuk Excel
+      const excelData = filteredData.map(letter => {
+        let parsedFormData = letter.form_data;
+        if (typeof parsedFormData === 'string') {
+          try {
+            parsedFormData = JSON.parse(parsedFormData);
+          } catch {
+            parsedFormData = {};
+          }
+        }
+
+        // Untuk Template 9 (SPTJM), NIP dan Nama penerima kosong
+        const isTemplate9 = letter.template_id === 9;
+        
+        return {
+          'NIP': isTemplate9 ? '' : (letter.recipient_employee_nip || ''),
+          'Nama': isTemplate9 ? '' : (parsedFormData.namapegawai || letter.recipient?.nama || ''),
+          'No Surat': letter.letter_number || '',
+          'Jenis Surat/Template': letter.template_name || '',
+          'NIP Penandatangan': letter.signing_official_nip || '',
+          'Nama Penandatangan': letter.signing_official?.nama || ''
+        };
+      });
+
+      // Buat workbook
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths
+      const colWidths = [
+        { wch: 20 }, // NIP
+        { wch: 40 }, // Nama
+        { wch: 50 }, // No Surat
+        { wch: 50 }, // Jenis Surat/Template
+        { wch: 20 }, // NIP Penandatangan
+        { wch: 40 }  // Nama Penandatangan
+      ];
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Data Surat');
+
+      // Generate filename dengan timestamp
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      let filename = `Export_Surat_${timestamp}.xlsx`;
+      if (exportTemplateFilter !== 'all') {
+        const templateName = exportTemplateFilter.replace(/[^a-zA-Z0-9]/g, '_');
+        filename = `Export_Surat_${templateName}_${timestamp}.xlsx`;
+      }
+      if (user?.role === 'admin' && exportOfficeFilter !== 'all') {
+        const office = offices.find(o => o.id === exportOfficeFilter);
+        const officeName = office?.kabkota || office?.namakantor || 'Office';
+        const officeNameClean = officeName.replace(/[^a-zA-Z0-9]/g, '_');
+        filename = `Export_Surat_${officeNameClean}_${timestamp}.xlsx`;
+      }
+
+      // Download file
+      XLSX.writeFile(wb, filename);
+
+      toast({
+        title: 'Export berhasil',
+        description: `Data surat berhasil diekspor ke Excel (${filteredData.length} data)`,
+        duration: 3000
+      });
+
+      setShowExportModal(false);
+    } catch (error: any) {
+      console.error('Error exporting Excel:', error);
+      toast({
+        title: 'Gagal export Excel',
+        description: error.message || 'Terjadi kesalahan saat mengekspor data',
+        variant: 'destructive',
+        duration: 5000
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Helper untuk update paging per kantor
   const setOfficePage = (officeName: string, page: number) => {
     setOfficePaging(prev => ({
@@ -669,6 +780,15 @@ const Letters: React.FC = () => {
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Loading...' : 'Refresh'}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowExportModal(true)}
+              disabled={loading || letters.length === 0}
+              className="border-green-200 text-green-700 hover:bg-green-50"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Excel
             </Button>
             {tabFilteredLetters.length > 0 && (() => {
               const deletableLettersCount = tabFilteredLetters.filter(letter => 
@@ -1393,6 +1513,83 @@ const Letters: React.FC = () => {
            </DialogContent>
          </Dialog>
        )}
+
+      {/* Export Excel Modal */}
+      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogTitle>Export Data ke Excel</DialogTitle>
+          <div className="space-y-4 mt-4">
+            {/* Filter by Template */}
+            <div className="space-y-2">
+              <Label htmlFor="template-filter">Filter by Jenis Surat/Template</Label>
+              <Select value={exportTemplateFilter} onValueChange={setExportTemplateFilter}>
+                <SelectTrigger id="template-filter">
+                  <SelectValue placeholder="Pilih template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Template</SelectItem>
+                  {uniqueTemplates.map(template => (
+                    <SelectItem key={template} value={template}>
+                      {template}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filter by Office (hanya untuk admin) */}
+            {user?.role === 'admin' && (
+              <div className="space-y-2">
+                <Label htmlFor="office-filter">Filter by Kabupaten/Kota</Label>
+                <Select value={exportOfficeFilter} onValueChange={setExportOfficeFilter}>
+                  <SelectTrigger id="office-filter">
+                    <SelectValue placeholder="Pilih kabupaten/kota" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Kabupaten/Kota</SelectItem>
+                    {offices.map(office => (
+                      <SelectItem key={office.id} value={office.id}>
+                        {office.kabkota || office.namakantor || office.name || 'Kantor Tidak Diketahui'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowExportModal(false);
+                  setExportTemplateFilter('all');
+                  setExportOfficeFilter('all');
+                }}
+                disabled={exporting}
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={handleExportExcel}
+                disabled={exporting}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {exporting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Mengekspor...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
