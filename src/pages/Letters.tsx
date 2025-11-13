@@ -591,8 +591,17 @@ const Letters: React.FC = () => {
         filteredData = filteredData.filter(l => l.office_id === exportOfficeFilter);
       }
 
-      // Prepare data untuk Excel
-      const excelDataRaw = filteredData.map(letter => {
+      // Pisahkan data: yang punya NIP dan yang tidak (Template 9)
+      const lettersWithNip = filteredData.filter(l => l.template_id !== 9 && l.recipient_employee_nip);
+      const lettersWithoutNip = filteredData.filter(l => l.template_id === 9 || !l.recipient_employee_nip);
+
+      // Get semua unique template names untuk kolom dinamis
+      const allTemplateNames = Array.from(new Set(filteredData.map(l => l.template_name))).sort();
+      
+      // Group by NIP untuk data yang punya NIP
+      const groupedByNip: Record<string, any> = {};
+      
+      lettersWithNip.forEach(letter => {
         let parsedFormData = letter.form_data;
         if (typeof parsedFormData === 'string') {
           try {
@@ -602,43 +611,71 @@ const Letters: React.FC = () => {
           }
         }
 
-        // Untuk Template 9 (SPTJM), NIP dan Nama penerima kosong
-        const isTemplate9 = letter.template_id === 9;
+        const nip = letter.recipient_employee_nip || '';
+        const nama = parsedFormData.namapegawai || letter.recipient?.nama || '';
+        const templateName = letter.template_name || '';
         
-        return {
-          'NIP': isTemplate9 ? '' : (letter.recipient_employee_nip || ''),
-          'Nama': isTemplate9 ? '' : (parsedFormData.namapegawai || letter.recipient?.nama || ''),
-          'No Surat': letter.letter_number || '',
-          'Jenis Surat/Template': letter.template_name || '',
-          'NIP Penandatangan': letter.signing_official_nip || '',
-          'Nama Penandatangan': letter.signing_official?.nama || '',
-          // Helper untuk sorting
-          _nipForSort: isTemplate9 ? 'ZZZ_NO_NIP' : (letter.recipient_employee_nip || 'ZZZ_NO_NIP'),
-          _templateId: letter.template_id || 0
-        };
+        if (!groupedByNip[nip]) {
+          groupedByNip[nip] = {
+            'NIP': nip,
+            'Nama': nama,
+            'NIP Penandatangan': letter.signing_official_nip || '',
+            'Nama Penandatangan': letter.signing_official?.nama || ''
+          };
+          // Initialize semua kolom template dengan kosong
+          allTemplateNames.forEach(tmpl => {
+            groupedByNip[nip][tmpl] = '';
+          });
+        }
+        
+        // Set nomor surat untuk template ini
+        groupedByNip[nip][templateName] = letter.letter_number || '';
       });
 
-      // Sort by NIP, kemudian by template_id untuk NIP yang sama
-      // Template 9 (SPTJM) yang tidak punya NIP akan di akhir
-      const excelData = excelDataRaw.sort((a, b) => {
-        // Sort by NIP first
-        const nipCompare = a._nipForSort.localeCompare(b._nipForSort);
-        if (nipCompare !== 0) return nipCompare;
+      // Convert grouped data ke array (data dengan NIP)
+      const excelDataWithNip = Object.values(groupedByNip);
+
+      // Handle data tanpa NIP (Template 9) - baris terpisah di bawah
+      const excelDataWithoutNip = lettersWithoutNip.map(letter => {
+        let parsedFormData = letter.form_data;
+        if (typeof parsedFormData === 'string') {
+          try {
+            parsedFormData = JSON.parse(parsedFormData);
+          } catch {
+            parsedFormData = {};
+          }
+        }
+
+        const row: any = {
+          'NIP': '',
+          'Nama': '',
+          'NIP Penandatangan': letter.signing_official_nip || '',
+          'Nama Penandatangan': letter.signing_official?.nama || ''
+        };
         
-        // Jika NIP sama, sort by template_id
-        return (a._templateId || 0) - (b._templateId || 0);
-      }).map(({ _nipForSort, _templateId, ...rest }) => rest); // Remove helper fields
+        // Initialize semua kolom template dengan kosong
+        allTemplateNames.forEach(tmpl => {
+          row[tmpl] = '';
+        });
+        
+        // Set nomor surat untuk template ini
+        row[letter.template_name || ''] = letter.letter_number || '';
+        
+        return row;
+      });
+
+      // Gabungkan: data dengan NIP dulu, kemudian tanpa NIP
+      const excelData = [...excelDataWithNip, ...excelDataWithoutNip]; // Remove helper fields
 
       // Buat workbook
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(excelData);
       
-      // Set column widths
+      // Set column widths - dinamis berdasarkan jumlah template
       const colWidths = [
         { wch: 20 }, // NIP
         { wch: 40 }, // Nama
-        { wch: 50 }, // No Surat
-        { wch: 50 }, // Jenis Surat/Template
+        ...allTemplateNames.map(() => ({ wch: 50 })), // Kolom template (dinamis)
         { wch: 20 }, // NIP Penandatangan
         { wch: 40 }  // Nama Penandatangan
       ];
