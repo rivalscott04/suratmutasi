@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { apiPost, apiGet } from '../lib/api';
 import DynamicIsland, { IslandMode, makeScene } from '../components/DynamicIsland/DynamicIsland';
 
@@ -35,6 +36,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -200,8 +202,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Show Dynamic Island ONLY after login (once per session)
   useEffect(() => {
-    const isLoginPage = window.location.pathname === '/' || window.location.pathname === '/login';
-    const isMaintenancePage = window.location.pathname === '/maintenance' || isMaintenanceMode;
+    const isLoginPage = location.pathname === '/' || location.pathname === '/login';
+    const isMaintenancePage = location.pathname === '/maintenance' || isMaintenanceMode;
     
     console.log('🔍 useEffect triggered with conditions:', {
       hasUser: !!user,
@@ -212,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoginPage,
       isMaintenancePage,
       isMaintenanceMode,
-      currentPath: window.location.pathname,
+      currentPath: location.pathname,
       shouldShow: user && !showWelcomeIsland && !hasShownWelcome && !isHiding && !isLoginPage && !isMaintenancePage
     });
     
@@ -265,7 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return () => clearTimeout(hideTimer);
     }
-  }, [user, hasShownWelcome, isHiding]);
+  }, [user, hasShownWelcome, isHiding, location.pathname, isMaintenanceMode]);
 
   // Debug Dynamic Island state changes
   useEffect(() => {
@@ -316,6 +318,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up impersonation data from localStorage
       localStorage.removeItem('originalToken');
       localStorage.removeItem('originalUser');
+      
+      // Reset welcome flag to allow Dynamic Island to show after login
+      setHasShownWelcome(false);
+      localStorage.removeItem('hasShownWelcome');
       
       // Dynamic Island will be shown automatically by useEffect when user data is set
       console.log('Login successful, user data:', res.user);
