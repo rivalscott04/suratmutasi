@@ -592,7 +592,7 @@ const Letters: React.FC = () => {
       }
 
       // Prepare data untuk Excel
-      const excelData = filteredData.map(letter => {
+      const excelDataRaw = filteredData.map(letter => {
         let parsedFormData = letter.form_data;
         if (typeof parsedFormData === 'string') {
           try {
@@ -611,9 +611,23 @@ const Letters: React.FC = () => {
           'No Surat': letter.letter_number || '',
           'Jenis Surat/Template': letter.template_name || '',
           'NIP Penandatangan': letter.signing_official_nip || '',
-          'Nama Penandatangan': letter.signing_official?.nama || ''
+          'Nama Penandatangan': letter.signing_official?.nama || '',
+          // Helper untuk sorting
+          _nipForSort: isTemplate9 ? 'ZZZ_NO_NIP' : (letter.recipient_employee_nip || 'ZZZ_NO_NIP'),
+          _templateId: letter.template_id || 0
         };
       });
+
+      // Sort by NIP, kemudian by template_id untuk NIP yang sama
+      // Template 9 (SPTJM) yang tidak punya NIP akan di akhir
+      const excelData = excelDataRaw.sort((a, b) => {
+        // Sort by NIP first
+        const nipCompare = a._nipForSort.localeCompare(b._nipForSort);
+        if (nipCompare !== 0) return nipCompare;
+        
+        // Jika NIP sama, sort by template_id
+        return (a._templateId || 0) - (b._templateId || 0);
+      }).map(({ _nipForSort, _templateId, ...rest }) => rest); // Remove helper fields
 
       // Buat workbook
       const wb = XLSX.utils.book_new();
