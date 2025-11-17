@@ -13,7 +13,7 @@ import {
   Cog
 } from 'lucide-react';
 
-export type UserRole = 'admin' | 'admin_wilayah' | 'operator' | 'user';
+export type UserRole = 'admin' | 'admin_wilayah' | 'operator' | 'user' | 'bimas';
 
 export interface NavigationItem {
   name: string;
@@ -78,7 +78,7 @@ export const navigationConfig: NavigationItem[] = [
     href: '/pengajuan',
     icon: Upload,
     description: 'Kelola data pengajuan pegawai',
-    roles: ['admin', 'admin_wilayah', 'operator', 'user']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas']
   },
   {
     name: 'Tracking',
@@ -207,7 +207,7 @@ export const routeConfig: Record<string, {
     breadcrumbs: [
       { name: 'Data Pengajuan', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator', 'user']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas']
   },
   '/pengajuan/select': {
     title: 'Pilih Pegawai',
@@ -224,7 +224,7 @@ export const routeConfig: Record<string, {
       { name: 'Data Pengajuan', href: '/pengajuan' },
       { name: 'Detail Pengajuan', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator', 'user'],
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas'],
     parent: '/pengajuan'
   },
   '/pengajuan/:pengajuanId/upload': {

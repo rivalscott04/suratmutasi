@@ -77,7 +77,9 @@ const PengajuanIndex: React.FC = () => {
   const itemsPerPage = 50;
   const isAdmin = user?.role === 'admin';
   const isReadOnlyUser = user?.role === 'user';
-  const isGroupingRole = isAdmin || isReadOnlyUser;
+  const isBimas = user?.role === 'bimas';
+  const isReadOnlyRole = isReadOnlyUser || isBimas;
+  const isGroupingRole = isAdmin || isReadOnlyUser || isBimas;
 
   // Fallback grouping on client for admin when server doesn't provide grouping
   const clientGroupedByKabkota: Record<string, PengajuanData[]> = React.useMemo(() => {
@@ -487,7 +489,7 @@ const PengajuanIndex: React.FC = () => {
                 </>
               )}
               {/* Only show Add button for admin and operator, not for user role */}
-              {user?.role !== 'user' && (
+              {!isReadOnlyRole && (
                 <Button
                   onClick={() => navigate('/pengajuan/select')}
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -904,7 +906,7 @@ const PengajuanIndex: React.FC = () => {
                                 Lihat Detail
                               </DropdownMenuItem>
                               {/* Only show edit actions for admin and operator, not for user role */}
-                              {user?.role !== 'user' && (
+                              {!isReadOnlyRole && (
                                 <>
                                   {pengajuan.status === 'draft' && (
                                     <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}>

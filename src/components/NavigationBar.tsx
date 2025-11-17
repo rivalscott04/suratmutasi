@@ -101,7 +101,7 @@ const NavigationBar = () => {
       const response = await apiGet('/api/users', token);
       console.log(' Raw users response:', response);
       
-      // Filter out current user dan admin lain
+      // Filter out current user dan admin lain (bimas bisa di-impersonate)
       const filteredUsers = response.users.filter((u: User) => 
         u.id !== originalUser?.id && u.role !== 'admin'
       );

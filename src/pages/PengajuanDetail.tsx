@@ -1159,6 +1159,8 @@ const PengajuanDetail: React.FC = () => {
   const isAdmin = user?.role === 'admin';
   const isAdminWilayah = user?.role === 'admin_wilayah';
   const isReadOnlyUser = user?.role === 'user';
+  const isBimas = user?.role === 'bimas';
+  const isReadOnlyRole = isReadOnlyUser || isBimas;
   
   // File yang pending = file yang sudah diperbaiki dan siap diajukan ulang
   const hasPendingFiles = (() => {
@@ -1172,18 +1174,18 @@ const PengajuanDetail: React.FC = () => {
   })();
   
   // Operator yang sudah upload perbaikan tidak boleh edit/delete lagi, hanya bisa ajukan ulang
-  const canEdit = (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected' || pengajuan?.status === 'admin_wilayah_rejected') && 
+  const canEdit = !isReadOnlyRole && (pengajuan?.status === 'draft' || pengajuan?.status === 'rejected' || pengajuan?.status === 'admin_wilayah_rejected') && 
                   (isAdmin || pengajuan?.created_by === user?.id) && 
                   !hasPendingFiles; // Tidak bisa edit jika ada file pending
-  const canDelete = pengajuan?.status === 'draft' && 
+  const canDelete = !isReadOnlyRole && pengajuan?.status === 'draft' && 
                    (isAdmin || pengajuan?.created_by === user?.id) && 
                    !hasPendingFiles; // Tidak bisa delete jika ada file pending
   // SUPERADMIN: tombol aksi hanya di tab Admin Wilayah untuk verifikasi dokumen tambahan
   // ADMIN WILAYAH: tombol aksi untuk verifikasi dokumen kabupaten
-  const canApprove = (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted' || pengajuan?.status === 'resubmitted'));
-  const canReject = (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted' || pengajuan?.status === 'resubmitted'));
+  const canApprove = !isReadOnlyRole && ((isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted' || pengajuan?.status === 'resubmitted')));
+  const canReject = !isReadOnlyRole && ((isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted' || pengajuan?.status === 'resubmitted')));
   // Tampilkan tombol Ajukan Ulang saat status ditolak atau draft, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
-  const canShowResubmit = (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft' || pengajuan?.status === 'admin_wilayah_rejected') && user?.role !== 'user'; // User dengan role 'user' tidak bisa resubmit
+  const canShowResubmit = !isReadOnlyRole && (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft' || pengajuan?.status === 'admin_wilayah_rejected'); // Read-only roles (user, bimas) tidak bisa resubmit
   
 
   
@@ -1439,7 +1441,7 @@ const PengajuanDetail: React.FC = () => {
             )}
             
             {/* Superadmin & User: semua 3 tab */}
-            {(user?.role === 'admin' || user?.role === 'user') && (
+            {(user?.role === 'admin' || isReadOnlyRole) && (
               <>
                 <TabsTrigger value="KabupatenKota">Kabupaten/Kota</TabsTrigger>
                 <TabsTrigger value="admin_wilayah">Admin Wilayah</TabsTrigger>
@@ -1852,7 +1854,7 @@ const PengajuanDetail: React.FC = () => {
                             <Eye className="h-4 w-4 mr-2" />
                             Preview
                           </Button>
-                          {!isReadOnlyUser && (
+                          {!isReadOnlyRole && (
                           <Button
                             size="sm"
                             variant="outline"
