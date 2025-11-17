@@ -1244,7 +1244,8 @@ const PengajuanDetail: React.FC = () => {
     }).filter(f => f.verification_status !== 'approved');
   })();
   
-  // Cek apakah ada file kabupaten yang "rejected" atau belum ada
+  // Cek apakah ada file kabupaten yang "rejected" (hanya rejected, bukan pending atau belum ada)
+  // Setelah perubahan jabatan, file yang belum ada atau pending tidak dianggap rejected
   const hasRejectedKabupatenFiles = (() => {
     if (!pengajuan) return false;
     for (const t of requiredKabupaten) {
@@ -1252,7 +1253,9 @@ const PengajuanDetail: React.FC = () => {
       const f = pengajuan.files.find((x) => 
         x.file_type === t && (!x.file_category || x.file_category === 'kabupaten')
       );
-      if (!f || f.verification_status === 'rejected') return true;
+      // Hanya return true jika file ada DAN statusnya rejected
+      // File yang belum ada atau pending tidak dianggap rejected
+      if (f && f.verification_status === 'rejected') return true;
     }
     return false;
   })();
@@ -2105,8 +2108,8 @@ const PengajuanDetail: React.FC = () => {
                 
                 {canReject && (
                   // SUPERADMIN di tab Admin Wilayah: reject jika ada dokumen tidak sesuai
-                  // ADMIN WILAYAH: reject jika ada file bermasalah
-                  (isAdmin && activeTab === 'admin_wilayah' && !allFilesApproved) || (isAdminWilayah && (hasRejectedKabupatenFiles || !allKabupatenFilesApproved))
+                  // ADMIN WILAYAH: reject hanya jika ada file yang benar-benar rejected (bukan pending)
+                  (isAdmin && activeTab === 'admin_wilayah' && !allFilesApproved) || (isAdminWilayah && hasRejectedKabupatenFiles)
                 ) && (
                   <Button
                     onClick={() => setShowRejectDialog(true)}
@@ -2799,9 +2802,9 @@ const PengajuanDetail: React.FC = () => {
                        
                        {canReject && (
                          // SUPERADMIN di tab Admin Wilayah: reject jika ada dokumen tidak sesuai
-                         // ADMIN WILAYAH: reject jika ada file bermasalah
+                         // ADMIN WILAYAH: reject hanya jika ada file yang benar-benar rejected (bukan pending)
                          (isAdmin && activeTab === 'admin_wilayah' && !allFilesApproved) || 
-                         (isAdminWilayah && (hasRejectedKabupatenFiles || !allKabupatenFilesApproved))
+                         (isAdminWilayah && hasRejectedKabupatenFiles)
                        ) && (
                          <Button
                            onClick={() => {
