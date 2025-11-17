@@ -1211,18 +1211,52 @@ const PengajuanDetail: React.FC = () => {
   })();
 
   // Cek kelengkapan file kabupaten saja (untuk badge di tab Kabupaten/Kota)
+  // Hanya menghitung file dari jabatan baru (requiredKabupaten)
   const allKabupatenFilesApproved = (() => {
     if (!pengajuan) return false;
     if (requiredKabupaten.length === 0) return false;
+    
+    // Debug: log untuk troubleshooting
+    const missingFiles: string[] = [];
+    const notApprovedFiles: string[] = [];
+    
     for (const t of requiredKabupaten) {
       // Cari file kabupaten yang sesuai (file_category null, 'kabupaten', atau tidak ada)
-      const f = pengajuan.files.find((x) => 
-        x.file_type === t && (!x.file_category || x.file_category === 'kabupaten')
-      );
-      if (!f) return false; // wajib: harus ada
-      if (f.verification_status !== 'approved') return false; // harus sesuai
+      // Pastikan hanya file dari jabatan baru yang dihitung
+      const f = pengajuan.files.find((x) => {
+        // File harus sesuai dengan file_type
+        if (x.file_type !== t) return false;
+        // File kabupaten harus memiliki file_category null, 'kabupaten', atau tidak ada
+        // File dengan file_category 'admin_wilayah' tidak dihitung sebagai file kabupaten
+        return !x.file_category || x.file_category === 'kabupaten';
+      });
+      
+      if (!f) {
+        missingFiles.push(t);
+        continue;
+      }
+      
+      if (f.verification_status !== 'approved') {
+        notApprovedFiles.push(`${t} (${f.verification_status || 'null'})`);
+      }
     }
-    return true;
+    
+    // Debug log (akan muncul di console browser)
+    if (missingFiles.length > 0 || notApprovedFiles.length > 0) {
+      console.log('🔍 allKabupatenFilesApproved DEBUG:', {
+        requiredKabupaten,
+        totalRequired: requiredKabupaten.length,
+        missingFiles,
+        notApprovedFiles,
+        allFiles: pengajuan.files.map(f => ({
+          file_type: f.file_type,
+          file_category: f.file_category,
+          verification_status: f.verification_status
+        }))
+      });
+    }
+    
+    return missingFiles.length === 0 && notApprovedFiles.length === 0;
   })();
 
   // Debug: cek file kabupaten yang tidak approved
@@ -2113,11 +2147,26 @@ const PengajuanDetail: React.FC = () => {
                <CardTitle>Aksi</CardTitle>
              </CardHeader>
                            <CardContent className="space-y-3">
-                {canApprove && (
-                  // SUPERADMIN di tab Admin Wilayah: cek apakah semua dokumen admin wilayah sesuai
-                  // ADMIN WILAYAH: cek apakah semua dokumen kabupaten sesuai
-                  (isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || (isAdminWilayah && allKabupatenFilesApproved)
-                ) && (
+                {(() => {
+                  const shouldShowApprove = canApprove && (
+                    (isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || 
+                    (isAdminWilayah && allKabupatenFilesApproved)
+                  );
+                  
+                  // Debug log untuk troubleshooting
+                  if (isAdminWilayah && canApprove && !shouldShowApprove) {
+                    console.log('🔍 Tombol Setujui tidak muncul - DEBUG:', {
+                      canApprove,
+                      isAdminWilayah,
+                      allKabupatenFilesApproved,
+                      pengajuanStatus: pengajuan?.status,
+                      requiredKabupaten: requiredKabupaten.length,
+                      totalFiles: pengajuan?.files?.length
+                    });
+                  }
+                  
+                  return shouldShowApprove;
+                })() && (
                   <Button
                     onClick={() => setShowApproveDialog(true)}
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
