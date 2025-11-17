@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Plus, 
   Search, 
@@ -23,10 +26,12 @@ import {
   FileText,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiGet, apiDelete } from '@/lib/api';
+import { apiGet, apiDelete, apiPut } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface PengajuanData {
   id: string;
@@ -54,6 +59,7 @@ interface PengajuanData {
 const PengajuanIndex: React.FC = () => {
   const navigate = useNavigate();
   const { user, token, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [pengajuanList, setPengajuanList] = useState<PengajuanData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +73,11 @@ const PengajuanIndex: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pengajuanToDelete, setPengajuanToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showUpdateStatusDialog, setShowUpdateStatusDialog] = useState(false);
+  const [selectedPengajuan, setSelectedPengajuan] = useState<PengajuanData | null>(null);
+  const [newStatus, setNewStatus] = useState<string>('');
+  const [statusChangeReason, setStatusChangeReason] = useState<string>('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [filterOptions, setFilterOptions] = useState<{
     users: Array<{ id: string; email: string; full_name: string }>;
     statuses: Array<{ value: string; label: string; count: number }>;
@@ -232,6 +243,49 @@ const PengajuanIndex: React.FC = () => {
       setError('Terjadi kesalahan saat menghapus pengajuan');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!selectedPengajuan || !newStatus) return;
+
+    setUpdatingStatus(true);
+    try {
+      const response = await apiPut(
+        `/api/pengajuan/${selectedPengajuan.id}/update-status`,
+        {
+          status: newStatus,
+          reason: statusChangeReason
+        },
+        token
+      );
+
+      if (response.success) {
+        toast({
+          title: 'Berhasil',
+          description: 'Status pengajuan berhasil diubah',
+        });
+        setShowUpdateStatusDialog(false);
+        setSelectedPengajuan(null);
+        setNewStatus('');
+        setStatusChangeReason('');
+        fetchPengajuanData();
+      } else {
+        toast({
+          title: 'Error',
+          description: response.message || 'Gagal mengubah status',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: 'Error',
+        description: 'Terjadi kesalahan saat mengubah status',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -657,6 +711,20 @@ const PengajuanIndex: React.FC = () => {
                                         <Eye className="h-4 w-4 mr-2" />
                                         Lihat Detail
                                       </DropdownMenuItem>
+                                      {/* Ubah Status - hanya untuk admin */}
+                                      {isAdmin && (
+                                        <DropdownMenuItem 
+                                          onClick={() => {
+                                            setSelectedPengajuan(pengajuan);
+                                            setNewStatus(pengajuan.status);
+                                            setStatusChangeReason('');
+                                            setShowUpdateStatusDialog(true);
+                                          }}
+                                        >
+                                          <Settings className="h-4 w-4 mr-2" />
+                                          Ubah Status
+                                        </DropdownMenuItem>
+                                      )}
                                       {isAdmin && pengajuan.status === 'admin_wilayah_submitted' && (
                                         <>
                                           <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
@@ -922,6 +990,20 @@ const PengajuanIndex: React.FC = () => {
                                   )}
                                 </>
                               )}
+                              {/* Ubah Status - hanya untuk admin */}
+                              {isAdmin && (
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setSelectedPengajuan(pengajuan);
+                                    setNewStatus(pengajuan.status);
+                                    setStatusChangeReason('');
+                                    setShowUpdateStatusDialog(true);
+                                  }}
+                                >
+                                  <Settings className="h-4 w-4 mr-2" />
+                                  Ubah Status
+                                </DropdownMenuItem>
+                              )}
                                {isAdmin && pengajuan.status === 'admin_wilayah_submitted' && (
                                  <>
                                    <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
@@ -1016,6 +1098,81 @@ const PengajuanIndex: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Update Status Dialog */}
+      <Dialog open={showUpdateStatusDialog} onOpenChange={setShowUpdateStatusDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ubah Status Pengajuan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="status">Status Saat Ini</Label>
+              <div className="mt-1 p-2 bg-gray-50 rounded-md">
+                {selectedPengajuan && getStatusBadge(selectedPengajuan.status, selectedPengajuan)}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="newStatus">Status Baru</Label>
+              <select
+                id="newStatus"
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="draft">Draft</option>
+                <option value="submitted">Submitted</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="resubmitted">Resubmitted</option>
+                <option value="admin_wilayah_approved">Admin Wilayah Approved</option>
+                <option value="admin_wilayah_rejected">Admin Wilayah Rejected</option>
+                <option value="admin_wilayah_submitted">Admin Wilayah Submitted</option>
+                <option value="final_approved">Final Approved</option>
+                <option value="final_rejected">Final Rejected</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="reason">Alasan Perubahan (Opsional)</Label>
+              <Textarea
+                id="reason"
+                value={statusChangeReason}
+                onChange={(e) => setStatusChangeReason(e.target.value)}
+                placeholder="Masukkan alasan perubahan status..."
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUpdateStatusDialog(false);
+                setSelectedPengajuan(null);
+                setNewStatus('');
+                setStatusChangeReason('');
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleUpdateStatus}
+              disabled={updatingStatus || !newStatus || (selectedPengajuan && newStatus === selectedPengajuan.status)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {updatingStatus ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                'Ubah Status'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

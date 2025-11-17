@@ -2998,7 +2998,7 @@ const PengajuanDetail: React.FC = () => {
             <div>
               <Label htmlFor="status">Status Saat Ini</Label>
               <div className="mt-1 p-2 bg-gray-50 rounded-md">
-                {pengajuan && getStatusBadge(pengajuan.status)}
+                {pengajuan && getStatusBadge(pengajuan.status, pengajuan)}
               </div>
             </div>
             <div>
