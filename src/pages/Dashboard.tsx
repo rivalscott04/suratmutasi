@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { apiGet } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, TrendingUp, Clock, Users, ArrowRight, BarChart3, Calendar, Settings as SettingsIcon, RefreshCw, Download } from 'lucide-react';
+import { FileText, TrendingUp, Clock, Users, ArrowRight, BarChart3, Calendar, Settings as SettingsIcon, RefreshCw, Download, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import * as XLSX from 'xlsx';
@@ -197,8 +197,44 @@ const Dashboard = () => {
     }
   };
 
-  // Statistik dinamis
-  const stats = [
+  // Statistik dinamis - berbeda untuk role bimas
+  const isBimas = user?.role === 'bimas';
+  const stats = isBimas ? [
+    {
+      title: 'Total Pengajuan',
+      value: pengajuan.length,
+      change: calculatePercentageChange(pengajuan.length, lastMonthPengajuan.length),
+      icon: Users,
+      color: 'text-blue-600'
+    },
+    {
+      title: 'Pengajuan Bulan Ini',
+      value: currentMonthPengajuan.length,
+      change: calculatePercentageChange(currentMonthPengajuan.length, lastMonthPengajuan.length),
+      icon: TrendingUp,
+      color: 'text-green-600'
+    },
+    {
+      title: 'Disetujui',
+      value: pengajuan.filter(p => p.status === 'approved' || p.status === 'final_approved').length,
+      change: calculatePercentageChange(
+        pengajuan.filter(p => p.status === 'approved' || p.status === 'final_approved').length,
+        lastMonthPengajuan.filter(p => p.status === 'approved' || p.status === 'final_approved').length
+      ),
+      icon: FileText,
+      color: 'text-green-600'
+    },
+    {
+      title: 'Diajukan',
+      value: pengajuan.filter(p => p.status === 'submitted' || p.status === 'reviewed').length,
+      change: calculatePercentageChange(
+        pengajuan.filter(p => p.status === 'submitted' || p.status === 'reviewed').length,
+        lastMonthPengajuan.filter(p => p.status === 'submitted' || p.status === 'reviewed').length
+      ),
+      icon: Clock,
+      color: 'text-orange-600'
+    }
+  ] : [
     {
       title: 'Total Surat',
       value: letters.length,
@@ -277,12 +313,14 @@ const Dashboard = () => {
     <div className="space-y-6">
       {/* Header with Breadcrumb */}
       <PageHeader
-        title={user?.role === 'user' ? 'Dashboard Admin Pusat' : 'Dashboard'}
+        title={user?.role === 'user' ? 'Dashboard Admin Pusat' : 
+               user?.role === 'bimas' ? 'Dashboard Bimas' : 'Dashboard'}
         subtitle={(() => {
           const roleText = user?.role === 'admin_wilayah' ? 'Admin Wilayah' :
                           user?.role === 'admin' ? 'Administrator Kanwil' :
                           user?.role === 'operator' ? 'Operator' :
-                          user?.role === 'user' ? 'Pengguna' : 'Pengguna';
+                          user?.role === 'user' ? 'Pengguna' :
+                          user?.role === 'bimas' ? 'Kanwil Bimas Islam' : 'Pengguna';
           
           return `Selamat datang, ${roleText}`;
         })()}
@@ -300,8 +338,8 @@ const Dashboard = () => {
         }
       />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Cards - 2 kolom untuk bimas, 4 kolom untuk lainnya */}
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${isBimas ? '' : 'lg:grid-cols-4'} gap-6`}>
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -323,7 +361,8 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - Hidden untuk bimas */}
+      {!isBimas && (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {quickActions
           .filter(action => action.showForRoles.includes(user?.role || ''))
@@ -353,12 +392,16 @@ const Dashboard = () => {
           );
         })}
       </div>
+      )}
 
-      {/* Rekap Status (Pivot) */}
+      {/* Rekap Status (Pivot) - Simplified untuk bimas */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-semibold">Rekap Status per Kabupaten</CardTitle>
+            <CardTitle className="text-xl font-semibold">
+              {isBimas ? 'Rekap Pengajuan Penghulu & Penyuluh per Kabupaten' : 'Rekap Status per Kabupaten'}
+            </CardTitle>
+            {!isBimas && (
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -391,6 +434,7 @@ const Dashboard = () => {
                 {exporting ? 'Exporting...' : 'Export Excel'}
               </Button>
             </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -453,8 +497,8 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Jenis Template: tidak ditampilkan untuk admin pusat (role user) */}
-      {user?.role !== 'user' && (
+      {/* Jenis Template: tidak ditampilkan untuk admin pusat (role user) dan bimas */}
+      {user?.role !== 'user' && !isBimas && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
@@ -479,63 +523,127 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Tabel Surat Terbaru (tambah link ke detail surat) */}
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">Daftar Surat</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
-            <input
-              type="text"
-              className="input input-bordered w-full md:w-64"
-              placeholder="Cari nomor, perihal, atau template..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-          {loadingLetters ? (
-            <div>Loading surat...</div>
-          ) : error ? (
-            <div className="text-error">{error}</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Nomor Surat</TableHead>
-                    <TableHead>Perihal</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLetters.length === 0 ? (
+      {/* Tabel Pengajuan Terbaru untuk bimas, Tabel Surat untuk lainnya */}
+      {isBimas ? (
+        <Card className="mb-4">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl font-semibold">Pengajuan Penghulu & Penyuluh Terbaru</CardTitle>
+              <Button asChild variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
+                <Link to="/pengajuan">
+                  Lihat Semua <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingPengajuan ? (
+              <div className="text-center py-8 text-gray-500">Memuat pengajuan...</div>
+            ) : pengajuan.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">Tidak ada pengajuan</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">Tidak ada surat</TableCell>
+                      <TableHead>No.</TableHead>
+                      <TableHead>Nama Pegawai</TableHead>
+                      <TableHead>Jenis Jabatan</TableHead>
+                      <TableHead>Kabupaten/Kota</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Aksi</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredLetters.slice(0, 5).map((l, i) => (
-                      <TableRow key={l.id}>
+                  </TableHeader>
+                  <TableBody>
+                    {pengajuan.slice(0, 10).map((p: any, i: number) => (
+                      <TableRow key={p.id}>
                         <TableCell>{i + 1}</TableCell>
-                        <TableCell>{l.letter_number}</TableCell>
-                        <TableCell>{l.subject}</TableCell>
-                        <TableCell>{getStatusBadge(l.status)}</TableCell>
+                        <TableCell>{p.pegawai?.nama || '-'}</TableCell>
+                        <TableCell>{p.jenis_jabatan || '-'}</TableCell>
+                        <TableCell>{p.office?.kabkota || p.office?.name || '-'}</TableCell>
                         <TableCell>
-                          <Link to={`/letters/${l.id}`} className="btn btn-xs btn-outline flex items-center gap-1">
-                            <FileText className="w-4 h-4" /> Detail
-                          </Link>
+                          <Badge className={
+                            p.status === 'approved' || p.status === 'final_approved' ? 'bg-green-100 text-green-700 border-green-200' :
+                            p.status === 'submitted' || p.status === 'reviewed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                            p.status === 'rejected' || p.status === 'final_rejected' ? 'bg-red-100 text-red-700 border-red-200' :
+                            'bg-gray-100 text-gray-700 border-gray-200'
+                          }>
+                            {getStatusLabel(p.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button asChild variant="outline" size="sm">
+                            <Link to={`/pengajuan/${p.id}`}>
+                              <Eye className="w-4 h-4 mr-1" /> Detail
+                            </Link>
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">Daftar Surat</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
+              <input
+                type="text"
+                className="input input-bordered w-full md:w-64"
+                placeholder="Cari nomor, perihal, atau template..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            {loadingLetters ? (
+              <div>Loading surat...</div>
+            ) : error ? (
+              <div className="text-error">{error}</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>No.</TableHead>
+                      <TableHead>Nomor Surat</TableHead>
+                      <TableHead>Perihal</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLetters.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center">Tidak ada surat</TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredLetters.slice(0, 5).map((l, i) => (
+                        <TableRow key={l.id}>
+                          <TableCell>{i + 1}</TableCell>
+                          <TableCell>{l.letter_number}</TableCell>
+                          <TableCell>{l.subject}</TableCell>
+                          <TableCell>{getStatusBadge(l.status)}</TableCell>
+                          <TableCell>
+                            <Link to={`/letters/${l.id}`} className="btn btn-xs btn-outline flex items-center gap-1">
+                              <FileText className="w-4 h-4" /> Detail
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

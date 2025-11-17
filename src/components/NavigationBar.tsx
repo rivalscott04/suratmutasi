@@ -233,8 +233,8 @@ const NavigationBar = () => {
               </div>
             )}
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+            {/* Desktop Navigation - Compact untuk bimas */}
+            <div className={`hidden md:flex items-center ${user?.role === 'bimas' ? 'space-x-3' : 'space-x-8'}`}>
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 
@@ -246,14 +246,15 @@ const NavigationBar = () => {
                         <Button
                           variant="ghost"
                           className={cn(
-                            "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                            "flex items-center space-x-2 rounded-md text-sm font-medium transition-colors",
+                            user?.role === 'bimas' ? "px-2 py-1.5" : "px-3 py-2",
                             isActivePath(item.href) || item.children.some(child => isActivePath(child.href))
                               ? "bg-green-100 text-green-700"
                               : "text-gray-600 hover:text-green-700 hover:bg-green-50"
                           )}
                         >
-                          <Icon className="h-4 w-4" />
-                          <span>{item.name}</span>
+                          <Icon className={user?.role === 'bimas' ? "h-3.5 w-3.5" : "h-4 w-4"} />
+                          <span className={user?.role === 'bimas' ? "text-xs" : ""}>{item.name}</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56">
@@ -289,14 +290,15 @@ const NavigationBar = () => {
                     key={item.name}
                     to={item.href}
                       className={cn(
-                        "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                        "flex items-center space-x-2 rounded-md text-sm font-medium transition-colors",
+                        user?.role === 'bimas' ? "px-2 py-1.5" : "px-3 py-2",
                         isActivePath(item.href)
                           ? "bg-green-100 text-green-700"
                           : "text-gray-600 hover:text-green-700 hover:bg-green-50"
-                    )}
+                      )}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
+                    <Icon className={user?.role === 'bimas' ? "h-3.5 w-3.5" : "h-4 w-4"} />
+                    <span className={user?.role === 'bimas' ? "text-xs" : ""}>{item.name}</span>
                   </Link>
                 );
               })}
@@ -469,12 +471,13 @@ const NavigationBar = () => {
                     return (
                       <div key={item.name} className="space-y-1">
                         <div className={cn(
-                          "flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium",
+                          "flex items-center space-x-3 rounded-md font-medium",
+                          user?.role === 'bimas' ? "px-2 py-1.5 text-sm" : "px-3 py-2 text-base",
                           isActivePath(item.href) || item.children.some(child => isActivePath(child.href))
                             ? "bg-green-100 text-green-700"
                             : "text-gray-600"
                         )}>
-                          <Icon className="h-5 w-5" />
+                          <Icon className={user?.role === 'bimas' ? "h-4 w-4" : "h-5 w-5"} />
                           <span>{item.name}</span>
                         </div>
                         <div className="ml-6 space-y-1">
@@ -508,14 +511,15 @@ const NavigationBar = () => {
                       key={item.name}
                       to={item.href}
                       className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium",
+                        "flex items-center space-x-3 rounded-md font-medium",
+                        user?.role === 'bimas' ? "px-2 py-1.5 text-sm" : "px-3 py-2 text-base",
                         isActivePath(item.href)
                           ? "bg-green-100 text-green-700"
                           : "text-gray-600 hover:text-green-700 hover:bg-green-50"
                       )}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className={user?.role === 'bimas' ? "h-4 w-4" : "h-5 w-5"} />
                       <span>{item.name}</span>
                     </Link>
                   );

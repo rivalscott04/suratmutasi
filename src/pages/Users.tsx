@@ -123,47 +123,90 @@ const Users = () => {
 
   // Copy password to clipboard
   const copyPasswordToClipboard = async (password: string) => {
+    if (!password) {
+      toast({
+        title: "Gagal menyalin",
+        description: "Password kosong",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Fallback method yang lebih reliable (works in all browsers)
+    const fallbackCopy = (text: string): boolean => {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '0';
+        textarea.style.top = '0';
+        textarea.style.opacity = '0';
+        textarea.style.pointerEvents = 'none';
+        textarea.setAttribute('readonly', '');
+        document.body.appendChild(textarea);
+        
+        // Select text
+        if (navigator.userAgent.match(/ipad|iphone/i)) {
+          // iOS
+          const range = document.createRange();
+          range.selectNodeContents(textarea);
+          const selection = window.getSelection();
+          if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+          textarea.setSelectionRange(0, 999999);
+        } else {
+          textarea.select();
+        }
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        return successful;
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+        return false;
+      }
+    };
+
     try {
-      // Try modern clipboard API first
-      await navigator.clipboard.writeText(password);
+      // Try modern clipboard API first (requires HTTPS or localhost)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(password);
+        setCopiedPassword(true);
+        toast({
+          title: "Password disalin",
+          description: "Password telah disalin ke clipboard",
+        });
+        setTimeout(() => setCopiedPassword(false), 2000);
+        return;
+      }
+    } catch (err) {
+      console.warn('Clipboard API failed, trying fallback:', err);
+    }
+
+    // Fallback to legacy method
+    const success = fallbackCopy(password);
+    if (success) {
       setCopiedPassword(true);
       toast({
         title: "Password disalin",
         description: "Password telah disalin ke clipboard",
       });
       setTimeout(() => setCopiedPassword(false), 2000);
-    } catch (err) {
-      // Fallback to legacy method
-      try {
-        const textarea = document.createElement('textarea');
-        textarea.value = password;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        textarea.style.left = '-999999px';
-        textarea.style.top = '-999999px';
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        
-        if (successful) {
-          setCopiedPassword(true);
-          toast({
-            title: "Password disalin",
-            description: "Password telah disalin ke clipboard",
-          });
-          setTimeout(() => setCopiedPassword(false), 2000);
-        } else {
-          throw new Error('execCommand failed');
-        }
-      } catch (fallbackErr) {
-        toast({
-          title: "Gagal menyalin",
-          description: "Tidak dapat menyalin password ke clipboard",
-          variant: "destructive",
-        });
+    } else {
+      // Last resort: show password in alert so user can manually copy
+      toast({
+        title: "Gagal menyalin otomatis",
+        description: "Silakan salin password secara manual dari field password",
+        variant: "destructive",
+        duration: 5000,
+      });
+      // Focus and select password field
+      const passwordInput = document.querySelector('input[type="password"], input[type="text"][id*="password"]') as HTMLInputElement;
+      if (passwordInput) {
+        passwordInput.focus();
+        passwordInput.select();
       }
     }
   };

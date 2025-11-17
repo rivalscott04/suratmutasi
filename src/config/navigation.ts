@@ -43,7 +43,7 @@ export const navigationConfig: NavigationItem[] = [
     href: '/dashboard',
     icon: Home,
     description: 'Overview dan statistik sistem',
-    roles: ['admin', 'admin_wilayah', 'operator', 'user']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas']
   },
   {
     name: 'Admin Wilayah Dashboard',
