@@ -138,6 +138,10 @@ const PengajuanDetail: React.FC = () => {
   const [verificationNotes, setVerificationNotes] = useState('');
   const [updatingVerification, setUpdatingVerification] = useState(false);
   const [showEditJabatanDialog, setShowEditJabatanDialog] = useState(false);
+  const [showUpdateStatusDialog, setShowUpdateStatusDialog] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>('');
+  const [statusChangeReason, setStatusChangeReason] = useState<string>('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   
   // Check if there are admin wilayah files
   const hasAdminWilayahFiles = pengajuan?.files?.some(file => file.file_category === 'admin_wilayah') || false;
@@ -1534,16 +1538,33 @@ const PengajuanDetail: React.FC = () => {
                     <label className="text-sm font-medium text-gray-700">Jenis Jabatan Target</label>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-sm">{getJabatanDisplayName(pengajuan.jenis_jabatan)}</Badge>
-                      {isAdmin && pengajuan.status === 'admin_wilayah_approved' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setShowEditJabatanDialog(true)}
-                          className="h-7 text-xs"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
+                      {isAdmin && (
+                        <>
+                          {pengajuan.status === 'admin_wilayah_approved' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setShowEditJabatanDialog(true)}
+                              className="h-7 text-xs"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit Jabatan
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="ml-2 h-7 text-xs"
+                            onClick={() => {
+                              setNewStatus(pengajuan.status);
+                              setStatusChangeReason('');
+                              setShowUpdateStatusDialog(true);
+                            }}
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Ubah Status
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -1575,11 +1596,15 @@ const PengajuanDetail: React.FC = () => {
                 <FileText className="h-5 w-5" />
                 Berkas Kabupaten/Kota
                 <Badge variant="outline" className="ml-2">
-                  {pengajuan.files.filter(f => !f.file_category || f.file_category === 'kabupaten').length} / {requiredKabupaten.length}
+                  {pengajuan.files.filter(f => 
+                    (!f.file_category || f.file_category === 'kabupaten') && 
+                    requiredKabupaten.includes(f.file_type)
+                  ).length} / {requiredKabupaten.length}
                 </Badge>
                 {(() => {
                   const rejectedCount = pengajuan.files.filter(f => 
                     (!f.file_category || f.file_category === 'kabupaten') && 
+                    requiredKabupaten.includes(f.file_type) &&
                     f.verification_status === 'rejected'
                   ).length;
                   return rejectedCount > 0 ? (
@@ -1633,8 +1658,15 @@ const PengajuanDetail: React.FC = () => {
                 </div>
               ) : (
                 (() => {
+                  // Hanya tampilkan file dari jabatan baru (requiredKabupaten)
+                  // File dari jabatan lama tidak ditampilkan meskipun file_category-nya kabupaten
                   const files = pengajuan.files
-                    .filter(f => !f.file_category || f.file_category === 'kabupaten')
+                    .filter(f => {
+                      // File harus memiliki file_category kabupaten atau null
+                      if (f.file_category && f.file_category !== 'kabupaten') return false;
+                      // File harus ada di requiredKabupaten (jabatan baru)
+                      return requiredKabupaten.includes(f.file_type);
+                    })
                     .sort((a, b) => {
                       // Jika status pengajuan "rejected", prioritas file ditolak dulu
                       if (pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_rejected') {
@@ -2955,6 +2987,120 @@ const PengajuanDetail: React.FC = () => {
            </AlertDialogFooter>
          </AlertDialogContent>
       </AlertDialog>
+
+      {/* Update Status Dialog */}
+      <Dialog open={showUpdateStatusDialog} onOpenChange={setShowUpdateStatusDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ubah Status Pengajuan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="status">Status Saat Ini</Label>
+              <div className="mt-1 p-2 bg-gray-50 rounded-md">
+                {pengajuan && getStatusBadge(pengajuan.status)}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="newStatus">Status Baru</Label>
+              <select
+                id="newStatus"
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="draft">Draft</option>
+                <option value="submitted">Submitted</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="resubmitted">Resubmitted</option>
+                <option value="admin_wilayah_approved">Admin Wilayah Approved</option>
+                <option value="admin_wilayah_rejected">Admin Wilayah Rejected</option>
+                <option value="admin_wilayah_submitted">Admin Wilayah Submitted</option>
+                <option value="final_approved">Final Approved</option>
+                <option value="final_rejected">Final Rejected</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="reason">Alasan Perubahan (Opsional)</Label>
+              <Textarea
+                id="reason"
+                value={statusChangeReason}
+                onChange={(e) => setStatusChangeReason(e.target.value)}
+                placeholder="Masukkan alasan perubahan status..."
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUpdateStatusDialog(false);
+                setNewStatus('');
+                setStatusChangeReason('');
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!newStatus || !pengajuan) return;
+                
+                setUpdatingStatus(true);
+                try {
+                  const response = await apiPut(
+                    `/api/pengajuan/${pengajuan.id}/update-status`,
+                    {
+                      status: newStatus,
+                      reason: statusChangeReason
+                    },
+                    token
+                  );
+
+                  if (response.success) {
+                    toast({
+                      title: 'Berhasil',
+                      description: 'Status pengajuan berhasil diubah',
+                    });
+                    setShowUpdateStatusDialog(false);
+                    setNewStatus('');
+                    setStatusChangeReason('');
+                    fetchPengajuanData();
+                  } else {
+                    toast({
+                      title: 'Error',
+                      description: response.message || 'Gagal mengubah status',
+                      variant: 'destructive',
+                    });
+                  }
+                } catch (error) {
+                  console.error('Error updating status:', error);
+                  toast({
+                    title: 'Error',
+                    description: 'Terjadi kesalahan saat mengubah status',
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setUpdatingStatus(false);
+                }
+              }}
+              disabled={updatingStatus || !newStatus || newStatus === pengajuan?.status}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {updatingStatus ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                'Ubah Status'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Jabatan Dialog */}
       {pengajuan && (
