@@ -2740,10 +2740,13 @@ const PengajuanDetail: React.FC = () => {
                             return f.file_category === 'admin_wilayah';
                           }
                         });
-                      }).filter(Boolean);
+                      });
                       
-                      const approvedCount = allFiles.filter(f => f?.verification_status === 'approved').length;
-                      const rejectedCount = allFiles.filter(f => f?.verification_status === 'rejected').length;
+                      // Hitung approved dan rejected (file yang tidak ada dianggap pending)
+                      const approvedCount = allFiles.filter(f => f && f.verification_status === 'approved').length;
+                      const rejectedCount = allFiles.filter(f => f && f.verification_status === 'rejected').length;
+                      // Pending = file yang tidak ada (undefined) + file yang statusnya pending atau null
+                      const pendingCount = totalFiles - approvedCount - rejectedCount;
                       const verifiedCount = approvedCount + rejectedCount;
                       
                       return (
