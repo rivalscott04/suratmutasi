@@ -1180,10 +1180,7 @@ const PengajuanDetail: React.FC = () => {
   const canDelete = !isReadOnlyRole && pengajuan?.status === 'draft' && 
                    (isAdmin || pengajuan?.created_by === user?.id) && 
                    !hasPendingFiles; // Tidak bisa delete jika ada file pending
-  // SUPERADMIN: tombol aksi hanya di tab Admin Wilayah untuk verifikasi dokumen tambahan
-  // ADMIN WILAYAH: tombol aksi untuk verifikasi dokumen kabupaten
-  const canApprove = !isReadOnlyRole && ((isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted' || pengajuan?.status === 'resubmitted')));
-  const canReject = !isReadOnlyRole && ((isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || (isAdminWilayah && (pengajuan?.status === 'approved' || pengajuan?.status === 'submitted' || pengajuan?.status === 'resubmitted')));
+  
   // Tampilkan tombol Ajukan Ulang saat status ditolak atau draft, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
   const canShowResubmit = !isReadOnlyRole && (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft' || pengajuan?.status === 'admin_wilayah_rejected'); // Read-only roles (user, bimas) tidak bisa resubmit
   
@@ -1259,6 +1256,30 @@ const PengajuanDetail: React.FC = () => {
     }
     return false;
   })();
+
+  // SUPERADMIN: tombol aksi hanya di tab Admin Wilayah untuk verifikasi dokumen tambahan
+  // ADMIN WILAYAH: tombol aksi untuk verifikasi dokumen kabupaten
+  // Admin Wilayah bisa approve/reject jika:
+  // - Status submitted, approved, atau resubmitted (normal flow)
+  // - Status draft setelah perubahan jabatan (jika semua file sudah approved/rejected)
+  const canApprove = !isReadOnlyRole && (
+    (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || 
+    (isAdminWilayah && (
+      pengajuan?.status === 'approved' || 
+      pengajuan?.status === 'submitted' || 
+      pengajuan?.status === 'resubmitted' ||
+      (pengajuan?.status === 'draft' && allKabupatenFilesApproved) // Setelah perubahan jabatan, bisa approve jika semua file sudah approved
+    ))
+  );
+  const canReject = !isReadOnlyRole && (
+    (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || 
+    (isAdminWilayah && (
+      pengajuan?.status === 'approved' || 
+      pengajuan?.status === 'submitted' || 
+      pengajuan?.status === 'resubmitted' ||
+      (pengajuan?.status === 'draft' && hasRejectedKabupatenFiles) // Setelah perubahan jabatan, bisa reject jika ada file rejected
+    ))
+  );
 
   // File yang rejected = file yang masih bermasalah dan tidak bisa diajukan ulang
   const hasRejectedFiles = (() => {
@@ -2754,10 +2775,26 @@ const PengajuanDetail: React.FC = () => {
 
            {/* Tombol Aksi Final - Setujui/Tolak Pengajuan di Modal - Selalu Muncul */}
            {previewFile && (canApprove || canReject) && (() => {
-             const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
-             const allFiles = Array.from(requiredAll).map(fileType => 
-               pengajuan?.files.find(f => f.file_type === fileType)
-             ).filter(Boolean);
+             // Untuk admin_wilayah: hanya cek file kabupaten dari jabatan baru
+             // Untuk admin: cek semua file (kabupaten + admin_wilayah) dari jabatan baru
+             const requiredAll = isAdminWilayah 
+               ? new Set<string>([...requiredKabupaten])
+               : new Set<string>([...requiredKabupaten, ...requiredKanwil]);
+             
+             const allFiles = Array.from(requiredAll).map(fileType => {
+               const isKabupatenFile = requiredKabupaten.includes(fileType);
+               // Cari file yang sesuai dengan kategori dan file_type
+               return pengajuan?.files.find(f => {
+                 if (f.file_type !== fileType) return false;
+                 if (isKabupatenFile) {
+                   // File kabupaten harus memiliki file_category null, 'kabupaten', atau tidak ada
+                   return !f.file_category || f.file_category === 'kabupaten';
+                 } else {
+                   // File admin_wilayah harus memiliki file_category 'admin_wilayah'
+                   return f.file_category === 'admin_wilayah';
+                 }
+               });
+             }).filter(Boolean);
              
              const totalFiles = allFiles.length;
              const approvedCount = allFiles.filter(f => f?.verification_status === 'approved').length;
