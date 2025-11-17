@@ -1241,21 +1241,6 @@ const PengajuanDetail: React.FC = () => {
       }
     }
     
-    // Debug log (akan muncul di console browser)
-    if (missingFiles.length > 0 || notApprovedFiles.length > 0) {
-      console.log('🔍 allKabupatenFilesApproved DEBUG:', {
-        requiredKabupaten,
-        totalRequired: requiredKabupaten.length,
-        missingFiles,
-        notApprovedFiles,
-        allFiles: pengajuan.files.map(f => ({
-          file_type: f.file_type,
-          file_category: f.file_category,
-          verification_status: f.verification_status
-        }))
-      });
-    }
-    
     return missingFiles.length === 0 && notApprovedFiles.length === 0;
   })();
 
@@ -1445,18 +1430,27 @@ const PengajuanDetail: React.FC = () => {
 
       {/* Progress Tracker */}
       {(() => {
-        // Filter files berdasarkan required files untuk jabatan saat ini
-        const requiredAll = new Set<string>([...requiredKabupaten, ...requiredKanwil]);
-        const operatorFiles = pengajuan.files.filter(f => 
-          (!f.file_category || f.file_category === 'kabupaten') && 
-          requiredKabupaten.includes(f.file_type)
-        );
-        const adminWilayahFiles = pengajuan.files.filter(f => 
-          f.file_category === 'admin_wilayah' && 
-          requiredKanwil.includes(f.file_type)
-        );
-        const operatorApproved = operatorFiles.filter(f => f.verification_status === 'approved').length;
-        const adminApproved = adminWilayahFiles.filter(f => f.verification_status === 'approved').length;
+        // Hanya hitung file dari jabatan baru (requiredKabupaten dan requiredKanwil)
+        // File dari jabatan lama tidak dihitung meskipun file_type-nya sama
+        const operatorFiles = requiredKabupaten.map(fileType => {
+          // Cari file kabupaten yang sesuai dengan file_type dan file_category
+          return pengajuan.files.find(f => 
+            f.file_type === fileType && 
+            (!f.file_category || f.file_category === 'kabupaten')
+          );
+        }).filter(Boolean);
+        
+        const adminWilayahFiles = requiredKanwil.map(fileType => {
+          // Cari file admin_wilayah yang sesuai dengan file_type dan file_category
+          return pengajuan.files.find(f => 
+            f.file_type === fileType && 
+            f.file_category === 'admin_wilayah'
+          );
+        }).filter(Boolean);
+        
+        const operatorApproved = operatorFiles.filter(f => f && f.verification_status === 'approved').length;
+        const adminApproved = adminWilayahFiles.filter(f => f && f.verification_status === 'approved').length;
+        
         // Selalu gunakan requiredKabupaten.length dan requiredKanwil.length (jabatan saat ini)
         const operatorTotal = requiredKabupaten.length;
         const adminTotal = requiredKanwil.length;
@@ -2152,18 +2146,6 @@ const PengajuanDetail: React.FC = () => {
                     (isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || 
                     (isAdminWilayah && allKabupatenFilesApproved)
                   );
-                  
-                  // Debug log untuk troubleshooting
-                  if (isAdminWilayah && canApprove && !shouldShowApprove) {
-                    console.log('🔍 Tombol Setujui tidak muncul - DEBUG:', {
-                      canApprove,
-                      isAdminWilayah,
-                      allKabupatenFilesApproved,
-                      pengajuanStatus: pengajuan?.status,
-                      requiredKabupaten: requiredKabupaten.length,
-                      totalFiles: pengajuan?.files?.length
-                    });
-                  }
                   
                   return shouldShowApprove;
                 })() && (
