@@ -1796,12 +1796,14 @@ const PengajuanDetail: React.FC = () => {
                             - Hanya Superadmin yang bisa verifikasi
                             - Admin Wilayah TIDAK bisa verifikasi berkas admin wilayah (karena mereka yang upload)
                             
-                            Superadmin bisa verifikasi saat status:
-                            - submitted: verifikasi berkas operator
-                            - rejected: verifikasi berkas operator yang ditolak
-                            - admin_wilayah_approved: verifikasi berkas admin wilayah untuk final approval
+                            Superadmin bisa verifikasi file admin_wilayah di SEMUA pengajuan yang memiliki file admin_wilayah
+                            Kecuali status final yang sudah selesai (final_approved, final_rejected)
+                            Ini memungkinkan verifikasi bahkan setelah perubahan jabatan atau status apapun
                           */}
-                          {isAdmin && (pengajuan.status === 'admin_wilayah_submitted' || pengajuan.status === 'rejected' || pengajuan.status === 'admin_wilayah_approved') ? (
+                          {isAdmin && file.file_category === 'admin_wilayah' && 
+                           pengajuan && 
+                           pengajuan.status !== 'final_approved' && 
+                           pengajuan.status !== 'final_rejected' ? (
                             <div className="flex items-center gap-3 mr-3">
                               {verifyingFile === file.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin text-green-600" />
@@ -2558,17 +2560,17 @@ const PengajuanDetail: React.FC = () => {
                   const isAdminWilayahFile = previewFile.file_category === 'admin_wilayah';
                   
                   // Admin Wilayah hanya bisa verifikasi berkas kabupaten
-                  const canAdminWilayahVerify = isAdminWilayah && isKabupatenFile && 
+                  const canAdminWilayahVerify = isAdminWilayah && isKabupatenFile && pengajuan &&
                     (pengajuan.status === 'submitted' || pengajuan.status === 'approved' || pengajuan.status === 'rejected' || pengajuan.status === 'resubmitted');
                   
                   // Superadmin bisa verifikasi file admin_wilayah di SEMUA pengajuan yang memiliki file admin_wilayah
                   // Kecuali status final yang sudah selesai (final_approved, final_rejected)
                   // Ini memungkinkan verifikasi bahkan setelah perubahan jabatan atau status apapun
-                  const isFinalStatus = pengajuan.status === 'final_approved' || pengajuan.status === 'final_rejected';
-                  const canAdminVerifyAdminWilayahFile = isAdmin && isAdminWilayahFile && !isFinalStatus;
+                  const isFinalStatus = pengajuan?.status === 'final_approved' || pengajuan?.status === 'final_rejected';
+                  const canAdminVerifyAdminWilayahFile = isAdmin && isAdminWilayahFile && pengajuan && !isFinalStatus;
                   
                   // Superadmin juga bisa verifikasi file kabupaten jika diperlukan (untuk kasus khusus)
-                  const canAdminVerifyKabupatenFile = isAdmin && isKabupatenFile &&
+                  const canAdminVerifyKabupatenFile = isAdmin && isKabupatenFile && pengajuan &&
                     (pengajuan.status === 'admin_wilayah_submitted' || 
                      pengajuan.status === 'rejected' || 
                      pengajuan.status === 'admin_wilayah_approved');
