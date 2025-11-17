@@ -389,7 +389,22 @@ const PengajuanDetail: React.FC = () => {
         setShowDeleteDialog(false);
         // Redirect setelah 2 detik agar user bisa lihat pesan sukses
         setTimeout(() => {
-          navigate('/pengajuan');
+          // Restore filter from sessionStorage and navigate with query params
+          const search = sessionStorage.getItem('pengajuan_filter_search') || '';
+          const status = sessionStorage.getItem('pengajuan_filter_status') || 'all';
+          const createdBy = sessionStorage.getItem('pengajuan_filter_created_by') || 'all';
+          const jenisJabatan = sessionStorage.getItem('pengajuan_filter_jenis_jabatan') || 'all';
+          const page = sessionStorage.getItem('pengajuan_filter_page') || '1';
+          
+          const params = new URLSearchParams();
+          if (search) params.set('search', search);
+          if (status !== 'all') params.set('status', status);
+          if (createdBy !== 'all') params.set('created_by', createdBy);
+          if (jenisJabatan !== 'all') params.set('jenis_jabatan', jenisJabatan);
+          if (page !== '1') params.set('page', page);
+          
+          const queryString = params.toString();
+          navigate(`/pengajuan${queryString ? `?${queryString}` : ''}`);
         }, 2000);
       } else {
         setError(response.message || 'Gagal menghapus pengajuan');
@@ -1415,7 +1430,24 @@ const PengajuanDetail: React.FC = () => {
                  <div className="flex items-center gap-4">
            <Button
              variant="outline"
-             onClick={() => navigate('/pengajuan')}
+             onClick={() => {
+               // Restore filter from sessionStorage and navigate with query params
+               const search = sessionStorage.getItem('pengajuan_filter_search') || '';
+               const status = sessionStorage.getItem('pengajuan_filter_status') || 'all';
+               const createdBy = sessionStorage.getItem('pengajuan_filter_created_by') || 'all';
+               const jenisJabatan = sessionStorage.getItem('pengajuan_filter_jenis_jabatan') || 'all';
+               const page = sessionStorage.getItem('pengajuan_filter_page') || '1';
+               
+               const params = new URLSearchParams();
+               if (search) params.set('search', search);
+               if (status !== 'all') params.set('status', status);
+               if (createdBy !== 'all') params.set('created_by', createdBy);
+               if (jenisJabatan !== 'all') params.set('jenis_jabatan', jenisJabatan);
+               if (page !== '1') params.set('page', page);
+               
+               const queryString = params.toString();
+               navigate(`/pengajuan${queryString ? `?${queryString}` : ''}`);
+             }}
              className="flex items-center gap-2"
            >
              <ArrowLeft className="h-4 w-4" />

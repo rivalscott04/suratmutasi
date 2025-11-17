@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,16 +58,34 @@ interface PengajuanData {
 
 const PengajuanIndex: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, token, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [pengajuanList, setPengajuanList] = useState<PengajuanData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [createdByFilter, setCreatedByFilter] = useState<string>('all');
-  const [jenisJabatanFilter, setJenisJabatanFilter] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Initialize state from URL params or sessionStorage
+  const getInitialFilter = (key: string, defaultValue: string): string => {
+    // First try URL params
+    const urlValue = searchParams.get(key);
+    if (urlValue !== null) return urlValue;
+    
+    // Fallback to sessionStorage (for backward navigation from detail)
+    const stored = sessionStorage.getItem(`pengajuan_filter_${key}`);
+    if (stored) return stored;
+    
+    return defaultValue;
+  };
+  
+  const [searchTerm, setSearchTerm] = useState(() => getInitialFilter('search', ''));
+  const [statusFilter, setStatusFilter] = useState<string>(() => getInitialFilter('status', 'all'));
+  const [createdByFilter, setCreatedByFilter] = useState<string>(() => getInitialFilter('created_by', 'all'));
+  const [jenisJabatanFilter, setJenisJabatanFilter] = useState<string>(() => getInitialFilter('jenis_jabatan', 'all'));
+  const [currentPage, setCurrentPage] = useState(() => {
+    const page = getInitialFilter('page', '1');
+    return parseInt(page, 10) || 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -117,7 +135,27 @@ const PengajuanIndex: React.FC = () => {
     return clientGrouped;
   }, [isGroupingRole, groupedByKabkota, pengajuanList]);
 
-  
+  // Update URL params when filters change
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (createdByFilter !== 'all') params.set('created_by', createdByFilter);
+    if (jenisJabatanFilter !== 'all') params.set('jenis_jabatan', jenisJabatanFilter);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+    
+    // Update URL without triggering navigation
+    setSearchParams(params, { replace: true });
+    
+    // Also save to sessionStorage for backward navigation
+    sessionStorage.setItem('pengajuan_filter_search', searchTerm);
+    sessionStorage.setItem('pengajuan_filter_status', statusFilter);
+    sessionStorage.setItem('pengajuan_filter_created_by', createdByFilter);
+    sessionStorage.setItem('pengajuan_filter_jenis_jabatan', jenisJabatanFilter);
+    sessionStorage.setItem('pengajuan_filter_page', currentPage.toString());
+  }, [isAuthenticated, searchTerm, statusFilter, createdByFilter, jenisJabatanFilter, currentPage, setSearchParams]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -220,6 +258,13 @@ const PengajuanIndex: React.FC = () => {
   const handleJenisJabatanFilter = (value: string) => {
     setJenisJabatanFilter(value);
     setCurrentPage(1);
+  };
+
+  // Helper function to navigate to detail while preserving filter state
+  const navigateToDetail = (pengajuanId: string) => {
+    // Filter state is already saved in sessionStorage by the useEffect above
+    // Just navigate to detail
+    navigate(`/pengajuan/${pengajuanId}`);
   };
 
 
@@ -707,7 +752,7 @@ const PengajuanIndex: React.FC = () => {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                      <DropdownMenuItem onClick={() => navigateToDetail(pengajuan.id)}>
                                         <Eye className="h-4 w-4 mr-2" />
                                         Lihat Detail
                                       </DropdownMenuItem>
@@ -727,11 +772,11 @@ const PengajuanIndex: React.FC = () => {
                                       )}
                                       {isAdmin && pengajuan.status === 'admin_wilayah_submitted' && (
                                         <>
-                                          <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                          <DropdownMenuItem onClick={() => navigateToDetail(pengajuan.id)}>
                                             <CheckCircle className="h-4 w-4 mr-2" />
                                             Setujui
                                           </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                          <DropdownMenuItem onClick={() => navigateToDetail(pengajuan.id)}>
                                             <XCircle className="h-4 w-4 mr-2" />
                                             Tolak
                                           </DropdownMenuItem>
@@ -969,7 +1014,7 @@ const PengajuanIndex: React.FC = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                              <DropdownMenuItem onClick={() => navigateToDetail(pengajuan.id)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 Lihat Detail
                               </DropdownMenuItem>
@@ -1006,11 +1051,11 @@ const PengajuanIndex: React.FC = () => {
                               )}
                                {isAdmin && pengajuan.status === 'admin_wilayah_submitted' && (
                                  <>
-                                   <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                   <DropdownMenuItem onClick={() => navigateToDetail(pengajuan.id)}>
                                      <CheckCircle className="h-4 w-4 mr-2" />
                                      Setujui
                                    </DropdownMenuItem>
-                                   <DropdownMenuItem onClick={() => navigate(`/pengajuan/${pengajuan.id}`)}>
+                                   <DropdownMenuItem onClick={() => navigateToDetail(pengajuan.id)}>
                                      <XCircle className="h-4 w-4 mr-2" />
                                      Tolak
                                    </DropdownMenuItem>
