@@ -46,8 +46,13 @@ const Dashboard = () => {
         .finally(() => setLoadingLetters(false));
 
       setLoadingPengajuan(true);
+      // Backend sudah filter otomatis untuk role bimas (penghulu/penyuluh, status != draft/rejected)
       apiGet('/api/pengajuan', token)
-        .then(res => setPengajuan(res.pengajuan || []))
+        .then(res => {
+          // Backend return format: { success: true, data: [...], pagination: {...} }
+          const pengajuanData = res.data || res.pengajuan || [];
+          setPengajuan(Array.isArray(pengajuanData) ? pengajuanData : []);
+        })
         .catch(() => setPengajuan([]))
         .finally(() => setLoadingPengajuan(false));
 
@@ -101,8 +106,9 @@ const Dashboard = () => {
   // Data untuk perhitungan
   const currentMonthLetters = getCurrentMonthData(letters, 'createdAt');
   const lastMonthLetters = getLastMonthData(letters, 'createdAt');
-  const currentMonthPengajuan = getCurrentMonthData(pengajuan, 'createdAt');
-  const lastMonthPengajuan = getLastMonthData(pengajuan, 'createdAt');
+  // Field created_at untuk pengajuan (bukan createdAt)
+  const currentMonthPengajuan = getCurrentMonthData(pengajuan, 'created_at');
+  const lastMonthPengajuan = getLastMonthData(pengajuan, 'created_at');
 
   const getStatusLabel = (status: string) => {
     const statusConfig = {
