@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -142,6 +142,18 @@ const PengajuanDetail: React.FC = () => {
   const [newStatus, setNewStatus] = useState<string>('');
   const [statusChangeReason, setStatusChangeReason] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const editableJabatanStatuses = useMemo(
+    () => new Set([
+      'submitted',
+      'approved',
+      'rejected',
+      'resubmitted',
+      'admin_wilayah_approved',
+      'admin_wilayah_rejected',
+      'admin_wilayah_submitted'
+    ]),
+    []
+  );
   
   // Check if there are admin wilayah files
   const hasAdminWilayahFiles = pengajuan?.files?.some(file => file.file_category === 'admin_wilayah') || false;
@@ -1570,19 +1582,17 @@ const PengajuanDetail: React.FC = () => {
                     <label className="text-sm font-medium text-gray-700">Jenis Jabatan Target</label>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-sm">{getJabatanDisplayName(pengajuan.jenis_jabatan)}</Badge>
-                      {isAdmin && (
+                      {isAdmin && editableJabatanStatuses.has(pengajuan.status) && (
                         <>
-                          {pengajuan.status === 'admin_wilayah_approved' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setShowEditJabatanDialog(true)}
-                              className="h-7 text-xs"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit Jabatan
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShowEditJabatanDialog(true)}
+                            className="h-7 text-xs"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit Jabatan
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
