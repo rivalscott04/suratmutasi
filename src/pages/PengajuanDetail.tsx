@@ -390,6 +390,26 @@ const PengajuanDetail: React.FC = () => {
     }
   };
 
+  const handleAdminWilayahFinalResubmit = async () => {
+    try {
+      setSubmitting(true);
+      const response = await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/submit-to-superadmin`, {}, token);
+
+      if (response.success !== false) {
+        setSuccessMessage('Pengajuan berhasil diajukan kembali ke Superadmin!');
+        setShowSuccessDialog(true);
+        await fetchPengajuanData();
+      } else {
+        setError(response.message || 'Gagal mengirim ulang pengajuan ke Superadmin');
+      }
+    } catch (error) {
+      console.error('Error resubmitting admin wilayah pengajuan:', error);
+      setError('Terjadi kesalahan saat mengirim ulang ke Superadmin');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       setSubmitting(true);
@@ -1192,6 +1212,7 @@ const PengajuanDetail: React.FC = () => {
   const isReadOnlyUser = user?.role === 'user';
   const isBimas = user?.role === 'bimas';
   const isReadOnlyRole = isReadOnlyUser || isBimas;
+  const isFinalRejectedBySuperadmin = !!(pengajuan && pengajuan.status === 'admin_wilayah_rejected' && pengajuan.final_rejected_at);
   
   // File yang pending = file yang sudah diperbaiki dan siap diajukan ulang
   const hasPendingFiles = (() => {
@@ -1213,7 +1234,12 @@ const PengajuanDetail: React.FC = () => {
                    !hasPendingFiles; // Tidak bisa delete jika ada file pending
   
   // Tampilkan tombol Ajukan Ulang saat status ditolak atau draft, namun aktifkan hanya jika semua dokumen yang sebelumnya ditolak sudah diperbaiki (tidak ada yang statusnya 'rejected')
-  const canShowResubmit = !isReadOnlyRole && (pengajuan?.status === 'rejected' || pengajuan?.status === 'draft' || pengajuan?.status === 'admin_wilayah_rejected'); // Read-only roles (user, bimas) tidak bisa resubmit
+  const canShowResubmit = !isReadOnlyRole && (
+    pengajuan?.status === 'rejected' ||
+    pengajuan?.status === 'draft' ||
+    (pengajuan?.status === 'admin_wilayah_rejected' && !isFinalRejectedBySuperadmin)
+  ); // Read-only roles (user, bimas) tidak bisa resubmit
+  const showAdminWilayahFinalResubmit = isAdminWilayah && isFinalRejectedBySuperadmin;
   
 
   
@@ -1798,7 +1824,7 @@ const PengajuanDetail: React.FC = () => {
           {/* Berkas Admin Wilayah - tidak ditampilkan untuk operator */}
           {user?.role !== 'operator' && activeTab === 'admin_wilayah' && (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Berkas Admin Wilayah
@@ -1826,8 +1852,32 @@ const PengajuanDetail: React.FC = () => {
                   </Badge>
                 )}
               </CardTitle>
+              {isAdminWilayah && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="self-start sm:self-auto"
+                  onClick={() => navigate(`/admin-wilayah/upload/${pengajuan.id}`)}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Kelola Dokumen Kanwil
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
+              {isFinalRejectedBySuperadmin && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                  <p className="font-semibold mb-1">Dokumen Admin Wilayah ditolak Superadmin</p>
+                  <p className="mb-2">
+                    {pengajuan.final_rejection_reason || pengajuan.rejection_reason || 'Perbaiki dokumen yang diminta lalu ajukan kembali ke Superadmin.'}
+                  </p>
+                  {(pengajuan.final_rejected_at || pengajuan.rejected_at) && (
+                    <p className="text-xs text-red-600">
+                      Terakhir ditolak: {formatDate((pengajuan.final_rejected_at || pengajuan.rejected_at)!)}
+                    </p>
+                  )}
+                </div>
+              )}
               {pengajuan.files.filter(f => f.file_category === 'admin_wilayah').length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -2247,7 +2297,27 @@ const PengajuanDetail: React.FC = () => {
                   </Button>
                 )}
                 
-                {canShowResubmit && (
+                {showAdminWilayahFinalResubmit && (
+                  <Button
+                    onClick={handleAdminWilayahFinalResubmit}
+                    disabled={submitting || !resubmitEnabled}
+                    className="w-full bg-blue-700 hover:bg-blue-800 text-white"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />
+                        Mengirim...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Ajukan Lagi ke Superadmin
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {!showAdminWilayahFinalResubmit && canShowResubmit && (
                   <Button
                     onClick={handleResubmit}
                     disabled={submitting || !resubmitEnabled}

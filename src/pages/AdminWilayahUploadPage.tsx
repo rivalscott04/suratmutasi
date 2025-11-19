@@ -22,6 +22,9 @@ interface PengajuanDetail {
   updated_at: string;
   pegawai?: { nama: string; nip: string };
   office?: { id: string; name: string; kabkota: string };
+  final_rejected_by?: string;
+  final_rejected_at?: string;
+  final_rejection_reason?: string;
 }
 
 const AdminWilayahUploadPage: React.FC = () => {
@@ -38,6 +41,7 @@ const AdminWilayahUploadPage: React.FC = () => {
   const [availableJobTypes, setAvailableJobTypes] = useState<string[]>([]);
   const [selectedJobType, setSelectedJobType] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<{ required: number; total: number; isComplete: boolean }>({ required: 0, total: 0, isComplete: false });
+  const isFinalRejected = pengajuan?.status === 'admin_wilayah_rejected' && Boolean(pengajuan?.final_rejected_at);
 
   const fetchDetail = async () => {
     if (!token || !pengajuanId) return;
@@ -229,6 +233,14 @@ const AdminWilayahUploadPage: React.FC = () => {
     );
   }
 
+  const showSubmitButton = pengajuan.status === 'admin_wilayah_approved' || pengajuan.status === 'admin_wilayah_submitted' || isFinalRejected;
+  const submitButtonDisabled = pengajuan.status === 'admin_wilayah_submitted' || !uploadProgress.isComplete;
+  const submitButtonLabel = pengajuan.status === 'admin_wilayah_submitted'
+    ? 'Sudah Diajukan'
+    : isFinalRejected
+      ? 'Ajukan Lagi ke Superadmin'
+      : 'Ajukan ke Superadmin';
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -336,6 +348,13 @@ const AdminWilayahUploadPage: React.FC = () => {
               />
             )}
 
+            {isFinalRejected && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                <p className="font-semibold mb-1">Ditolak Superadmin</p>
+                <p>{pengajuan.final_rejection_reason || 'Perbaiki dokumen admin wilayah sesuai catatan Superadmin sebelum mengirim ulang.'}</p>
+              </div>
+            )}
+
             {/* File Upload Component */}
             {selectedJobType && (
               <AdminWilayahFileUpload
@@ -352,20 +371,19 @@ const AdminWilayahUploadPage: React.FC = () => {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3">
-          {(pengajuan.status === 'admin_wilayah_approved' || pengajuan.status === 'admin_wilayah_submitted') && (
+          {showSubmitButton && (
             <>
               <span className="text-sm text-gray-600 mr-2">{uploadProgress.required}/{uploadProgress.total} berkas wajib</span>
               <SubmitButton 
-                onClick={pengajuan.status === 'admin_wilayah_submitted' ? () => {} : submitToSuperadmin} 
-                className={`bg-green-600 hover:bg-green-700 text-white ${pengajuan.status === 'admin_wilayah_submitted' || !uploadProgress.isComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={submitButtonDisabled ? () => {} : submitToSuperadmin} 
+                className={`bg-green-600 hover:bg-green-700 text-white ${submitButtonDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                 isProcessing={isSubmitting}
                 processingText="Mengirim..."
-                // Guard click when not eligible
                 onError={() => {}}
                 onSuccess={() => {}}
               >
                 <Send className="h-4 w-4 mr-2" />
-                {pengajuan.status === 'admin_wilayah_submitted' ? 'Sudah Diajukan' : 'Ajukan ke Superadmin'}
+                {submitButtonLabel}
               </SubmitButton>
             </>
           )}
