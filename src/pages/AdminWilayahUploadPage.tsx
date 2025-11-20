@@ -14,6 +14,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
+interface PengajuanFile {
+  id: string;
+  file_type: string;
+  file_category?: string;
+  file_name: string;
+  file_size: number;
+  verification_status?: string;
+  verification_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface PengajuanDetail {
   id: string;
   jenis_jabatan: number;
@@ -25,6 +37,9 @@ interface PengajuanDetail {
   final_rejected_by?: string;
   final_rejected_at?: string;
   final_rejection_reason?: string;
+  rejection_reason?: string;
+  rejected_at?: string;
+  files?: PengajuanFile[];
 }
 
 const AdminWilayahUploadPage: React.FC = () => {
@@ -233,8 +248,24 @@ const AdminWilayahUploadPage: React.FC = () => {
     );
   }
 
+  // Cek apakah masih ada file yang rejected (untuk status admin_wilayah_rejected)
+  const hasRejectedFiles = (() => {
+    if (pengajuan?.status !== 'admin_wilayah_rejected') return false;
+    if (!pengajuan?.files || !Array.isArray(pengajuan.files)) return false;
+    const adminWilayahFiles = pengajuan.files.filter((f: any) => f.file_category === 'admin_wilayah');
+    return adminWilayahFiles.some((f: any) => f.verification_status === 'rejected');
+  })();
+
   const showSubmitButton = pengajuan.status === 'admin_wilayah_approved' || pengajuan.status === 'admin_wilayah_submitted' || pengajuan.status === 'admin_wilayah_rejected' || isFinalRejected;
-  const submitButtonDisabled = pengajuan.status === 'admin_wilayah_submitted' || !uploadProgress.isComplete;
+  
+  // Button disabled jika:
+  // 1. Status sudah submitted
+  // 2. Status rejected tapi masih ada file yang rejected (belum semua diperbaiki)
+  // 3. Upload progress belum complete (untuk status normal)
+  const submitButtonDisabled = pengajuan.status === 'admin_wilayah_submitted' || 
+                                (pengajuan.status === 'admin_wilayah_rejected' && hasRejectedFiles) ||
+                                (pengajuan.status !== 'admin_wilayah_rejected' && !uploadProgress.isComplete);
+  
   const submitButtonLabel = pengajuan.status === 'admin_wilayah_submitted'
     ? 'Sudah Diajukan'
     : (isFinalRejected || pengajuan.status === 'admin_wilayah_rejected')

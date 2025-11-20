@@ -687,8 +687,32 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
             const status = getFileStatus(fileConfig.file_type);
             const uploadedFile = getUploadedFile(fileConfig.file_type);
             
+            // Cek apakah status pengajuan adalah admin_wilayah_rejected
+            const isRejectedStatus = pengajuanStatus === 'admin_wilayah_rejected';
+            
+            // Cek apakah file ini approved (readonly) atau rejected (bisa diupload)
+            const isFileApproved = uploadedFile?.verification_status === 'approved';
+            const isFileRejected = uploadedFile?.verification_status === 'rejected';
+            
+            // Logika readonly: hanya untuk status rejected dan file approved
+            const isReadonly = isRejectedStatus && isFileApproved;
+            
+            // Logika canUpload:
+            // - Jika status BUKAN rejected: semua file bisa diupload (normal flow untuk pengajuan baru)
+            // - Jika status rejected: hanya file rejected yang bisa diupload, file approved readonly
+            const canUpload = !isRejectedStatus 
+              ? true // Normal flow: semua file bisa diupload
+              : !isReadonly && isFileRejected; // Rejected status: hanya file rejected yang bisa diupload
+            
+            // Jika status admin_wilayah_rejected, hanya tampilkan file yang sudah ada (approved atau rejected)
+            // Jangan tampilkan file yang belum ada karena tidak perlu upload file baru
+            // Untuk status normal (bukan rejected), tampilkan semua file termasuk yang belum ada
+            if (isRejectedStatus && !uploadedFile) {
+              return null;
+            }
+            
             return (
-              <Card key={fileConfig.id} className="border border-gray-200">
+              <Card key={fileConfig.id} className={`border ${isReadonly ? 'border-green-200 bg-green-50' : isFileRejected ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
                 <CardContent className="p-3">
                   <div className="flex flex-col gap-3">
                     {/* Title and Status */}
@@ -703,9 +727,19 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                       </div>
                       
                       {/* Status Badge */}
-                      {status === 'uploaded' ? (
+                      {isFileApproved ? (
                         <Badge className="bg-green-600 text-white flex items-center gap-1 text-xs">
                           <CheckCircle className="h-3 w-3" />
+                          Sesuai
+                        </Badge>
+                      ) : isFileRejected ? (
+                        <Badge className="bg-red-600 text-white flex items-center gap-1 text-xs">
+                          <XCircle className="h-3 w-3" />
+                          Ditolak
+                        </Badge>
+                      ) : status === 'uploaded' ? (
+                        <Badge className="bg-blue-600 text-white flex items-center gap-1 text-xs">
+                          <FileText className="h-3 w-3" />
                           Uploaded
                         </Badge>
                       ) : (
@@ -733,11 +767,22 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                       {/* Uploaded File Info */}
                       {status === 'uploaded' && uploadedFile && (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-1 text-green-600 text-xs">
-                            <CheckCircle className="h-3 w-3" />
+                          <div className={`flex items-center gap-1 text-xs ${isFileApproved ? 'text-green-600' : isFileRejected ? 'text-red-600' : 'text-blue-600'}`}>
+                            {isFileApproved ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : isFileRejected ? (
+                              <XCircle className="h-3 w-3" />
+                            ) : (
+                              <FileText className="h-3 w-3" />
+                            )}
                             <span className="truncate">{uploadedFile.file_name}</span>
                             <span className="text-gray-500">({formatFileSize(uploadedFile.file_size)})</span>
                           </div>
+                          {isFileRejected && uploadedFile.verification_notes && (
+                            <p className="text-xs text-red-600 italic">
+                              Catatan: {uploadedFile.verification_notes}
+                            </p>
+                          )}
                           <div className="flex gap-1">
                             <Button size="sm" variant="outline" onClick={() => handlePreview(uploadedFile)} className="h-6 px-2 text-xs">
                               <Eye className="h-3 w-3" />
@@ -745,28 +790,41 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                             <Button size="sm" variant="outline" onClick={() => handleDownload(uploadedFile)} className="h-6 px-2 text-xs">
                               <Download className="h-3 w-3" />
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => triggerReplace(fileConfig.file_type)} className="h-6 px-2 text-xs">
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <input
-                              id={`replace-${toSafeId(fileConfig.file_type)}`}
-                              type="file"
-                              className="hidden"
-                              accept=".pdf,.doc,.docx"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleFileUpload(fileConfig.file_type, file);
-                                  e.target.value = '';
-                                }
-                              }}
-                            />
+                            {/* Button Edit: 
+                                - Untuk status normal (bukan rejected): semua file bisa diganti
+                                - Untuk status rejected: hanya file rejected yang bisa diganti, file approved readonly
+                            */}
+                            {(!isRejectedStatus || isFileRejected) && (
+                              <>
+                                <Button size="sm" variant="outline" onClick={() => triggerReplace(fileConfig.file_type)} className="h-6 px-2 text-xs">
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <input
+                                  id={`replace-${toSafeId(fileConfig.file_type)}`}
+                                  type="file"
+                                  className="hidden"
+                                  accept=".pdf,.doc,.docx"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      handleFileUpload(fileConfig.file_type, file);
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                />
+                              </>
+                            )}
                           </div>
+                          {isReadonly && (
+                            <p className="text-xs text-green-600 italic">
+                              File ini sudah sesuai dan tidak perlu diperbaiki
+                            </p>
+                          )}
                         </div>
                       )}
                       
-                      {/* Drag and Drop Zone */}
-                      {status !== 'uploaded' && (
+                      {/* Drag and Drop Zone - hanya tampilkan jika bisa upload */}
+                      {canUpload && status !== 'uploaded' && (
                         <div
                           className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer w-full h-32 ${
                             dragOver === fileConfig.file_type
@@ -822,6 +880,13 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                             id={`file-${toSafeId(fileConfig.file_type)}`}
                           />
                         </div>
+                      )}
+                      
+                      {/* Pesan untuk file yang belum ada tapi status rejected */}
+                      {isRejectedStatus && !uploadedFile && (
+                        <p className="text-xs text-gray-500 italic">
+                          File ini belum diupload
+                        </p>
                       )}
                     </div>
                   </div>
