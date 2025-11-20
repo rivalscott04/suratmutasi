@@ -233,11 +233,11 @@ const AdminWilayahUploadPage: React.FC = () => {
     );
   }
 
-  const showSubmitButton = pengajuan.status === 'admin_wilayah_approved' || pengajuan.status === 'admin_wilayah_submitted' || isFinalRejected;
+  const showSubmitButton = pengajuan.status === 'admin_wilayah_approved' || pengajuan.status === 'admin_wilayah_submitted' || pengajuan.status === 'admin_wilayah_rejected' || isFinalRejected;
   const submitButtonDisabled = pengajuan.status === 'admin_wilayah_submitted' || !uploadProgress.isComplete;
   const submitButtonLabel = pengajuan.status === 'admin_wilayah_submitted'
     ? 'Sudah Diajukan'
-    : isFinalRejected
+    : (isFinalRejected || pengajuan.status === 'admin_wilayah_rejected')
       ? 'Ajukan Lagi ke Superadmin'
       : 'Ajukan ke Superadmin';
 
@@ -348,10 +348,15 @@ const AdminWilayahUploadPage: React.FC = () => {
               />
             )}
 
-            {isFinalRejected && (
+            {(isFinalRejected || pengajuan.status === 'admin_wilayah_rejected') && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-                <p className="font-semibold mb-1">Ditolak Superadmin</p>
-                <p>{pengajuan.final_rejection_reason || 'Perbaiki dokumen admin wilayah sesuai catatan Superadmin sebelum mengirim ulang.'}</p>
+                <p className="font-semibold mb-1">Dokumen Admin Wilayah Ditolak</p>
+                <p>{pengajuan.final_rejection_reason || pengajuan.rejection_reason || 'Perbaiki dokumen admin wilayah yang ditolak sebelum mengirim ulang ke Superadmin.'}</p>
+                {(pengajuan.final_rejected_at || pengajuan.rejected_at) && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Ditolak pada: {formatDate(pengajuan.final_rejected_at || pengajuan.rejected_at!)}
+                  </p>
+                )}
               </div>
             )}
 
