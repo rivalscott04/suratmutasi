@@ -2159,11 +2159,12 @@ const PengajuanDetail: React.FC = () => {
                    <div className="flex items-start gap-4">
                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
                      <div className="flex-1 space-y-1">
-                       <p className="font-medium">Ditolak</p>
+                       <p className="font-medium">Ditolak Admin Wilayah</p>
                        <p className="text-sm text-gray-600">{formatDate(pengajuan.rejected_at)}</p>
                        {pengajuan.rejected_by && (
                          <p className="text-xs text-gray-500">oleh {pengajuan.rejected_by}</p>
                        )}
+                       <p className="text-xs text-gray-500">Admin Wilayah menolak pengajuan operator</p>
                      </div>
                    </div>
                  )}
@@ -2184,9 +2185,12 @@ const PengajuanDetail: React.FC = () => {
                    <div className="flex items-start gap-4">
                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
                      <div className="flex-1 space-y-1">
-                       <p className="font-medium">Ditolak Admin Wilayah</p>
-                       <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
-                       <p className="text-xs text-gray-500">Admin Wilayah menolak pengajuan</p>
+                       <p className="font-medium">Ditolak Superadmin</p>
+                       <p className="text-sm text-gray-600">{formatDate(pengajuan.final_rejected_at || pengajuan.updated_at)}</p>
+                       {pengajuan.final_rejected_by && (
+                         <p className="text-xs text-gray-500">oleh {pengajuan.final_rejected_by}</p>
+                       )}
+                       <p className="text-xs text-gray-500">Superadmin menolak berkas admin wilayah</p>
                      </div>
                    </div>
                  )}
