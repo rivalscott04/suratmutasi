@@ -1872,7 +1872,7 @@ const PengajuanDetail: React.FC = () => {
                   onClick={() => navigate(`/admin-wilayah/upload/${pengajuan.id}`)}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Kelola Dokumen Kanwil
+                  Perbaiki Dokumen Kanwil
                 </Button>
               )}
             </CardHeader>
