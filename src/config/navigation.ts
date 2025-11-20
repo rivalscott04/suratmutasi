@@ -13,7 +13,7 @@ import {
   Cog
 } from 'lucide-react';
 
-export type UserRole = 'admin' | 'admin_wilayah' | 'operator' | 'user' | 'bimas';
+export type UserRole = 'admin' | 'admin_wilayah' | 'operator' | 'user' | 'bimas' | 'kanwil';
 
 export interface NavigationItem {
   name: string;
@@ -43,7 +43,7 @@ export const navigationConfig: NavigationItem[] = [
     href: '/dashboard',
     icon: Home,
     description: 'Overview dan statistik sistem',
-    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas', 'kanwil']
   },
   {
     name: 'Admin Wilayah Dashboard',
@@ -57,7 +57,7 @@ export const navigationConfig: NavigationItem[] = [
     href: '/generator',
     icon: FileText,
     description: 'Generate surat berdasarkan template',
-    roles: ['admin', 'operator']
+    roles: ['admin', 'operator', 'kanwil']
   },
   {
     name: 'SK Generator',
@@ -71,14 +71,14 @@ export const navigationConfig: NavigationItem[] = [
     href: '/letters',
     icon: FolderOpen,
     description: 'Daftar surat yang telah dibuat',
-    roles: ['admin', 'admin_wilayah', 'operator', 'user']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'kanwil']
   },
   {
     name: 'Data Pengajuan',
     href: '/pengajuan',
     icon: Upload,
     description: 'Kelola data pengajuan pegawai',
-    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas', 'kanwil']
   },
   {
     name: 'Tracking',
@@ -122,7 +122,7 @@ export const navigationConfig: NavigationItem[] = [
     href: '/settings',
     icon: Settings,
     description: 'Pengaturan sistem dan profil',
-    roles: ['admin', 'admin_wilayah', 'operator']
+    roles: ['admin', 'admin_wilayah', 'operator', 'kanwil']
   }
 ];
 
@@ -143,7 +143,7 @@ export const routeConfig: Record<string, {
     breadcrumbs: [
       { name: 'Dashboard', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator', 'user']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'kanwil']
   },
   '/admin-wilayah/dashboard': {
     title: 'Dashboard Admin Wilayah',
@@ -166,7 +166,7 @@ export const routeConfig: Record<string, {
       { name: 'Generator', href: '/generator' },
       { name: 'Buat Surat', current: true }
     ],
-    roles: ['admin', 'operator'],
+    roles: ['admin', 'operator', 'kanwil'],
     parent: '/generator'
   },
   '/generator/sk': {
@@ -181,7 +181,7 @@ export const routeConfig: Record<string, {
     breadcrumbs: [
       { name: 'Riwayat Surat', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator', 'user']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'kanwil']
   },
   '/letters/:id': {
     title: 'Detail Surat',
@@ -189,7 +189,7 @@ export const routeConfig: Record<string, {
       { name: 'Riwayat Surat', href: '/letters' },
       { name: 'Detail Surat', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator', 'user'],
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'kanwil'],
     parent: '/letters'
   },
   '/letters/:id/preview': {
@@ -199,7 +199,7 @@ export const routeConfig: Record<string, {
       { name: 'Detail Surat', href: '/letters/:id' },
       { name: 'Preview', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator', 'user'],
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'kanwil'],
     parent: '/letters'
   },
   '/pengajuan': {
@@ -207,7 +207,7 @@ export const routeConfig: Record<string, {
     breadcrumbs: [
       { name: 'Data Pengajuan', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas']
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas', 'kanwil']
   },
   '/pengajuan/select': {
     title: 'Pilih Pegawai',
@@ -215,7 +215,7 @@ export const routeConfig: Record<string, {
       { name: 'Data Pengajuan', href: '/pengajuan' },
       { name: 'Pilih Pegawai', current: true }
     ],
-    roles: ['admin', 'operator'],
+    roles: ['admin', 'operator', 'kanwil'],
     parent: '/pengajuan'
   },
   '/pengajuan/:pengajuanId': {
@@ -224,7 +224,7 @@ export const routeConfig: Record<string, {
       { name: 'Data Pengajuan', href: '/pengajuan' },
       { name: 'Detail Pengajuan', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas'],
+    roles: ['admin', 'admin_wilayah', 'operator', 'user', 'bimas', 'kanwil'],
     parent: '/pengajuan'
   },
   '/pengajuan/:pengajuanId/upload': {
@@ -234,7 +234,7 @@ export const routeConfig: Record<string, {
       { name: 'Detail Pengajuan', href: '/pengajuan/:pengajuanId' },
       { name: 'Upload File', current: true }
     ],
-    roles: ['admin', 'operator'],
+    roles: ['admin', 'operator', 'kanwil'],
     parent: '/pengajuan'
   },
   '/pengajuan/:pengajuanId/edit': {
@@ -244,7 +244,7 @@ export const routeConfig: Record<string, {
       { name: 'Detail Pengajuan', href: '/pengajuan/:pengajuanId' },
       { name: 'Edit', current: true }
     ],
-    roles: ['admin', 'operator'],
+    roles: ['admin', 'operator', 'kanwil'],
     parent: '/pengajuan'
   },
   '/admin-wilayah/upload/:pengajuanId': {
@@ -286,7 +286,7 @@ export const routeConfig: Record<string, {
     breadcrumbs: [
       { name: 'Settings', current: true }
     ],
-    roles: ['admin', 'admin_wilayah', 'operator']
+    roles: ['admin', 'admin_wilayah', 'operator', 'kanwil']
   },
   '/tracking-status-settings': {
     title: 'Konfigurasi Status Tracking',

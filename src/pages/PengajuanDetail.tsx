@@ -76,10 +76,21 @@ interface PengajuanData {
     kabkota: string;
     address?: string;
   };
+  creator?: {
+    id: string;
+    full_name?: string;
+    email?: string;
+    role?: string;
+    office?: {
+      id: string;
+      name: string;
+      kabkota: string;
+    };
+  };
   jenis_jabatan: string;
   jabatan_id?: number;
   total_dokumen: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'admin_wilayah_submitted' | 'final_approved' | 'final_rejected';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'admin_wilayah_submitted' | 'kanwil_submitted' | 'kanwil_approved' | 'final_approved' | 'final_rejected';
   catatan?: string;
   rejection_reason?: string;
   rejected_by?: string;
@@ -247,6 +258,9 @@ const PengajuanDetail: React.FC = () => {
         if (pengajuan?.status === 'admin_wilayah_submitted') {
           // Untuk status admin_wilayah_submitted, gunakan final approval
           response = await apiPost(`/api/pengajuan/${pengajuanId}/final-approve`, { notes: approvalNote }, token);
+        } else if (pengajuan?.status === 'kanwil_submitted') {
+          // Untuk status kanwil_submitted, gunakan final approval langsung
+          response = await apiPost(`/api/pengajuan/${pengajuanId}/final-approve`, { notes: approvalNote }, token);
         } else {
           // Untuk status lainnya (submitted, rejected), gunakan approve biasa
           response = await apiPut(`/api/pengajuan/${pengajuanId}/approve`, { catatan: approvalNote }, token);
@@ -254,10 +268,10 @@ const PengajuanDetail: React.FC = () => {
       }
       
       if (response.success) {
-        const successMessage = pengajuan?.status === 'admin_wilayah_submitted' 
+        const successMessage = (pengajuan?.status === 'admin_wilayah_submitted' || pengajuan?.status === 'kanwil_submitted')
           ? 'Pengajuan berhasil disetujui final!' 
           : 'Pengajuan berhasil disetujui!';
-        const toastMessage = pengajuan?.status === 'admin_wilayah_submitted' 
+        const toastMessage = (pengajuan?.status === 'admin_wilayah_submitted' || pengajuan?.status === 'kanwil_submitted')
           ? 'Pengajuan disetujui final.' 
           : 'Pengajuan disetujui.';
         
@@ -290,8 +304,8 @@ const PengajuanDetail: React.FC = () => {
         response = await apiPost(`/api/admin-wilayah/pengajuan/${pengajuanId}/reject`, { rejection_reason: rejectionReason }, token);
       } else {
         // Superadmin: cek status pengajuan untuk menentukan endpoint yang tepat
-        if (pengajuan?.status === 'admin_wilayah_submitted') {
-          // Untuk status admin_wilayah_submitted, gunakan final rejection
+        if (pengajuan?.status === 'admin_wilayah_submitted' || pengajuan?.status === 'kanwil_submitted') {
+          // Untuk status admin_wilayah_submitted atau kanwil_submitted, gunakan final rejection
           response = await apiPost(`/api/pengajuan/${pengajuanId}/final-reject`, { rejection_reason: rejectionReason }, token);
         } else {
           // Untuk status lainnya (submitted, rejected), gunakan reject biasa
@@ -300,10 +314,10 @@ const PengajuanDetail: React.FC = () => {
       }
       
       if (response.success) {
-        const successMessage = pengajuan?.status === 'admin_wilayah_submitted' 
+        const successMessage = (pengajuan?.status === 'admin_wilayah_submitted' || pengajuan?.status === 'kanwil_submitted')
           ? 'Pengajuan berhasil ditolak final!' 
           : 'Pengajuan berhasil ditolak!';
-        const toastMessage = pengajuan?.status === 'admin_wilayah_submitted' 
+        const toastMessage = (pengajuan?.status === 'admin_wilayah_submitted' || pengajuan?.status === 'kanwil_submitted')
           ? 'Pengajuan ditolak final.' 
           : 'Pengajuan ditolak.';
         
@@ -472,10 +486,10 @@ const PengajuanDetail: React.FC = () => {
         className: 'bg-blue-100 text-blue-800' 
       },
       approved: { label: 'APPROVED', className: 'bg-green-100 text-green-800' },
-      rejected: { label: 'REJECTED', className: 'bg-red-100 text-red-800' },
+      rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-100 text-red-800' },
       resubmitted: { label: 'RESUBMITTED', className: 'bg-yellow-100 text-yellow-800' },
       admin_wilayah_approved: { label: 'ADMIN_WILAYAH_APPROVED', className: 'bg-green-200 text-green-800' },
-      admin_wilayah_rejected: { label: 'ADMIN_WILAYAH_REJECTED', className: 'bg-red-200 text-red-800' },
+      admin_wilayah_rejected: { label: 'Ditolak Superadmin', className: 'bg-red-200 text-red-800' },
       admin_wilayah_submitted: { label: 'DIAJUKAN ADMIN WILAYAH', className: 'bg-blue-200 text-blue-800' },
       final_approved: { label: 'FINAL_APPROVED', className: 'bg-green-600 text-white' },
       final_rejected: { label: 'FINAL_REJECTED', className: 'bg-red-600 text-white' },
@@ -739,8 +753,11 @@ const PengajuanDetail: React.FC = () => {
       // For admin wilayah files, verifier should be Superadmin
       return 'Superadmin';
     } else {
-      // For kabupaten files, verifier should be Admin Wilayah
-      return 'Admin Wilayah Lombok Barat';
+      // For kabupaten files:
+      // - If uploaded by kanwil or pengajuan created by kanwil, verifier should be Superadmin
+      // - Otherwise, verifier should be Admin Wilayah
+      const isKanwilFile = file.uploaded_by_role === 'kanwil' || pengajuan?.creator?.role === 'kanwil';
+      return isKanwilFile ? 'Superadmin' : 'Admin Wilayah';
     }
   };
 
@@ -1339,13 +1356,18 @@ const PengajuanDetail: React.FC = () => {
     return false;
   })();
 
-  // SUPERADMIN: tombol aksi hanya di tab Admin Wilayah untuk verifikasi dokumen tambahan
+  // SUPERADMIN: tombol aksi untuk verifikasi pengajuan dari admin wilayah atau kanwil
+  // - admin_wilayah_submitted: hanya di tab Admin Wilayah
+  // - kanwil_submitted: bisa di tab manapun (karena kanwil sudah upload semua file)
   // ADMIN WILAYAH: tombol aksi untuk verifikasi dokumen kabupaten
   // Admin Wilayah bisa approve/reject jika:
   // - Status submitted, approved, atau resubmitted (normal flow)
   // - Status draft setelah perubahan jabatan (jika semua file sudah approved/rejected)
   const canApprove = !isReadOnlyRole && (
-    (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || 
+    (isAdmin && (
+      (pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') ||
+      (pengajuan?.status === 'kanwil_submitted')
+    )) || 
     (isAdminWilayah && (
       pengajuan?.status === 'approved' || 
       pengajuan?.status === 'submitted' || 
@@ -1354,7 +1376,10 @@ const PengajuanDetail: React.FC = () => {
     ))
   );
   const canReject = !isReadOnlyRole && (
-    (isAdmin && pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') || 
+    (isAdmin && (
+      (pengajuan?.status === 'admin_wilayah_submitted' && activeTab === 'admin_wilayah') ||
+      (pengajuan?.status === 'kanwil_submitted')
+    )) || 
     (isAdminWilayah && (
       pengajuan?.status === 'approved' || 
       pengajuan?.status === 'submitted' || 
@@ -2202,7 +2227,7 @@ const PengajuanDetail: React.FC = () => {
                        {pengajuan.final_rejected_by && (
                          <p className="text-xs text-gray-500">oleh {pengajuan.final_rejected_by}</p>
                        )}
-                       <p className="text-xs text-gray-500">Superadmin menolak berkas admin wilayah</p>
+                       <p className="text-xs text-gray-500">Superadmin menolak pengajuan admin wilayah</p>
                      </div>
                    </div>
                  )}
@@ -2249,7 +2274,7 @@ const PengajuanDetail: React.FC = () => {
                      <div className="flex-1 space-y-1">
                        <p className="font-medium">Ditolak Final</p>
                        <p className="text-sm text-gray-600">{formatDate(pengajuan.updated_at)}</p>
-                       <p className="text-xs text-gray-500">Superadmin menolak final pengajuan</p>
+                       <p className="text-xs text-gray-500">Superadmin menolak pengajuan admin wilayah</p>
                      </div>
                    </div>
                  )}
@@ -2283,7 +2308,10 @@ const PengajuanDetail: React.FC = () => {
                            <CardContent className="space-y-3">
                 {(() => {
                   const shouldShowApprove = canApprove && (
-                    (isAdmin && activeTab === 'admin_wilayah' && allFilesApproved) || 
+                    (isAdmin && (
+                      (activeTab === 'admin_wilayah' && pengajuan?.status === 'admin_wilayah_submitted' && allFilesApproved) ||
+                      (pengajuan?.status === 'kanwil_submitted' && allFilesApproved)
+                    )) || 
                     (isAdminWilayah && allKabupatenFilesApproved)
                   );
                   
@@ -2299,9 +2327,14 @@ const PengajuanDetail: React.FC = () => {
                 )}
                 
                 {canReject && (
-                  // SUPERADMIN di tab Admin Wilayah: reject jika ada dokumen tidak sesuai
+                  // SUPERADMIN: reject jika ada dokumen tidak sesuai
+                  // - admin_wilayah_submitted: hanya di tab Admin Wilayah
+                  // - kanwil_submitted: bisa di tab manapun
                   // ADMIN WILAYAH: reject hanya jika ada file yang benar-benar rejected (bukan pending)
-                  (isAdmin && activeTab === 'admin_wilayah' && !allFilesApproved) || (isAdminWilayah && hasRejectedKabupatenFiles)
+                  (isAdmin && (
+                    (activeTab === 'admin_wilayah' && pengajuan?.status === 'admin_wilayah_submitted' && !allFilesApproved) ||
+                    (pengajuan?.status === 'kanwil_submitted' && !allFilesApproved)
+                  )) || (isAdminWilayah && hasRejectedKabupatenFiles)
                 ) && (
                   <Button
                     onClick={() => setShowRejectDialog(true)}
@@ -2790,7 +2823,11 @@ const PengajuanDetail: React.FC = () => {
                      pengajuan.status === 'rejected' || 
                      pengajuan.status === 'admin_wilayah_approved');
                   
-                  return (canAdminVerifyAdminWilayahFile || canAdminVerifyKabupatenFile || canAdminWilayahVerify);
+                  // Superadmin bisa verifikasi semua file (kabupaten + admin_wilayah) untuk pengajuan kanwil
+                  const canAdminVerifyKanwilFile = isAdmin && pengajuan &&
+                    (pengajuan.status === 'kanwil_submitted' || pengajuan.status === 'kanwil_approved');
+                  
+                  return (canAdminVerifyAdminWilayahFile || canAdminVerifyKabupatenFile || canAdminVerifyKanwilFile || canAdminWilayahVerify);
                 })() && (
                   <>
                     <button

@@ -7,7 +7,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas';
+  role: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas' | 'kanwil';
   office_id?: string | null;
   wilayah?: string | null;
   kabkota?: string;

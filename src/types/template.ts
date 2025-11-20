@@ -32,6 +32,7 @@ export interface BaseSignatureData {
 
 export interface BaseTemplateData extends BaseOfficeData, BasePejabatData, BasePegawaiData, BaseSignatureData {
   kode_kabko?: string;
+  office_name?: string; // Nama kantor lengkap (untuk kanwil: "Kantor Wilayah Kementerian Agama")
 }
 
 // Template 1: Surat Pernyataan Tidak Sedang Menjalani Tugas Belajar atau Ikatan Dinas

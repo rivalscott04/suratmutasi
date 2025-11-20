@@ -8,7 +8,7 @@ Aplikasi web untuk membuat surat-surat resmi Kementerian Agama dengan template y
 - **Auto-fill Data**: Pencarian otomatis data pegawai dan pejabat
 - **Live Preview**: Preview surat real-time saat mengisi form
 - **Export PDF**: Generate surat dalam format PDF
-- **Multi-role User**: Support untuk admin, operator, dan user biasa
+- **Multi-role User**: Support untuk admin, operator, admin wilayah, kanwil, dan user biasa
 - **Responsive Design**: Interface yang responsif untuk semua perangkat
 - **Environment Configuration**: Konfigurasi environment yang sederhana untuk development dan production
 
@@ -56,7 +56,7 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'operator', 'user')),
+    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'operator', 'admin_wilayah', 'kanwil', 'user', 'bimas')),
     office_id UUID REFERENCES offices(id),
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -453,6 +453,43 @@ INSERT INTO employees (office_id, nip, full_name, rank_grade, position, unit_wor
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 User Roles & Permissions
+
+### Role: Admin (Superadmin)
+- Akses penuh ke semua fitur
+- Dapat melihat semua pengajuan
+- Dapat approve/reject pengajuan final
+- Dapat verifikasi file admin wilayah dan kanwil
+
+### Role: Admin Wilayah
+- Dapat melihat pengajuan dari wilayahnya
+- Dapat verifikasi file kabupaten/kota
+- Dapat approve/reject pengajuan dari wilayahnya
+- Dapat submit pengajuan ke superadmin
+
+### Role: Kanwil
+- Dapat membuat pengajuan mutasi PNS
+- Dapat upload dua grup file:
+  - File Kabupaten/Kota (standar)
+  - File Admin Wilayah (tambahan)
+- Dapat submit pengajuan langsung ke superadmin
+- Hanya melihat pengajuan yang mereka buat
+- Jika ditolak, status kembali ke draft untuk revisi
+
+### Role: Operator
+- Dapat membuat dan mengelola pengajuan
+- Dapat upload file dokumen
+- Hanya melihat pengajuan yang mereka buat
+
+### Role: User (Read-only)
+- Hanya dapat melihat pengajuan dengan status final_approved
+- Tidak dapat membuat atau mengubah pengajuan
+
+### Role: Bimas
+- Read-only access
+- Hanya dapat melihat pengajuan dengan jenis jabatan penghulu/penyuluh
+- Status selain draft dan rejected
 
 ## 👥 Team
 

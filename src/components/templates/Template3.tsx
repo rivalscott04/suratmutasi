@@ -20,7 +20,7 @@ export const Template3: React.FC<Template3Props> = ({ data }) => {
         <div className="overflow-hidden">
           <div className="font-bold leading-tight mb-1">
             KEMENTERIAN AGAMA REPUBLIK INDONESIA<br />
-            <span>KANTOR KEMENTERIAN AGAMA {data.kabkota}</span>
+            <span>{data.office_name ? `${data.office_name.toUpperCase()} ${data.kabkota}` : `KANTOR KEMENTERIAN AGAMA ${data.kabkota}`}</span>
           </div>
           <div className="header-info">
             {data.jln}<br />

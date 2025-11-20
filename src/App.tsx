@@ -80,7 +80,7 @@ const AdminOperatorRoute = ({ children }: { children: React.ReactNode }) => {
     return <div>Loading...</div>;
   }
   
-  if (!user || (user.role !== 'admin' && user.role !== 'operator' && user.role !== 'admin_wilayah')) {
+  if (!user || (user.role !== 'admin' && user.role !== 'operator' && user.role !== 'admin_wilayah' && user.role !== 'kanwil')) {
     return <Navigate to="/dashboard" replace />;
   }
   

@@ -42,7 +42,7 @@ interface PengajuanData {
   };
   jenis_jabatan: string;
   total_dokumen: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'admin_wilayah_submitted' | 'final_approved' | 'final_rejected';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'resubmitted' | 'admin_wilayah_approved' | 'admin_wilayah_rejected' | 'admin_wilayah_submitted' | 'kanwil_submitted' | 'kanwil_approved' | 'final_approved' | 'final_rejected';
   catatan?: string;
   rejection_reason?: string;
   resubmitted_at?: string;
@@ -107,6 +107,7 @@ const PengajuanIndex: React.FC = () => {
   const isAdmin = user?.role === 'admin';
   const isReadOnlyUser = user?.role === 'user';
   const isBimas = user?.role === 'bimas';
+  const isKanwil = user?.role === 'kanwil';
   const isReadOnlyRole = isReadOnlyUser || isBimas;
   const isGroupingRole = isAdmin || isReadOnlyUser || isBimas;
 
@@ -185,7 +186,9 @@ const PengajuanIndex: React.FC = () => {
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(jenisJabatanFilter !== 'all' && { jenis_jabatan: jenisJabatanFilter }),
         ...(searchTerm && { search: searchTerm }),
-        ...(isAdmin && createdByFilter !== 'all' && { created_by: createdByFilter })
+        ...(isAdmin && createdByFilter !== 'all' && { created_by: createdByFilter }),
+        // Kanwil hanya melihat pengajuan yang mereka buat
+        ...(isKanwil && user?.id && { created_by: user.id })
       });
 
 
@@ -350,11 +353,13 @@ const PengajuanIndex: React.FC = () => {
         icon: FileText 
       },
       approved: { label: 'Disetujui', className: 'bg-green-100 text-green-800 hover:bg-green-200', icon: CheckCircle },
-      rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800 hover:bg-red-200', icon: XCircle },
+      rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-100 text-red-800 hover:bg-red-200', icon: XCircle },
       resubmitted: { label: 'Diajukan Ulang', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock },
       admin_wilayah_approved: { label: 'Disetujui Admin Wilayah', className: 'bg-green-200 text-green-800 hover:bg-green-300', icon: CheckCircle },
-      admin_wilayah_rejected: { label: 'Ditolak Admin Wilayah', className: 'bg-red-200 text-red-800 hover:bg-red-300', icon: XCircle },
+      admin_wilayah_rejected: { label: 'Ditolak Superadmin', className: 'bg-red-200 text-red-800 hover:bg-red-300', icon: XCircle },
       admin_wilayah_submitted: { label: 'Diajukan Admin Wilayah', className: 'bg-blue-200 text-blue-800 hover:bg-blue-300', icon: FileText },
+      kanwil_submitted: { label: 'Diajukan Kanwil', className: 'bg-purple-200 text-purple-800 hover:bg-purple-300', icon: FileText },
+      kanwil_approved: { label: 'Disetujui Kanwil', className: 'bg-purple-300 text-purple-900 hover:bg-purple-400', icon: CheckCircle },
       final_approved: { label: 'Final Approved', className: 'bg-green-600 text-white', icon: CheckCircle },
       final_rejected: { label: 'Final Rejected', className: 'bg-red-600 text-white', icon: XCircle }
     } as const;
@@ -577,7 +582,7 @@ const PengajuanIndex: React.FC = () => {
                 Daftar Pengajuan Mutasi PNS
               </CardTitle>
               <p className="text-sm text-gray-600 mt-1">
-                {isAdmin ? 'Semua pengajuan mutasi PNS' : (isReadOnlyUser ? 'Semua pengajuan berstatus final_approved (read-only)' : 'Pengajuan mutasi PNS Anda')}
+                {isAdmin ? 'Semua pengajuan mutasi PNS' : (isReadOnlyUser ? 'Semua pengajuan berstatus final_approved (read-only)' : (isKanwil ? 'Pengajuan mutasi PNS Anda (Kanwil)' : 'Pengajuan mutasi PNS Anda'))}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -1168,10 +1173,10 @@ const PengajuanIndex: React.FC = () => {
                 <option value="draft">Draft</option>
                 <option value="submitted">Submitted</option>
                 <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value="rejected">Ditolak Admin Wilayah</option>
                 <option value="resubmitted">Resubmitted</option>
                 <option value="admin_wilayah_approved">Admin Wilayah Approved</option>
-                <option value="admin_wilayah_rejected">Admin Wilayah Rejected</option>
+                <option value="admin_wilayah_rejected">Ditolak Superadmin</option>
                 <option value="admin_wilayah_submitted">Admin Wilayah Submitted</option>
                 <option value="final_approved">Final Approved</option>
                 <option value="final_rejected">Final Rejected</option>

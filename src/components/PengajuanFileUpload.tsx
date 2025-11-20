@@ -6,9 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, CheckCircle, X, FileText, Send, Loader2, AlertCircle, Eye, Download, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost, apiPut } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface PengajuanFile {
   id: string;
@@ -16,6 +18,7 @@ interface PengajuanFile {
   file_name: string;
   file_size: number;
   upload_status: string;
+  file_category?: string;
   blobUrl?: string;
 }
 
@@ -116,7 +119,8 @@ const PengajuanFileUpload: React.FC = () => {
   const { pengajuanId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const { toast } = useToast();
   const [pengajuan, setPengajuan] = useState<PengajuanData | null>(null);
   const [requiredFiles, setRequiredFiles] = useState<string[]>([]);
   const [uploadingStates, setUploadingStates] = useState<Record<string, boolean>>({});
@@ -139,12 +143,44 @@ const PengajuanFileUpload: React.FC = () => {
   
   // State untuk menyimpan data job type configuration
   const [jobTypeConfig, setJobTypeConfig] = useState<any>(null);
+  
+  // State untuk admin wilayah files (hanya untuk role kanwil)
+  const [adminWilayahFiles, setAdminWilayahFiles] = useState<any[]>([]);
+  const [adminWilayahRequiredFiles, setAdminWilayahRequiredFiles] = useState<any[]>([]);
+  const isKanwil = user?.role === 'kanwil';
 
   useEffect(() => {
     if (pengajuanId) {
       fetchPengajuanData();
     }
   }, [pengajuanId]);
+
+  // Fetch admin wilayah config untuk kanwil (baik pengajuan baru maupun yang sudah ada)
+  useEffect(() => {
+    if (!isKanwil || !token) {
+      console.log('⏭️ Skipping admin wilayah config fetch:', { isKanwil, hasToken: !!token });
+      return;
+    }
+    
+    const fetchConfig = async () => {
+      console.log('🔍 Checking for jabatan data:', { jabatanData: jabatanData?.id, pengajuanJabatanId: pengajuan?.jabatan_id });
+      // Jika ada jabatanData dari state navigation (pengajuan baru)
+      if (jabatanData?.id) {
+        console.log('📋 Using jabatanData.id:', jabatanData.id);
+        await fetchAdminWilayahConfig(jabatanData.id);
+      }
+      // Jika ada pengajuan dengan jabatan_id (pengajuan yang sudah ada)
+      else if (pengajuan?.jabatan_id) {
+        console.log('📋 Using pengajuan.jabatan_id:', pengajuan.jabatan_id);
+        await fetchAdminWilayahConfig(pengajuan.jabatan_id);
+      } else {
+        console.log('⚠️ No jabatan_id found for admin wilayah config');
+      }
+    };
+    
+    fetchConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isKanwil, jabatanData?.id, pengajuan?.jabatan_id, token]);
 
   // Reset semua file input setiap kali komponen di-render
   useEffect(() => {
@@ -202,6 +238,11 @@ const PengajuanFileUpload: React.FC = () => {
           setError('Jabatan belum dikonfigurasi. Silakan hubungi admin untuk mengkonfigurasi dokumen yang diperlukan.');
           setRequiredFiles([]);
         }
+        
+        // Jika role kanwil, fetch admin wilayah config juga
+        if (isKanwil && response.data.pengajuan.jabatan_id) {
+          await fetchAdminWilayahConfig(response.data.pengajuan.jabatan_id);
+        }
       } else {
         setError(response.message || 'Gagal mengambil data pengajuan');
       }
@@ -213,13 +254,84 @@ const PengajuanFileUpload: React.FC = () => {
     }
   };
 
+  // Fetch admin wilayah file configuration (hanya untuk role kanwil)
+  const fetchAdminWilayahConfig = async (jabatanId: number) => {
+    try {
+      console.log('🔍 Fetching admin wilayah config for jabatan_id:', jabatanId);
+      const response = await apiGet(`/api/admin-wilayah-file-config/job-type/${jabatanId}`, token);
+      console.log('🔍 Admin wilayah config response:', response);
+      if (response.success && Array.isArray(response.data)) {
+        console.log('✅ Setting admin wilayah required files:', response.data);
+        setAdminWilayahRequiredFiles(response.data);
+      } else {
+        console.log('⚠️ Admin wilayah config not found or empty for jabatan_id:', jabatanId);
+        setAdminWilayahRequiredFiles([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching admin wilayah config:', error);
+      // Tidak set error karena ini opsional untuk kanwil
+      setAdminWilayahRequiredFiles([]);
+    }
+  };
+
 
   const handleFileUpload = async (fileType: string, file: File) => {
+    // Validasi: Pastikan file yang diupload sesuai dengan jabatan pengajuan
+    if (!pengajuan) {
+      const errorMessage = 'Data pengajuan tidak ditemukan. Silakan refresh halaman.';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Cek apakah fileType ada di requiredFiles untuk jabatan pengajuan saat ini
+    const isAdminWilayahFile = adminWilayahRequiredFiles.some(f => f.file_type === fileType);
+    const isKabupatenFile = requiredFiles.includes(fileType);
+    
+    if (!isKabupatenFile && !isAdminWilayahFile) {
+      const currentJabatan = pengajuan.jenis_jabatan || 'tidak diketahui';
+      const errorMessage = `File "${getFileDisplayName(fileType)}" tidak sesuai dengan jabatan pengajuan saat ini.\n\n` +
+        `• Jabatan pengajuan: ${getJabatanDisplayName(currentJabatan)}\n` +
+        `• File yang diupload: ${getFileDisplayName(fileType)}\n\n` +
+        `Silakan pastikan Anda mengupload file yang sesuai dengan jabatan pengajuan.`;
+      
+      setError(errorMessage);
+      toast({
+        title: 'Jabatan Tidak Sesuai',
+        description: `File "${getFileDisplayName(fileType)}" tidak sesuai dengan jabatan pengajuan "${getJabatanDisplayName(currentJabatan)}". Silakan upload file yang sesuai dengan jabatan pengajuan.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validasi tipe file
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      const errorMessage = 'Hanya file PDF yang diizinkan untuk diupload.';
+      setError(errorMessage);
+      toast({
+        title: 'Format File Tidak Valid',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Validasi ukuran file: default 500KB, khusus SKP 2 Tahun Terakhir 1.6MB
     const maxSize = fileType === 'skp_2_tahun_terakhir' ? Math.floor(1.6 * 1024 * 1024) : 500 * 1024;
     if (file.size > maxSize) {
       const humanMax = fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB';
-      setError(`File terlalu besar. Maksimal ${humanMax}. Ukuran file: ${(file.size / 1024).toFixed(1)}KB`);
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      const errorMessage = `File terlalu besar. Maksimal ${humanMax}. Ukuran file saat ini: ${fileSizeMB}MB`;
+      setError(errorMessage);
+      toast({
+        title: 'Ukuran File Terlalu Besar',
+        description: errorMessage,
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -229,6 +341,9 @@ const PengajuanFileUpload: React.FC = () => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('file_type', fileType);
+    
+    // Tentukan file_category: jika fileType ada di adminWilayahRequiredFiles, maka 'admin_wilayah', jika tidak 'kabupaten'
+    formData.append('file_category', isAdminWilayahFile ? 'admin_wilayah' : 'kabupaten');
 
     try {
       // Simulate upload progress
@@ -256,20 +371,61 @@ const PengajuanFileUpload: React.FC = () => {
           // Refresh data setelah upload berhasil
           await fetchPengajuanData();
           setError(null);
+          
+          // Tampilkan toast success
+          toast({
+            title: 'Upload Berhasil',
+            description: `File ${getFileDisplayName(fileType)} berhasil diupload`,
+            variant: 'default',
+          });
+          
           // Reset file input setelah upload berhasil menggunakan ref
           const fileInput = fileInputRefs.current[fileType];
           if (fileInput) {
             fileInput.value = '';
           }
         } else {
-          setError(result.message || 'Gagal upload file');
+          const errorMessage = result.message || 'Gagal upload file';
+          setError(errorMessage);
+          toast({
+            title: 'Upload Gagal',
+            description: errorMessage,
+            variant: 'destructive',
+          });
         }
       } else {
-        setError('Gagal upload file');
+        // Parse error response dari backend
+        let errorMessage = 'Gagal upload file';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || `Error ${response.status}: ${response.statusText}`;
+        } catch (parseError) {
+          // Jika response bukan JSON, gunakan status text
+          if (response.status === 413) {
+            errorMessage = 'File terlalu besar. Untuk SKP 2 Tahun Terakhir maksimal 1.6MB, file lain maksimal 500KB.';
+          } else if (response.status === 400) {
+            errorMessage = 'Format file tidak valid atau file terlalu besar.';
+          } else {
+            errorMessage = `Error ${response.status}: ${response.statusText}`;
+          }
+        }
+        
+        setError(errorMessage);
+        toast({
+          title: 'Upload Gagal',
+          description: errorMessage,
+          variant: 'destructive',
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading file:', error);
-      setError('Terjadi kesalahan saat upload file');
+      const errorMessage = error?.message || 'Terjadi kesalahan saat upload file. Silakan coba lagi.';
+      setError(errorMessage);
+      toast({
+        title: 'Upload Gagal',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setUploadingStates(prev => ({ ...prev, [fileType]: false }));
       setReplacingFile(null);
@@ -284,7 +440,14 @@ const PengajuanFileUpload: React.FC = () => {
   const handleSubmitPengajuan = async () => {
     try {
       setSubmitting(true);
-      const response = await apiPut(`/api/pengajuan/${pengajuanId}/submit`, { catatan: '' }, token);
+      
+      // Jika role kanwil, gunakan endpoint submit-kanwil
+      const endpoint = isKanwil 
+        ? `/api/pengajuan/${pengajuanId}/submit-kanwil`
+        : `/api/pengajuan/${pengajuanId}/submit`;
+      const method = isKanwil ? apiPost : apiPut;
+      
+      const response = await method(endpoint, { catatan: '' }, token);
       if (response.success) {
         setShowSuccessModal(true);
       } else {
@@ -337,13 +500,26 @@ const PengajuanFileUpload: React.FC = () => {
   };
 
   const isAllFilesUploaded = () => {
-    return requiredFiles.every(fileType => {
-      return pengajuan?.files.some(f => f.file_type === fileType);
+    const kabupatenFilesUploaded = requiredFiles.every(fileType => {
+      return pengajuan?.files.some(f => f.file_type === fileType && (!f.file_category || f.file_category === 'kabupaten'));
     });
+    
+    // Jika role kanwil, cek juga admin wilayah files
+    if (isKanwil && adminWilayahRequiredFiles.length > 0) {
+      const adminWilayahFilesUploaded = adminWilayahRequiredFiles.every((config: any) => {
+        return pengajuan?.files.some(f => f.file_type === config.file_type && f.file_category === 'admin_wilayah');
+      });
+      return kabupatenFilesUploaded && adminWilayahFilesUploaded;
+    }
+    
+    return kabupatenFilesUploaded;
   };
 
-  const getFileStatus = (fileType: string) => {
-    return pengajuan?.files.some(f => f.file_type === fileType) ? 'uploaded' : 'pending';
+  const getFileStatus = (fileType: string, fileCategory?: string) => {
+    if (fileCategory) {
+      return pengajuan?.files.some(f => f.file_type === fileType && f.file_category === fileCategory) ? 'uploaded' : 'pending';
+    }
+    return pengajuan?.files.some(f => f.file_type === fileType && (!f.file_category || f.file_category === 'kabupaten')) ? 'uploaded' : 'pending';
   };
 
   const getFileSize = (bytes: number) => {
@@ -411,21 +587,42 @@ const PengajuanFileUpload: React.FC = () => {
             </div>
           )}
 
-          {/* File Upload Sections by Category */}
+          {/* File Upload Sections - Use Tabs for Kanwil, regular layout for others */}
           {requiredFiles.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-2">Tidak ada dokumen yang diperlukan</p>
               <p className="text-sm text-gray-400">Silakan hubungi admin untuk mengkonfigurasi dokumen yang diperlukan</p>
             </div>
-          ) : (
-            Object.entries(groupedFiles).map(([category, fileTypes]) => (
-            <div key={category} className="mb-8">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">
-                {category}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {fileTypes.map((fileType) => {
+          ) : isKanwil && adminWilayahRequiredFiles.length > 0 ? (
+            // Tab layout untuk kanwil (jika ada admin wilayah files)
+            <Tabs defaultValue="kabupaten" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="kabupaten" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Dokumen Kabupaten/Kota
+                  <Badge variant="secondary" className="ml-2">
+                    {requiredFiles.length}
+                  </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="admin_wilayah" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Dokumen Admin Wilayah
+                  <Badge variant="secondary" className="ml-2 bg-purple-100 text-purple-800">
+                    {adminWilayahRequiredFiles.length}
+                  </Badge>
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Tab Content: Dokumen Kabupaten/Kota */}
+              <TabsContent value="kabupaten" className="space-y-6">
+                {Object.entries(groupedFiles).map(([category, fileTypes]) => (
+                  <div key={category} className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">
+                      {category}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {fileTypes.map((fileType) => {
                   const status = getFileStatus(fileType);
                   const isUploading = uploadingStates[fileType];
                   const progress = uploadProgress[fileType];
@@ -543,7 +740,260 @@ const PengajuanFileUpload: React.FC = () => {
                 })}
               </div>
             </div>
-          ))
+                ))}
+              </TabsContent>
+              
+              {/* Tab Content: Dokumen Admin Wilayah */}
+              <TabsContent value="admin_wilayah" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {adminWilayahRequiredFiles.map((config: any) => {
+                    const fileType = config.file_type;
+                  const status = getFileStatus(fileType, 'admin_wilayah');
+                  const isUploading = uploadingStates[fileType];
+                  const progress = uploadProgress[fileType];
+                  const uploadedFile = pengajuan.files.find(f => f.file_type === fileType && f.file_category === 'admin_wilayah');
+                  const isReplacing = replacingFile === fileType;
+
+                  return (
+                    <div key={fileType} className="border rounded-lg p-4 border-purple-300">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm leading-tight">{config.display_name || fileType}</h4>
+                          {config.description && (
+                            <p className="text-xs text-gray-600 mt-1">{config.description}</p>
+                          )}
+                          <p className="text-xs text-gray-600 mt-1">
+                            Upload file PDF (maks. 500KB)
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={status === 'uploaded' ? 'secondary' : 'secondary'}
+                          className={status === 'uploaded' ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-100 text-purple-800'}
+                        >
+                          {status === 'uploaded' ? (
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                          ) : (
+                            <FileText className="h-3 w-3 mr-1" />
+                          )}
+                          {status === 'uploaded' ? 'Uploaded' : 'Pending'}
+                        </Badge>
+                      </div>
+
+                      {status === 'uploaded' && uploadedFile && !isReplacing ? (
+                        <div className="space-y-3">
+                          <div className="text-sm text-purple-600">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="truncate">{uploadedFile.file_name}</span>
+                              <span className="text-gray-500 text-xs">({getFileSize(uploadedFile.file_size)})</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePreviewFile(uploadedFile)}
+                              className="flex items-center gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              Preview
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownloadFile(uploadedFile)}
+                              className="flex items-center gap-1"
+                            >
+                              <Download className="h-3 w-3" />
+                              Download
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReplaceFile(fileType)}
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Ganti File
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            ref={(el) => fileInputRefs.current[fileType] = el}
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleFileUpload(fileType, file);
+                                e.target.value = '';
+                              }
+                            }}
+                            disabled={isUploading}
+                            className="hidden"
+                            id={`file-aw-${toSafeId(fileType)}`}
+                          />
+                          <label
+                            htmlFor={`file-aw-${toSafeId(fileType)}`}
+                            className="cursor-pointer inline-flex items-center px-4 py-2 border border-purple-300 rounded-md shadow-sm text-sm font-medium text-purple-700 bg-white hover:bg-purple-50 disabled:opacity-50"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            {isUploading ? 'Uploading...' : isReplacing ? 'Pilih File Baru' : 'Pilih File'}
+                          </label>
+                          {isReplacing && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setReplacingFile(null)}
+                              className="ml-2 text-gray-500"
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Batal
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                      {isUploading && (
+                        <div className="mt-2">
+                          <Progress value={progress} className="h-2" />
+                          <p className="text-xs text-gray-500 mt-1">{progress}% uploaded</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                  })}
+                </div>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            // Regular layout untuk role non-kanwil atau kanwil tanpa admin wilayah files
+            Object.entries(groupedFiles).map(([category, fileTypes]) => (
+              <div key={category} className="mb-8">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">
+                  {category}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {fileTypes.map((fileType) => {
+                    const status = getFileStatus(fileType);
+                    const isUploading = uploadingStates[fileType];
+                    const progress = uploadProgress[fileType];
+                    const uploadedFile = pengajuan.files.find(f => f.file_type === fileType);
+                    const isReplacing = replacingFile === fileType;
+
+                    return (
+                      <div key={fileType} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm leading-tight">{getFileDisplayName(fileType)}</h4>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Upload file PDF (maks. {fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
+                            </p>
+                          </div>
+                          <Badge 
+                            variant={status === 'uploaded' ? 'secondary' : 'secondary'}
+                            className={status === 'uploaded' ? 'bg-green-600 text-white hover:bg-green-700' : ''}
+                          >
+                            {status === 'uploaded' ? (
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                            ) : (
+                              <FileText className="h-3 w-3 mr-1" />
+                            )}
+                            {status === 'uploaded' ? 'Uploaded' : 'Pending'}
+                          </Badge>
+                        </div>
+
+                        {status === 'uploaded' && uploadedFile && !isReplacing ? (
+                          <div className="space-y-3">
+                            <div className="text-sm text-green-600">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4" />
+                                <span className="truncate">{uploadedFile.file_name}</span>
+                                <span className="text-gray-500 text-xs">({getFileSize(uploadedFile.file_size)})</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handlePreviewFile(uploadedFile)}
+                                className="flex items-center gap-1"
+                              >
+                                <Eye className="h-3 w-3" />
+                                Preview
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDownloadFile(uploadedFile)}
+                                className="flex items-center gap-1"
+                              >
+                                <Download className="h-3 w-3" />
+                                Download
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleReplaceFile(fileType)}
+                                className="flex items-center gap-1"
+                              >
+                                <Edit className="h-3 w-3" />
+                                Ganti File
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <input
+                              ref={(el) => fileInputRefs.current[fileType] = el}
+                              type="file"
+                              accept=".pdf"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleFileUpload(fileType, file);
+                                  e.target.value = '';
+                                }
+                              }}
+                              disabled={isUploading}
+                              className="hidden"
+                              id={`file-${toSafeId(fileType)}`}
+                            />
+                            <label
+                              htmlFor={`file-${toSafeId(fileType)}`}
+                              className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {isUploading ? 'Uploading...' : isReplacing ? 'Pilih File Baru' : 'Pilih File'}
+                            </label>
+                            {isReplacing && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setReplacingFile(null)}
+                                className="ml-2 text-gray-500"
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Batal
+                              </Button>
+                            )}
+                          </div>
+                        )}
+
+                        {isUploading && (
+                          <div className="mt-2">
+                            <Progress value={progress} className="h-2" />
+                            <p className="text-xs text-gray-500 mt-1">{progress}% uploaded</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
           )}
 
           {requiredFiles.length > 0 && (
@@ -608,7 +1058,9 @@ const PengajuanFileUpload: React.FC = () => {
               Pengajuan untuk {pengajuan.pegawai.nama} berhasil disubmit
             </p>
             <p className="text-gray-600 mb-6">
-              Pengajuan akan diproses oleh admin. Anda akan mendapat notifikasi ketika status berubah.
+              {isKanwil 
+                ? 'Pengajuan akan diproses oleh superadmin. Anda akan mendapat notifikasi ketika status berubah.'
+                : 'Pengajuan akan diproses oleh admin. Anda akan mendapat notifikasi ketika status berubah.'}
             </p>
             <div className="flex gap-3">
               <Button

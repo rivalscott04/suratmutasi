@@ -145,10 +145,12 @@ const AdminWilayahUploadPage: React.FC = () => {
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-600 text-white">Disetujui Kab/Kota</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-600 text-white">Ditolak Admin Wilayah</Badge>;
       case 'admin_wilayah_approved':
         return <Badge className="bg-green-700 text-white">Disetujui Admin Wilayah</Badge>;
       case 'admin_wilayah_rejected':
-        return <Badge className="bg-red-600 text-white">Ditolak Admin Wilayah</Badge>;
+        return <Badge className="bg-red-600 text-white">Ditolak Superadmin</Badge>;
       case 'admin_wilayah_submitted':
         return <Badge className="bg-blue-600 text-white">Diajukan Admin Wilayah</Badge>;
       case 'submitted':

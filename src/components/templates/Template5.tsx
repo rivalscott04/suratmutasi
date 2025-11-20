@@ -22,7 +22,7 @@ export const Template5: React.FC<Template5Props> = ({ data }) => {
               KEMENTERIAN AGAMA REPUBLIK INDONESIA
             </div>
             <div style={{ fontWeight: 'bold', fontSize: '11pt', marginTop: 2 }}>
-              KANTOR KEMENTERIAN AGAMA {data.kabkota}
+              {data.office_name ? `${data.office_name.toUpperCase()} ${data.kabkota}` : `KANTOR KEMENTERIAN AGAMA ${data.kabkota}`}
             </div>
             <div style={{ fontWeight: 'normal', fontSize: '9pt', marginTop: 4 }}>
               {data.jln}<br />

@@ -58,7 +58,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas';
+  role: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas' | 'kanwil';
   office_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -68,7 +68,7 @@ interface UserFormData {
   email: string;
   full_name: string;
   password: string;
-  role: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas';
+  role: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas' | 'kanwil';
   office_id: string;
 }
 
@@ -290,6 +290,14 @@ const Users = () => {
 
   const handleSubmit = async (isEdit: boolean = false) => {
     if (!token) return;
+
+    // Validasi: role kanwil wajib punya office_id
+    if (formData.role === 'kanwil' && (!formData.office_id || formData.office_id === '')) {
+      setAddUserSuccess(false);
+      setAddUserMessage('Role kanwil wajib memiliki office_id');
+      setShowAddUserResultModal(true);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -604,7 +612,7 @@ const Users = () => {
             </div>
             <div>
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas') => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas' | 'kanwil') => setFormData({ ...formData, role: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih role" />
                 </SelectTrigger>
@@ -614,16 +622,17 @@ const Users = () => {
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="admin_wilayah">Admin Wilayah</SelectItem>
                   <SelectItem value="bimas">Bimas</SelectItem>
+                  <SelectItem value="kanwil">Kanwil</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="office_id">Office ID</Label>
+              <Label htmlFor="office_id">Office ID {formData.role === 'kanwil' && <span className="text-red-500">*</span>}</Label>
               <Input
                 id="office_id"
                 value={formData.office_id}
                 onChange={(e) => setFormData({ ...formData, office_id: e.target.value })}
-                placeholder="ID kantor (opsional)"
+                placeholder={formData.role === 'kanwil' ? 'ID kantor (wajib untuk kanwil)' : 'ID kantor (opsional)'}
               />
             </div>
           </div>
@@ -734,7 +743,7 @@ const Users = () => {
             </div>
             <div>
               <Label htmlFor="edit-role">Role</Label>
-              <Select value={formData.role} onValueChange={(value: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas') => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value: 'admin' | 'operator' | 'user' | 'admin_wilayah' | 'bimas' | 'kanwil') => setFormData({ ...formData, role: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih role" />
                 </SelectTrigger>
@@ -744,6 +753,7 @@ const Users = () => {
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="admin_wilayah">Admin Wilayah</SelectItem>
                   <SelectItem value="bimas">Bimas</SelectItem>
+                  <SelectItem value="kanwil">Kanwil</SelectItem>
                 </SelectContent>
               </Select>
             </div>

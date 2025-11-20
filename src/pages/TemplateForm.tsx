@@ -289,7 +289,9 @@ const TemplateFormInner: React.FC = () => {
             fax: officeData.fax || '', // Allow empty fax
             email: officeData.email || '',
             website: officeData.website || '',
-            kode_kabko: officeData.kode_kabko || ''
+            kode_kabko: officeData.kode_kabko || '',
+            // Tambahkan office name untuk kanwil
+            office_name: officeData.name || ''
           }));
         }
       } catch (err) {
@@ -431,25 +433,28 @@ const TemplateFormInner: React.FC = () => {
         }
     // Format nomor surat sesuai template
     const kodeKabko = office?.kode_kabko || baseData.kode_kabko || '-';
+    const isKanwil = user?.role === 'kanwil';
+    // Untuk kanwil, gunakan kode kw.18.01, untuk yang lain gunakan Kk.18.${kodeKabko}
+    const kodeSurat = isKanwil ? 'kw.18.01' : `Kk.18.${kodeKabko}`;
     let letter_number = '';
     if (templateId === '1') {
-      letter_number = `B-${template1Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.07.6/${template1Data.blnno}/${template1Data.thnno}`;
+      letter_number = `B-${template1Data.nosrt}/${kodeSurat}/1/Kp.07.6/${template1Data.blnno}/${template1Data.thnno}`;
     } else if (templateId === '2') {
-      letter_number = `B-${template2Data.nosurat}/Kk.18.${kodeKabko}/1/KP.07.6/${template2Data.blnnomor}/${template2Data.tahunskrg}`;
+      letter_number = `B-${template2Data.nosurat}/${kodeSurat}/1/KP.07.6/${template2Data.blnnomor}/${template2Data.tahunskrg}`;
     } else if (templateId === '3') {
-      letter_number = `B-${template3Data.nosrt}/Kk.18.${kodeKabko}/1/KP.07.6/${template3Data.blnno}/${template3Data.thnno}`;
+      letter_number = `B-${template3Data.nosrt}/${kodeSurat}/1/KP.07.6/${template3Data.blnno}/${template3Data.thnno}`;
     } else if (templateId === '4') {
-      letter_number = `B-${template4Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.01.2/${template4Data.blnsrt}/${template4Data.thnskrg}`;
+      letter_number = `B-${template4Data.nosrt}/${kodeSurat}/1/Kp.01.2/${template4Data.blnsrt}/${template4Data.thnskrg}`;
     } else if (templateId === '5') {
-      letter_number = `B-${template5Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.07.6/${template5Data.blnno}/${template5Data.thnno}`;
+      letter_number = `B-${template5Data.nosrt}/${kodeSurat}/1/Kp.07.6/${template5Data.blnno}/${template5Data.thnno}`;
     } else if (templateId === '6') {
-      letter_number = `B-${template6Data.nosrt}/Kk.18.${kodeKabko}/1/Kh.04.1/${template6Data.blnno}/${template6Data.thnno}`;
+      letter_number = `B-${template6Data.nosrt}/${kodeSurat}/1/Kh.04.1/${template6Data.blnno}/${template6Data.thnno}`;
     } else if (templateId === '7') {
-      letter_number = `B-${template7Data.nosurat}/Kk.18.${kodeKabko}/1/Kp.07.6/${template7Data.blnnomor}/${template7Data.tahunskrg}`;
+      letter_number = `B-${template7Data.nosurat}/${kodeSurat}/1/Kp.07.6/${template7Data.blnnomor}/${template7Data.tahunskrg}`;
     } else if (templateId === '8') {
-      letter_number = `B-${template8Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.07.6/${template8Data.blnno}/${template8Data.thnno}`;
+      letter_number = `B-${template8Data.nosrt}/${kodeSurat}/1/Kp.07.6/${template8Data.blnno}/${template8Data.thnno}`;
     } else if (templateId === '9') {
-      letter_number = `B-${template9Data.nosrt}/Kk.18.${kodeKabko}/1/Kp.01.2/${template9Data.blnno}/${template9Data.thnno}`;
+      letter_number = `B-${template9Data.nosrt}/${kodeSurat}/1/Kp.01.2/${template9Data.blnno}/${template9Data.thnno}`;
     }
         if (!letter_number) {
           setSubmitError('Nomor surat wajib diisi.');
@@ -501,6 +506,7 @@ const TemplateFormInner: React.FC = () => {
           ibukota: baseData.ibukota,
           tanggal: tanggalIndo,
           kode_kabko: office?.kode_kabko || baseData.kode_kabko || '',
+          office_name: office?.name || baseData.office_name || '',
           // Add office data for Template 2
           office: office
         } : {
@@ -525,6 +531,7 @@ const TemplateFormInner: React.FC = () => {
           ...(templateId === '9' && template9Data),
           tanggal: tanggalIndo,
           kode_kabko: office?.kode_kabko || baseData.kode_kabko || '',
+          office_name: office?.name || baseData.office_name || '',
           unitkerja: selectedPegawai?.unit_kerja || selectedPejabat?.unit_kerja || '',
           namapejabat: selectedPejabat.nama,
           nippejabat: selectedPejabat.nip,
