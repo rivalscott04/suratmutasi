@@ -10,7 +10,8 @@ import {
   FolderOpen,
   TrendingUp,
   Eye,
-  Cog
+  Cog,
+  GraduationCap
 } from 'lucide-react';
 
 export type UserRole = 'admin' | 'admin_wilayah' | 'operator' | 'user' | 'bimas' | 'kanwil';
@@ -109,6 +110,13 @@ export const navigationConfig: NavigationItem[] = [
         roles: ['admin']
       }
     ]
+  },
+  {
+    name: 'Tutorial',
+    href: '/tutorial',
+    icon: GraduationCap,
+    description: 'Panduan cek dokumen & tracking manual',
+    roles: ['user']
   },
   {
     name: 'Management User',
@@ -296,6 +304,13 @@ export const routeConfig: Record<string, {
     ],
     roles: ['user'],
     parent: '/tracking'
+  },
+  '/tutorial': {
+    title: 'Tutorial & Tracking',
+    breadcrumbs: [
+      { name: 'Tutorial', current: true }
+    ],
+    roles: ['user']
   }
 };
 

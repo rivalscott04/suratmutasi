@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Upload
+  Upload,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 // NOTE: Adjust the import path if the package scaffolds into a different alias
@@ -44,6 +45,8 @@ import { apiGet, apiPut, apiDelete, apiPost, replaceFile } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { EditJabatanDialog } from '@/components/EditJabatanDialog';
 import { AuditLogCard } from '@/components/AuditLogCard';
+import Shepherd, { type Tour } from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
 
 interface PengajuanFile {
   id: string;
@@ -153,6 +156,7 @@ const PengajuanDetail: React.FC = () => {
   const [newStatus, setNewStatus] = useState<string>('');
   const [statusChangeReason, setStatusChangeReason] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const pengajuanDetailTourRef = useRef<Tour | null>(null);
   const editableJabatanStatuses = useMemo(
     () => new Set([
       'submitted',
@@ -1241,6 +1245,210 @@ const PengajuanDetail: React.FC = () => {
   const isBimas = user?.role === 'bimas';
   const isReadOnlyRole = isReadOnlyUser || isBimas;
   const isFinalRejectedBySuperadmin = !!(pengajuan && pengajuan.status === 'admin_wilayah_rejected' && pengajuan.final_rejected_at);
+  const startDetailTour = useCallback(() => {
+    if (!isReadOnlyUser) {
+      toast({
+        title: 'Tutorial hanya untuk user tracking',
+        description: 'Fitur tur ini ditujukan bagi role user yang fokus memantau dokumen.',
+      });
+      return;
+    }
+    if (!pengajuan) {
+      toast({
+        title: 'Data detail belum siap',
+        description: 'Tunggu data pengajuan selesai dimuat sebelum memulai tur.',
+      });
+      return;
+    }
+
+    if (pengajuanDetailTourRef.current) {
+      pengajuanDetailTourRef.current.cancel();
+      pengajuanDetailTourRef.current = null;
+    }
+    sessionStorage.removeItem('pending_pengajuan_detail_tour');
+
+    const interactionStatus: Record<string, boolean> = {};
+    const interactionCleanup: Record<string, (() => void) | null> = {};
+
+    const registerInteractionWatcher = (key: string, selector: string) => {
+      if (interactionCleanup[key]) {
+        interactionCleanup[key]?.();
+      }
+      interactionStatus[key] = false;
+      const handler = () => {
+        interactionStatus[key] = true;
+      };
+      const elements = document.querySelectorAll(selector);
+      elements.forEach((element) => element.addEventListener('click', handler, { once: false }));
+      interactionCleanup[key] = () => {
+        elements.forEach((element) => element.removeEventListener('click', handler));
+      };
+    };
+
+    const cleanupInteractions = () => {
+      Object.values(interactionCleanup).forEach((cleanup) => cleanup?.());
+    };
+
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        cancelIcon: { enabled: true },
+        classes: 'bg-white shadow-xl rounded-lg border border-gray-200 text-gray-800',
+        scrollTo: { behavior: 'smooth', block: 'center' }
+      }
+    });
+
+    const ensureTab = (tabValue: 'KabupatenKota' | 'admin_wilayah' | 'ringkasan') =>
+      new Promise<void>((resolve) => {
+        if (activeTab !== tabValue) {
+          setActiveTab(tabValue);
+          setTimeout(() => resolve(), 400);
+        } else {
+          resolve();
+        }
+      });
+
+    const buildButtons = (options?: { showBack?: boolean; isFinal?: boolean; requireKey?: string; requireMessage?: string }) => {
+      const buttons = [
+        {
+          text: 'Lewati',
+          classes: 'shepherd-button-secondary text-gray-500',
+          action: async () => {
+            tour.cancel();
+          }
+        }
+      ];
+
+      if (options?.showBack) {
+        buttons.push({
+          text: 'Kembali',
+          classes: 'shepherd-button-secondary',
+          action: async () => {
+            tour.back();
+          }
+        });
+      }
+
+      buttons.push({
+        text: options?.isFinal ? 'Selesai' : 'Lanjut',
+        classes: 'shepherd-button-primary bg-green-600 text-white hover:bg-green-700',
+        action: async () => {
+          if (options?.requireKey && !interactionStatus[options.requireKey]) {
+            toast({
+              title: 'Selesaikan langkah dulu',
+              description: options?.requireMessage || 'Ikuti instruksi pada langkah ini sebelum melanjutkan.',
+              variant: 'destructive'
+            });
+            return;
+          }
+          if (options?.isFinal) {
+            tour.complete();
+          } else {
+            tour.next();
+          }
+        }
+      });
+
+      return buttons;
+    };
+
+    tour.addStep({
+      id: 'tabs',
+      title: 'Pilih sumber dokumen',
+      text: 'Gunakan tab ini untuk berpindah antara dokumen yang dikirim kabupaten/kota dan dokumen dari Admin Wilayah (Kanwil).',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-detail-tabs"]',
+        on: 'bottom'
+      },
+      buttons: buildButtons()
+    });
+
+    tour.addStep({
+      id: 'tab-kabupaten',
+      title: 'Tab Kabupaten/Kota',
+      text: 'Pilih tab ini untuk mengecek kelengkapan dokumen yang dikirim oleh kabupaten/kota.',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-tab-kabupaten"]',
+        on: 'bottom'
+      },
+      beforeShowPromise: async () => {
+        await ensureTab('KabupatenKota');
+        registerInteractionWatcher('tabKabupaten', '[data-tour-id="pengajuan-tab-kabupaten"]');
+      },
+      buttons: buildButtons({
+        showBack: true,
+        requireKey: 'tabKabupaten',
+        requireMessage: 'Klik tab Kabupaten/Kota terlebih dulu untuk melanjutkan.'
+      })
+    });
+
+    tour.addStep({
+      id: 'card-kabupaten',
+      title: 'Berkas Kabupaten/Kota',
+      text: 'Di sini Anda bisa melihat jumlah dokumen, status verifikasi, dan membuka file satu per satu.',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-card-kabupaten"]',
+        on: 'top'
+      },
+      beforeShowPromise: () => ensureTab('KabupatenKota'),
+      buttons: buildButtons({ showBack: true })
+    });
+
+    tour.addStep({
+      id: 'tab-admin',
+      title: 'Tab Admin Wilayah',
+      text: 'Gunakan tab ini untuk berpindah ke dokumen yang diajukan Kanwil.',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-tab-admin"]',
+        on: 'bottom'
+      },
+      beforeShowPromise: async () => {
+        await ensureTab('admin_wilayah');
+        registerInteractionWatcher('tabAdmin', '[data-tour-id="pengajuan-tab-admin"]');
+      },
+      buttons: buildButtons({
+        showBack: true,
+        requireKey: 'tabAdmin',
+        requireMessage: 'Klik tab Admin Wilayah untuk melanjutkan tur.'
+      })
+    });
+
+    tour.addStep({
+      id: 'card-admin',
+      title: 'Berkas Admin Wilayah',
+      text: 'Bagian ini menampilkan dokumen Kanwil lengkap dengan status verifikasi superadmin.',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-card-admin"]',
+        on: 'top'
+      },
+      beforeShowPromise: () => ensureTab('admin_wilayah'),
+      buttons: buildButtons({ showBack: true })
+    });
+
+    tour.addStep({
+      id: 'finish',
+      title: 'Selesai',
+      text: 'Anda sudah mengetahui cara berpindah tab dan membaca dokumen. Gunakan tombol preview untuk membuka file dan catat progresnya di menu Tracking.',
+      buttons: buildButtons({ showBack: true, isFinal: true })
+    });
+
+    tour.on('complete', () => {
+      sessionStorage.removeItem('pending_pengajuan_detail_tour');
+      cleanupInteractions();
+      toast({
+        title: 'Tutorial detail selesai',
+        description: 'Silakan lanjutkan pengecekan dokumen atau isi catatan di menu Tracking.',
+      });
+    });
+
+    tour.on('cancel', () => {
+      sessionStorage.removeItem('pending_pengajuan_detail_tour');
+      cleanupInteractions();
+    });
+
+    tour.start();
+    pengajuanDetailTourRef.current = tour;
+  }, [isReadOnlyUser, pengajuan, activeTab, toast]);
   
   // File yang pending = file yang sudah diperbaiki dan siap diajukan ulang
   const hasPendingFiles = (() => {
@@ -1403,6 +1611,24 @@ const PengajuanDetail: React.FC = () => {
     }
     return false;
   })();
+
+  useEffect(() => {
+    if (!loading && isReadOnlyUser && pengajuan) {
+      const pendingTour = sessionStorage.getItem('pending_pengajuan_detail_tour');
+      if (pendingTour === 'true') {
+        startDetailTour();
+      }
+    }
+  }, [loading, isReadOnlyUser, pengajuan, startDetailTour]);
+
+  useEffect(() => {
+    return () => {
+      if (pengajuanDetailTourRef.current) {
+        pengajuanDetailTourRef.current.cancel();
+        pengajuanDetailTourRef.current = null;
+      }
+    };
+  }, []);
   
   // Bisa ajukan ulang jika tidak ada file rejected (semua file sudah diperbaiki)
   // Untuk operator kabupaten, mereka bisa ajukan ulang setelah upload file yang diperbaiki (status pending juga OK)
@@ -1590,19 +1816,32 @@ const PengajuanDetail: React.FC = () => {
         </div>
       )}
 
+      {isReadOnlyUser && (
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            onClick={startDetailTour}
+            className="border-green-200 text-green-700"
+          >
+            <HelpCircle className="h-4 w-4 mr-2" />
+            Mulai Tutorial Detail
+          </Button>
+        </div>
+      )}
+
       {/* Tabs for file groups - hanya untuk role yang perlu verifikasi */}
       {user?.role !== 'operator' && (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="mb-6">
-          <TabsList>
+          <TabsList data-tour-id="pengajuan-detail-tabs">
             {/* Admin Wilayah: Kabupaten/Kota, Admin Wilayah (jika perlu upload), & Ringkasan */}
             {user?.role === 'admin_wilayah' && (
               <>
-                <TabsTrigger value="KabupatenKota">Kabupaten/Kota</TabsTrigger>
+                <TabsTrigger value="KabupatenKota" data-tour-id="pengajuan-tab-kabupaten">Kabupaten/Kota</TabsTrigger>
                 {/* Tampilkan tab Admin Wilayah jika status memerlukan upload/perbaikan */}
                 {(pengajuan?.status === 'admin_wilayah_rejected' || 
                   pengajuan?.status === 'admin_wilayah_approved' || 
                   pengajuan?.status === 'admin_wilayah_submitted') && (
-                  <TabsTrigger value="admin_wilayah">Admin Wilayah</TabsTrigger>
+                  <TabsTrigger value="admin_wilayah" data-tour-id="pengajuan-tab-admin">Admin Wilayah</TabsTrigger>
                 )}
                 <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
               </>
@@ -1611,8 +1850,8 @@ const PengajuanDetail: React.FC = () => {
             {/* Superadmin & User: semua 3 tab */}
             {(user?.role === 'admin' || isReadOnlyRole) && (
               <>
-                <TabsTrigger value="KabupatenKota">Kabupaten/Kota</TabsTrigger>
-                <TabsTrigger value="admin_wilayah">Admin Wilayah</TabsTrigger>
+                <TabsTrigger value="KabupatenKota" data-tour-id="pengajuan-tab-kabupaten">Kabupaten/Kota</TabsTrigger>
+                <TabsTrigger value="admin_wilayah" data-tour-id="pengajuan-tab-admin">Admin Wilayah</TabsTrigger>
                 <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
               </>
             )}
@@ -1702,7 +1941,7 @@ const PengajuanDetail: React.FC = () => {
           {(user?.role === 'operator' || activeTab === 'KabupatenKota') && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle data-tour-id="pengajuan-card-kabupaten" className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Berkas Kabupaten/Kota
                 <Badge variant="outline" className="ml-2">
@@ -1867,7 +2106,7 @@ const PengajuanDetail: React.FC = () => {
           {user?.role !== 'operator' && activeTab === 'admin_wilayah' && (
           <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle data-tour-id="pengajuan-card-admin" className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Berkas Admin Wilayah
                 <Badge variant="outline" className="ml-2">

@@ -398,6 +398,40 @@ input, button, form {
   background: #34c759;
 }
 
+/* Shepherd.js theme overrides */
+.shepherd-button {
+  border-radius: 0.45rem;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+}
+
+.shepherd-button-primary {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.shepherd-button-primary:hover,
+.shepherd-button-primary:focus {
+  background-color: #047857 !important;
+  border-color: #047857 !important;
+}
+
+.shepherd-button-secondary {
+  background-color: #f3f4f6 !important;
+  color: #4b5563 !important;
+  border-color: #e5e7eb !important;
+}
+
+.shepherd-modal-overlay-container {
+  z-index: 12000 !important;
+}
+
+.shepherd-element {
+  z-index: 12001 !important;
+}
+
 .phone:hover {
   transform: scale(1.1);
 }

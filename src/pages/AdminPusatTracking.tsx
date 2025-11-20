@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,10 +24,13 @@ import {
   Eye,
   Edit,
   Package,
-  XCircle
+  XCircle,
+  HelpCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/PageHeader';
+import Shepherd, { type Tour } from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
 
 interface TrackingStatus {
   id: number;
@@ -102,6 +105,7 @@ const AdminPusatTracking: React.FC = () => {
     notes: '',
     estimated_days: ''
   });
+  const trackingDocTourRef = useRef<Tour | null>(null);
 
   // Load data
   useEffect(() => {
@@ -353,6 +357,213 @@ const AdminPusatTracking: React.FC = () => {
     return `${Math.ceil(days / 30)} bulan`;
   };
 
+  const startTrackingDocTour = useCallback(() => {
+    if (trackingDocTourRef.current) {
+      trackingDocTourRef.current.cancel();
+      trackingDocTourRef.current = null;
+    }
+
+    if (loading) {
+      toast({
+        title: 'Tunggu sebentar',
+        description: 'Data tracking sedang dimuat. Coba lagi setelah data tampil.',
+      });
+      return;
+    }
+
+    if (paginatedPengajuan.length === 0) {
+      toast({
+        title: 'Belum ada data',
+        description: 'Tidak ada pengajuan final approved untuk ditracking saat ini.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        cancelIcon: { enabled: true },
+        classes: 'bg-white shadow-xl rounded-lg border border-gray-200 text-gray-800',
+        scrollTo: { behavior: 'smooth', block: 'center' }
+      }
+    });
+
+    const interactionStatus: Record<string, boolean> = {};
+    const interactionCleanup: Array<() => void> = [];
+
+    const registerInteractionWatcher = (key: string, selector: string) => {
+      interactionStatus[key] = false;
+      const element = document.querySelector(selector);
+      if (!element) return;
+      const handler = () => {
+        interactionStatus[key] = true;
+      };
+      element.addEventListener('click', handler);
+      interactionCleanup.push(() => element.removeEventListener('click', handler));
+    };
+
+    const cleanupInteractions = () => {
+      interactionCleanup.forEach((cleanup) => cleanup());
+    };
+
+    const ensureDialogOpen = () => new Promise<void>((resolve) => {
+      if (!isDialogOpen) {
+        if (paginatedPengajuan[0]) {
+          handleOpenDialog(paginatedPengajuan[0]);
+        }
+        setTimeout(resolve, 400);
+      } else {
+        resolve();
+      }
+    });
+
+    const buildButtons = (options?: { showBack?: boolean; requireKey?: string; requireMessage?: string; isFinal?: boolean }) => {
+      const buttons = [
+        {
+          text: 'Lewati',
+          classes: 'shepherd-button-secondary text-gray-500',
+          action: async () => {
+            tour.cancel();
+          }
+        }
+      ];
+
+      if (options?.showBack) {
+        buttons.push({
+          text: 'Kembali',
+          classes: 'shepherd-button-secondary',
+          action: async () => {
+            tour.back();
+          }
+        });
+      }
+
+      buttons.push({
+        text: options?.isFinal ? 'Selesai' : 'Lanjut',
+        classes: 'shepherd-button-primary bg-green-600 text-white hover:bg-green-700',
+        action: async () => {
+          if (options?.requireKey && !interactionStatus[options.requireKey]) {
+            toast({
+              title: 'Aksi diperlukan',
+              description: options.requireMessage || 'Ikuti instruksi pada langkah ini sebelum melanjutkan.',
+              variant: 'destructive'
+            });
+            return;
+          }
+          if (options?.isFinal) {
+            tour.complete();
+          } else {
+            tour.next();
+          }
+        }
+      });
+
+      return buttons;
+    };
+
+    tour.addStep({
+      id: 'tracking-doc-intro',
+      title: 'Tracking Dokumen',
+      text: 'Menu ini dipakai untuk mencatat progres pengolahan berkas yang sudah final approved.',
+      attachTo: { element: '[data-tour-id="tracking-doc-header"]', on: 'bottom' },
+      buttons: buildButtons()
+    });
+
+    tour.addStep({
+      id: 'tracking-filters',
+      title: 'Filter & Pencarian',
+      text: 'Gunakan pencarian, filter jabatan, atau filter status tracking untuk fokus pada berkas tertentu.',
+      attachTo: { element: '[data-tour-id="tracking-doc-filter"]', on: 'top' },
+      buttons: buildButtons({ showBack: true })
+    });
+
+    tour.addStep({
+      id: 'tracking-card',
+      title: 'Pilih Pegawai',
+      text: 'Setiap kartu menampilkan ringkasan pegawai dan status tracking terakhir. Pilih salah satu yang ingin Anda update.',
+      attachTo: { element: '[data-tour-id="tracking-doc-card"]', on: 'top' },
+      buttons: buildButtons({ showBack: true })
+    });
+
+    tour.addStep({
+      id: 'tracking-input-button',
+      title: 'Mulai Input Tracking',
+      text: 'Klik tombol "Input Tracking" pada pegawai yang ingin diperbarui.',
+      attachTo: { element: '[data-tour-id="tracking-input-button"]', on: 'left' },
+      beforeShowPromise: () => {
+        registerInteractionWatcher('openTrackingDialog', '[data-tour-id="tracking-input-button"]');
+        return Promise.resolve();
+      },
+      buttons: buildButtons({
+        showBack: true,
+        requireKey: 'openTrackingDialog',
+        requireMessage: 'Klik tombol Input/Update Tracking terlebih dahulu.'
+      })
+    });
+
+    tour.addStep({
+      id: 'tracking-status-select',
+      title: 'Pilih Status Tracking',
+      text: 'Tentukan status terbaru sesuai progres fisik yang sedang Anda kerjakan.',
+      attachTo: { element: '[data-tour-id="tracking-status-select"]', on: 'top' },
+      beforeShowPromise: ensureDialogOpen,
+      buttons: buildButtons({ showBack: true })
+    });
+
+    tour.addStep({
+      id: 'tracking-notes',
+      title: 'Catatan & Estimasi',
+      text: 'Tambahkan catatan penting dan estimasi penyelesaian (opsional) agar tim lain tahu progresnya.',
+      attachTo: { element: '[data-tour-id="tracking-notes-fields"]', on: 'top' },
+      beforeShowPromise: ensureDialogOpen,
+      buttons: buildButtons({ showBack: true })
+    });
+
+    tour.addStep({
+      id: 'tracking-save',
+      title: 'Simpan Data Tracking',
+      text: 'Klik Simpan untuk mencatat status terbaru. Anda bisa mengulang langkah ini kapan saja.',
+      attachTo: { element: '[data-tour-id="tracking-save-button"]', on: 'top' },
+      beforeShowPromise: ensureDialogOpen,
+      buttons: buildButtons({ showBack: true, isFinal: true })
+    });
+
+    tour.on('complete', () => {
+      cleanupInteractions();
+      sessionStorage.removeItem('pending_tracking_doc_tour');
+      trackingDocTourRef.current = null;
+      toast({
+        title: 'Tutorial selesai',
+        description: 'Anda siap mencatat progres tracking secara mandiri.',
+      });
+    });
+
+    tour.on('cancel', () => {
+      cleanupInteractions();
+      sessionStorage.removeItem('pending_tracking_doc_tour');
+      trackingDocTourRef.current = null;
+    });
+
+    tour.start();
+    trackingDocTourRef.current = tour;
+  }, [handleOpenDialog, isDialogOpen, loading, paginatedPengajuan, toast]);
+
+  useEffect(() => {
+    if (!loading && sessionStorage.getItem('pending_tracking_doc_tour') === 'true') {
+      startTrackingDocTour();
+    }
+  }, [loading, startTrackingDocTour]);
+
+  useEffect(() => {
+    return () => {
+      if (trackingDocTourRef.current) {
+        trackingDocTourRef.current.cancel();
+        trackingDocTourRef.current = null;
+      }
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -376,13 +587,25 @@ const AdminPusatTracking: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <PageHeader 
-        title="Tracking Dokumen" 
-        subtitle="Input status tracking untuk berkas yang sudah final approved" 
-      />
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+        <div data-tour-id="tracking-doc-header" className="flex-1">
+          <PageHeader 
+            title="Tracking Dokumen" 
+            subtitle="Input status tracking untuk berkas yang sudah final approved" 
+          />
+        </div>
+        <Button
+          variant="outline"
+          onClick={startTrackingDocTour}
+          className="border-green-200 text-green-700"
+        >
+          <HelpCircle className="h-4 w-4 mr-2" />
+          Mulai Tutorial Tracking
+        </Button>
+      </div>
 
       {/* Search and Filter */}
-      <Card className="mb-6">
+      <Card className="mb-6" data-tour-id="tracking-doc-filter">
         <CardContent className="p-6">
           <div className="flex gap-4">
             <div className="relative flex-1">
@@ -458,12 +681,17 @@ const AdminPusatTracking: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          paginatedPengajuan.map((pengajuanData) => {
+          paginatedPengajuan.map((pengajuanData, idx) => {
             const latestTracking = getLatestTracking(pengajuanData);
             const hasTracking = latestTracking !== null;
+            const isFirstCard = idx === 0;
             
             return (
-              <Card key={pengajuanData.id} className="hover:shadow-md transition-shadow">
+              <Card
+                key={pengajuanData.id}
+                className="hover:shadow-md transition-shadow"
+                data-tour-id={isFirstCard ? 'tracking-doc-card' : undefined}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -527,6 +755,7 @@ const AdminPusatTracking: React.FC = () => {
                       <Button
                         onClick={() => handleOpenDialog(pengajuanData)}
                         className="bg-green-600 hover:bg-green-700 text-white"
+                        data-tour-id={isFirstCard ? 'tracking-input-button' : undefined}
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         {hasTracking ? 'Update Tracking' : 'Input Tracking'}
@@ -597,7 +826,7 @@ const AdminPusatTracking: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <div>
+                <div data-tour-id="tracking-status-select">
                   <Label htmlFor="status">Update Status Tracking *</Label>
                   <Select
                     value={formData.tracking_status_id}
@@ -616,36 +845,38 @@ const AdminPusatTracking: React.FC = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="notes">Catatan</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Catatan tambahan (opsional)"
-                    value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
+                <div data-tour-id="tracking-notes-fields" className="space-y-4">
+                  <div>
+                    <Label htmlFor="notes">Catatan</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="Catatan tambahan (opsional)"
+                      value={formData.notes}
+                      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                      rows={3}
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="estimated_days">Estimasi Penyelesaian (hari)</Label>
-                  <Input
-                    id="estimated_days"
-                    type="number"
-                    placeholder="Contoh: 2"
-                    value={formData.estimated_days}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Only allow positive integers
-                      if (value === '' || /^\d+$/.test(value)) {
-                        setFormData(prev => ({ ...prev, estimated_days: value }));
-                      }
-                    }}
-                    min="1"
-                    step="1"
-                    pattern="[0-9]*"
-                    inputMode="numeric"
-                  />
+                  <div>
+                    <Label htmlFor="estimated_days">Estimasi Penyelesaian (hari)</Label>
+                    <Input
+                      id="estimated_days"
+                      type="number"
+                      placeholder="Contoh: 2"
+                      value={formData.estimated_days}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow positive integers
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setFormData(prev => ({ ...prev, estimated_days: value }));
+                        }
+                      }}
+                      min="1"
+                      step="1"
+                      pattern="[0-9]*"
+                      inputMode="numeric"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -661,6 +892,7 @@ const AdminPusatTracking: React.FC = () => {
                   onClick={handleSubmit}
                   disabled={submitting || !formData.tracking_status_id}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  data-tour-id="tracking-save-button"
                 >
                   {submitting ? (
                     <>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
@@ -12,8 +13,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from '../components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Plus, Edit, Trash2, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowUpDown, HelpCircle } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import Shepherd, { type Tour } from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
 
 interface TrackingStatus {
   id: number;
@@ -30,12 +33,14 @@ interface TrackingStatus {
 const TrackingStatusSettings: React.FC = () => {
   const { user, token } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [trackingStatuses, setTrackingStatuses] = useState<TrackingStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStatus, setEditingStatus] = useState<TrackingStatus | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const trackingSettingsTourRef = useRef<Tour | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -178,13 +183,161 @@ const TrackingStatusSettings: React.FC = () => {
     return `status-${Date.now()}`;
   };
 
-  const handleStatusNameChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      status_name: value,
-      status_code: editingStatus ? prev.status_code : generateStatusCode(value)
-    }));
+const handleStatusNameChange = (value: string) => {
+  setFormData(prev => ({
+    ...prev,
+    status_name: value,
+    status_code: editingStatus ? prev.status_code : generateStatusCode(value)
+  }));
+};
+
+const startTrackingSettingsTour = useCallback(() => {
+  if (trackingSettingsTourRef.current) {
+    trackingSettingsTourRef.current.cancel();
+    trackingSettingsTourRef.current = null;
+  }
+
+  if (loading) {
+    toast({
+      title: 'Tunggu sebentar',
+      description: 'Data status tracking sedang dimuat.',
+    });
+    return;
+  }
+
+  const tour = new Shepherd.Tour({
+    useModalOverlay: true,
+    defaultStepOptions: {
+      cancelIcon: { enabled: true },
+      classes: 'bg-white shadow-xl rounded-lg border border-gray-200 text-gray-800',
+      scrollTo: { behavior: 'smooth', block: 'center' }
+    }
+  });
+
+  const ensureDialogOpen = () => new Promise<void>((resolve) => {
+    if (!isDialogOpen) {
+      setIsDialogOpen(true);
+      setTimeout(resolve, 350);
+    } else {
+      resolve();
+    }
+  });
+
+  const buildButtons = (options?: { showBack?: boolean; isFinal?: boolean; specialAction?: () => void }) => {
+    const buttons = [
+      {
+        text: 'Lewati',
+        classes: 'shepherd-button-secondary text-gray-500',
+        action: async () => {
+          tour.cancel();
+        }
+      }
+    ];
+
+    if (options?.showBack) {
+      buttons.push({
+        text: 'Kembali',
+        classes: 'shepherd-button-secondary',
+        action: async () => {
+          tour.back();
+        }
+      });
+    }
+
+    buttons.push({
+      text: options?.isFinal ? 'Ke Tracking Dokumen' : 'Lanjut',
+      classes: 'shepherd-button-primary bg-green-600 text-white hover:bg-green-700',
+      action: async () => {
+        if (options?.specialAction) {
+          options.specialAction();
+        } else if (options?.isFinal) {
+          tour.complete();
+        } else {
+          tour.next();
+        }
+      }
+    });
+
+    return buttons;
   };
+
+  tour.addStep({
+    id: 'settings-intro',
+    title: 'Master Status Tracking',
+    text: 'Di sini Anda bisa membuat, mengedit, atau mematikan status tracking yang tersedia.',
+    attachTo: { element: '[data-tour-id="tracking-settings-card"]', on: 'bottom' },
+    buttons: buildButtons()
+  });
+
+  tour.addStep({
+    id: 'add-status',
+    title: 'Tambah Status Baru',
+    text: 'Klik "Tambah Status" bila status yang Anda perlukan belum ada di daftar.',
+    attachTo: { element: '[data-tour-id="tracking-add-button"]', on: 'bottom' },
+    buttons: buildButtons({ showBack: true })
+  });
+
+  tour.addStep({
+    id: 'status-form',
+    title: 'Isi Detail Status',
+    text: 'Masukkan nama status, deskripsi, dan atur apakah status aktif sebelum disimpan.',
+    attachTo: { element: '[data-tour-id="tracking-status-form"]', on: 'top' },
+    beforeShowPromise: ensureDialogOpen,
+    buttons: buildButtons({ showBack: true })
+  });
+
+  tour.addStep({
+    id: 'status-table',
+    title: 'Kelola Status yang Ada',
+    text: 'Gunakan tabel ini untuk melihat urutan tampil dan melakukan edit/hapus pada status yang sudah dibuat.',
+    attachTo: { element: '[data-tour-id="tracking-status-table"]', on: 'top' },
+    buttons: buildButtons({ showBack: true })
+  });
+
+  tour.addStep({
+    id: 'go-to-tracking',
+    title: 'Lanjut ke Tracking Dokumen',
+    text: 'Setelah status tersedia, lanjutkan ke menu Tracking Dokumen untuk mencatat progres berkas.',
+    buttons: buildButtons({
+      showBack: true,
+      isFinal: true,
+      specialAction: () => {
+        sessionStorage.setItem('pending_tracking_doc_tour', 'true');
+        sessionStorage.removeItem('pending_tracking_settings_tour');
+        tour.complete();
+        navigate('/tracking');
+      }
+    })
+  });
+
+  tour.on('complete', () => {
+    sessionStorage.removeItem('pending_tracking_settings_tour');
+    trackingSettingsTourRef.current = null;
+  });
+
+  tour.on('cancel', () => {
+    sessionStorage.removeItem('pending_tracking_settings_tour');
+    trackingSettingsTourRef.current = null;
+  });
+
+  tour.start();
+  trackingSettingsTourRef.current = tour;
+}, [loading, isDialogOpen, navigate, toast]);
+
+  useEffect(() => {
+    if (!loading && sessionStorage.getItem('pending_tracking_settings_tour') === 'true') {
+      startTrackingSettingsTour();
+    }
+  }, [loading, startTrackingSettingsTour]);
+
+  useEffect(() => {
+    return () => {
+      if (trackingSettingsTourRef.current) {
+        trackingSettingsTourRef.current.cancel();
+        trackingSettingsTourRef.current = null;
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -202,10 +355,33 @@ const TrackingStatusSettings: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <PageHeader title="Konfigurasi Status Tracking" />
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+        <div data-tour-id="tracking-settings-header" className="flex-1">
+          <PageHeader title="Konfigurasi Status Tracking" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={startTrackingSettingsTour}
+            className="border-green-200 text-green-700"
+          >
+            <HelpCircle className="h-4 w-4 mr-2" />
+            Mulai Tutorial
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              sessionStorage.setItem('pending_tracking_doc_tour', 'true');
+              navigate('/tracking');
+            }}
+          >
+            Pergi ke Tracking
+          </Button>
+        </div>
+      </div>
       
       <div className="mb-6">
-        <Card>
+        <Card data-tour-id="tracking-settings-card">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -216,12 +392,16 @@ const TrackingStatusSettings: React.FC = () => {
               </div>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={() => handleOpenDialog()} className="bg-green-600 hover:bg-green-700 text-white">
+                  <Button
+                    data-tour-id="tracking-add-button"
+                    onClick={() => handleOpenDialog()}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Tambah Status
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[425px]" data-tour-id="tracking-status-form">
                   <DialogHeader>
                     <DialogTitle>
                       {editingStatus ? 'Edit Status Tracking' : 'Tambah Status Tracking'}
@@ -293,7 +473,7 @@ const TrackingStatusSettings: React.FC = () => {
           </CardHeader>
           
           <CardContent>
-            <div className="rounded-md border">
+            <div className="rounded-md border" data-tour-id="tracking-status-table">
               <Table>
                 <TableHeader>
                   <TableRow>

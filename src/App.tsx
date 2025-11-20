@@ -35,6 +35,7 @@ const AdminTrackingMonitor = lazy(() => import("./pages/SuperadminTracking"));
 const TrackingStatusSettings = lazy(() => import("./pages/TrackingStatusSettings"));
 const SKForm = lazy(() => import("./components/SKForm"));
 const MaintenancePage = lazy(() => import("./pages/MaintenancePage"));
+const TutorialPage = lazy(() => import("./pages/Tutorial"));
 
 // Loading component for Suspense fallback
 const PageLoading = () => (
@@ -330,6 +331,15 @@ const AppRoutes = () => {
           <AdminPusatRoute>
             <Suspense fallback={<PageLoading />}>
               <AdminPusatTracking />
+            </Suspense>
+          </AdminPusatRoute>
+        </MaintenanceRoute>
+      } />
+      <Route path="/tutorial" element={
+        <MaintenanceRoute>
+          <AdminPusatRoute>
+            <Suspense fallback={<PageLoading />}>
+              <TutorialPage />
             </Suspense>
           </AdminPusatRoute>
         </MaintenanceRoute>

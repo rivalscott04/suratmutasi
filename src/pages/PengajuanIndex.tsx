@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,11 +27,14 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Settings
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiDelete, apiPut } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import Shepherd, { type Tour } from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
 
 interface PengajuanData {
   id: string;
@@ -102,6 +105,7 @@ const PengajuanIndex: React.FC = () => {
     jenisJabatan: Array<{ value: string; label: string; count: number }>;
   }>({ users: [], statuses: [], jenisJabatan: [] });
   const [groupedByKabkota, setGroupedByKabkota] = useState<Record<string, PengajuanData[]>>({});
+  const pengajuanTourRef = useRef<Tour | null>(null);
 
   const itemsPerPage = 50;
   const isAdmin = user?.role === 'admin';
@@ -135,6 +139,194 @@ const PengajuanIndex: React.FC = () => {
     console.log('🔍 Client grouped result:', clientGrouped);
     return clientGrouped;
   }, [isGroupingRole, groupedByKabkota, pengajuanList]);
+
+  const startPengajuanTour = useCallback(() => {
+    if (!isReadOnlyUser) {
+      toast({
+        title: 'Tutorial khusus pengguna tracking',
+        description: 'Menu ini hanya tersedia untuk role user yang fokus tracking.',
+      });
+      return;
+    }
+
+    if (loading) {
+      toast({
+        title: 'Tunggu sebentar',
+        description: 'Kami masih menyiapkan data pengajuan untuk tur.',
+      });
+      return;
+    }
+
+    const totalRows = Object.values(clientGroupedByKabkota).reduce((acc, list) => acc + list.length, 0);
+    if (totalRows === 0) {
+      toast({
+        title: 'Data belum tersedia',
+        description: 'Tidak ada pengajuan untuk ditampilkan. Coba sesuaikan filter atau kembali lagi nanti.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (pengajuanTourRef.current) {
+      pengajuanTourRef.current.cancel();
+      pengajuanTourRef.current = null;
+    }
+    sessionStorage.removeItem('pending_pengajuan_list_tour');
+
+    // Pastikan accordion pertama terbuka supaya step terlihat
+    setTimeout(() => {
+      const firstAccordionTrigger = document.querySelector('[data-tour-id="pengajuan-accordion"] button');
+      if (firstAccordionTrigger && firstAccordionTrigger.getAttribute('aria-expanded') !== 'true') {
+        (firstAccordionTrigger as HTMLButtonElement).click();
+      }
+    }, 0);
+
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        cancelIcon: {
+          enabled: true
+        },
+        classes: 'bg-white shadow-xl rounded-lg border border-gray-200 text-gray-800',
+        scrollTo: { behavior: 'smooth', block: 'center' }
+      }
+    });
+
+    const buildButtons = (options?: { showBack?: boolean; isFinal?: boolean }) => {
+      const buttons = [
+        {
+          text: 'Lewati',
+          classes: 'shepherd-button-secondary text-gray-500',
+          action: async () => {
+            tour.cancel();
+          }
+        }
+      ];
+
+      if (options?.showBack) {
+        buttons.push({
+          text: 'Kembali',
+          classes: 'shepherd-button-secondary',
+          action: async () => {
+            tour.back();
+          }
+        });
+      }
+
+      buttons.push({
+        text: options?.isFinal ? 'Selesai' : 'Lanjut',
+        classes: 'shepherd-button-primary bg-green-600 text-white hover:bg-green-700',
+        action: async () => {
+          if (options?.isFinal) {
+            tour.complete();
+          } else {
+            tour.next();
+          }
+        }
+      });
+
+      return buttons;
+    };
+
+    tour.addStep({
+      id: 'intro',
+      title: 'Daftar Pengajuan',
+      text: 'Halaman ini menampilkan seluruh pengajuan dengan grouping kabupaten/kota agar Anda mudah memilih dokumen mana yang akan dicek.',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-header"]',
+        on: 'bottom'
+      },
+      buttons: buildButtons()
+    });
+
+    tour.addStep({
+      id: 'filters',
+      title: 'Filter & Pencarian',
+      text: 'Gunakan pencarian dan filter status untuk mempersempit daftar. Sistem otomatis menyimpan filter Anda.',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-filter"]',
+        on: 'top'
+      },
+      buttons: buildButtons({ showBack: true })
+    });
+
+    if (document.querySelector('[data-tour-id="pengajuan-jabatan-filter"]')) {
+      tour.addStep({
+        id: 'jabatan',
+        title: 'Filter Jenis Jabatan',
+        text: 'Khusus role user, filter ini membantu fokus pada jabatan tertentu (misal Guru, Fungsional).',
+        attachTo: {
+          element: '[data-tour-id="pengajuan-jabatan-filter"]',
+          on: 'bottom'
+        },
+        buttons: buildButtons({ showBack: true })
+      });
+    }
+
+    tour.addStep({
+      id: 'accordion',
+      title: 'Kelompok Kabupaten/Kota',
+      text: 'Setiap Kanwil memuat daftar kabupaten/kota. Klik untuk membuka tabel pengajuan di dalamnya.',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-accordion"]',
+        on: 'top'
+      },
+      buttons: buildButtons({ showBack: true })
+    });
+
+    tour.addStep({
+      id: 'row-action',
+      title: 'Masuk ke Detail Pengajuan',
+      text: 'Gunakan tombol aksi “...” lalu pilih Lihat Detail untuk membuka dokumen dan catatan lengkap.',
+      attachTo: {
+        element: '[data-tour-id="pengajuan-row-action"]',
+        on: 'left'
+      },
+      buttons: buildButtons({ showBack: true })
+    });
+
+    tour.addStep({
+      id: 'finish',
+      title: 'Siap ke Halaman Detail',
+      text: 'Setelah menemukan pengajuan yang ingin dicek, buka detailnya. Kami akan menampilkan tur lanjutan otomatis ketika detail terbuka.',
+      buttons: buildButtons({ showBack: true, isFinal: true })
+    });
+
+    tour.on('complete', () => {
+      sessionStorage.setItem('pending_pengajuan_detail_tour', 'true');
+      sessionStorage.removeItem('pending_pengajuan_list_tour');
+      toast({
+        title: 'Langkah berikutnya',
+        description: 'Buka salah satu pengajuan lalu klik Lihat Detail untuk melihat tur lanjutan.',
+      });
+    });
+
+    tour.on('cancel', () => {
+      sessionStorage.removeItem('pending_pengajuan_list_tour');
+      sessionStorage.removeItem('pending_pengajuan_detail_tour');
+    });
+
+    tour.start();
+    pengajuanTourRef.current = tour;
+  }, [isReadOnlyUser, loading, clientGroupedByKabkota, toast]);
+
+  useEffect(() => {
+    if (!loading && isReadOnlyUser) {
+      const pendingTour = sessionStorage.getItem('pending_pengajuan_list_tour');
+      if (pendingTour === 'true') {
+        startPengajuanTour();
+      }
+    }
+  }, [loading, isReadOnlyUser, startPengajuanTour]);
+
+  useEffect(() => {
+    return () => {
+      if (pengajuanTourRef.current) {
+        pengajuanTourRef.current.cancel();
+        pengajuanTourRef.current = null;
+      }
+    };
+  }, []);
 
   // Update URL params when filters change
   useEffect(() => {
@@ -577,7 +769,7 @@ const PengajuanIndex: React.FC = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle data-tour-id="pengajuan-header" className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Daftar Pengajuan Mutasi PNS
               </CardTitle>
@@ -586,6 +778,16 @@ const PengajuanIndex: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {isReadOnlyUser && (
+                <Button
+                  variant="outline"
+                  onClick={startPengajuanTour}
+                  className="border-green-200 text-green-700"
+                >
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  Mulai Tutorial
+                </Button>
+              )}
               {isReadOnlyUser && (
                 <>
                   <Button onClick={exportExcel} className="bg-green-600 hover:bg-green-700 text-white">Export Excel</Button>
@@ -612,8 +814,8 @@ const PengajuanIndex: React.FC = () => {
             </div>
           )}
 
-                     {/* Search and Filter */}
-           <div className="flex flex-col gap-4 mb-6">
+          {/* Search and Filter */}
+           <div className="flex flex-col gap-4 mb-6" data-tour-id="pengajuan-filter">
              {/* Search Bar */}
              <div className="relative flex-1">
                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -651,7 +853,7 @@ const PengajuanIndex: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-400" />
                     <Select value={jenisJabatanFilter} onValueChange={handleJenisJabatanFilter}>
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-48" data-tour-id="pengajuan-jabatan-filter">
                         <SelectValue placeholder="Filter Jenis Jabatan" />
                       </SelectTrigger>
                       <SelectContent>
@@ -694,7 +896,7 @@ const PengajuanIndex: React.FC = () => {
           {isGroupingRole && Object.keys(clientGroupedByKabkota).length > 0 ? (
             <div className="space-y-4">
               <div className="text-sm text-gray-600">Tergabung berdasarkan kabupaten/kota</div>
-              <Accordion type="multiple" className="w-full">
+              <Accordion type="multiple" className="w-full" data-tour-id="pengajuan-accordion">
                 {Object.entries(clientGroupedByKabkota).map(([kab, items]) => (
                   <AccordionItem key={kab} value={kab} className="border rounded-lg">
                     <AccordionTrigger className="px-4 py-3 hover:no-underline">
@@ -752,7 +954,7 @@ const PengajuanIndex: React.FC = () => {
                                 <TableCell className="text-right">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm">
+                                      <Button variant="ghost" size="sm" data-tour-id="pengajuan-row-action">
                                         <MoreHorizontal className="h-4 w-4" />
                                       </Button>
                                     </DropdownMenuTrigger>
