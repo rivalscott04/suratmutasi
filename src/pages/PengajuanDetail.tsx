@@ -212,9 +212,14 @@ const PengajuanDetail: React.FC = () => {
         const pengajuanData = response.data.pengajuan;
         setPengajuan(pengajuanData);
         
-        // Set default tab ke "admin_wilayah" untuk admin_wilayah ketika status admin_wilayah_rejected
-        if (user?.role === 'admin_wilayah' && pengajuanData?.status === 'admin_wilayah_rejected') {
+        // Set default tab berdasarkan status pengajuan
+        // Jika ditolak superadmin (admin_wilayah_rejected), default tab ke Admin Wilayah
+        if (pengajuanData?.status === 'admin_wilayah_rejected') {
           setActiveTab('admin_wilayah');
+        }
+        // Jika ditolak admin wilayah (rejected), default tab ke Kabupaten/Kota
+        else if (pengajuanData?.status === 'rejected') {
+          setActiveTab('KabupatenKota');
         }
         // simpan daftar required kab/kota dari job type
         if (Array.isArray(response.data.requiredFiles)) {
