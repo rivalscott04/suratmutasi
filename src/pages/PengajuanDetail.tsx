@@ -198,7 +198,13 @@ const PengajuanDetail: React.FC = () => {
       const timestamp = new Date().getTime();
       const response = await apiGet(`/api/pengajuan/${pengajuanId}?t=${timestamp}`, token);
       if (response.success) {
-        setPengajuan(response.data.pengajuan);
+        const pengajuanData = response.data.pengajuan;
+        setPengajuan(pengajuanData);
+        
+        // Set default tab ke "admin_wilayah" untuk admin_wilayah ketika status admin_wilayah_rejected
+        if (user?.role === 'admin_wilayah' && pengajuanData?.status === 'admin_wilayah_rejected') {
+          setActiveTab('admin_wilayah');
+        }
         // simpan daftar required kab/kota dari job type
         if (Array.isArray(response.data.requiredFiles)) {
           setRequiredKabupaten(response.data.requiredFiles as string[]);
@@ -1558,10 +1564,16 @@ const PengajuanDetail: React.FC = () => {
       {user?.role !== 'operator' && (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="mb-6">
           <TabsList>
-            {/* Admin Wilayah: hanya Kabupaten/Kota & Ringkasan */}
+            {/* Admin Wilayah: Kabupaten/Kota, Admin Wilayah (jika perlu upload), & Ringkasan */}
             {user?.role === 'admin_wilayah' && (
               <>
                 <TabsTrigger value="KabupatenKota">Kabupaten/Kota</TabsTrigger>
+                {/* Tampilkan tab Admin Wilayah jika status memerlukan upload/perbaikan */}
+                {(pengajuan?.status === 'admin_wilayah_rejected' || 
+                  pengajuan?.status === 'admin_wilayah_approved' || 
+                  pengajuan?.status === 'admin_wilayah_submitted') && (
+                  <TabsTrigger value="admin_wilayah">Admin Wilayah</TabsTrigger>
+                )}
                 <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
               </>
             )}
