@@ -848,8 +848,8 @@ const PengajuanIndex: React.FC = () => {
                  </Select>
                </div>
                
-                               {/* User Only Filter - Jenis Jabatan */}
-                {isReadOnlyUser && (
+              {/* Filter Jenis Jabatan untuk admin & pengguna tracking */}
+               {(isReadOnlyUser || isAdmin) && (
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-400" />
                     <Select value={jenisJabatanFilter} onValueChange={handleJenisJabatanFilter}>
