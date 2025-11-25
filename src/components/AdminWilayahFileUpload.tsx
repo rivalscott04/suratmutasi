@@ -610,9 +610,9 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       }
       
       // Validate file size
-      const maxSize = fileType === 'skp_2_tahun_terakhir' ? 1.6 * 1024 * 1024 : 500 * 1024; // 1.6MB or 500KB
+      const maxSize = fileType === 'skp_2_tahun_terakhir' ? 1.7 * 1024 * 1024 : 500 * 1024; // 1.7MB or 500KB
       if (file.size > maxSize) {
-        const maxSizeText = fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB';
+        const maxSizeText = fileType === 'skp_2_tahun_terakhir' ? '1.7MB' : '500KB';
         showErrorModalHandler('Ukuran File Terlalu Besar', `Ukuran file maksimal ${maxSizeText}. Silakan kompres file atau pilih file yang lebih kecil.`);
         setDragOver(null);
         setIsDragActive(false);
@@ -754,7 +754,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                     <div className="space-y-2">
                       {/* File requirements */}
                       <p className="text-xs text-gray-500">
-                        PDF (maks. {fileConfig.file_type === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
+                        PDF (maks. {fileConfig.file_type === 'skp_2_tahun_terakhir' ? '1.7MB' : '500KB'})
                       </p>
                       
                       {/* Upload Progress */}

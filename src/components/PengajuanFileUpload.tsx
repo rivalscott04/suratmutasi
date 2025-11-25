@@ -320,10 +320,10 @@ const PengajuanFileUpload: React.FC = () => {
       return;
     }
 
-    // Validasi ukuran file: default 500KB, khusus SKP 2 Tahun Terakhir 1.6MB
-    const maxSize = fileType === 'skp_2_tahun_terakhir' ? Math.floor(1.6 * 1024 * 1024) : 500 * 1024;
+    // Validasi ukuran file: default 500KB, khusus SKP 2 Tahun Terakhir 1.7MB
+    const maxSize = fileType === 'skp_2_tahun_terakhir' ? Math.floor(1.7 * 1024 * 1024) : 500 * 1024;
     if (file.size > maxSize) {
-      const humanMax = fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB';
+      const humanMax = fileType === 'skp_2_tahun_terakhir' ? '1.7MB' : '500KB';
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
       const errorMessage = `File terlalu besar. Maksimal ${humanMax}. Ukuran file saat ini: ${fileSizeMB}MB`;
       setError(errorMessage);
@@ -402,7 +402,7 @@ const PengajuanFileUpload: React.FC = () => {
         } catch (parseError) {
           // Jika response bukan JSON, gunakan status text
           if (response.status === 413) {
-            errorMessage = 'File terlalu besar. Untuk SKP 2 Tahun Terakhir maksimal 1.6MB, file lain maksimal 500KB.';
+            errorMessage = 'File terlalu besar. Untuk SKP 2 Tahun Terakhir maksimal 1.7MB, file lain maksimal 500KB.';
           } else if (response.status === 400) {
             errorMessage = 'Format file tidak valid atau file terlalu besar.';
           } else {
@@ -635,7 +635,7 @@ const PengajuanFileUpload: React.FC = () => {
                         <div className="flex-1">
                           <h4 className="font-medium text-sm leading-tight">{getFileDisplayName(fileType)}</h4>
                           <p className="text-xs text-gray-600 mt-1">
-                            Upload file PDF (maks. {fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
+                            Upload file PDF (maks. {fileType === 'skp_2_tahun_terakhir' ? '1.7MB' : '500KB'})
                           </p>
                         </div>
                         <Badge 
@@ -889,7 +889,7 @@ const PengajuanFileUpload: React.FC = () => {
                           <div className="flex-1">
                             <h4 className="font-medium text-sm leading-tight">{getFileDisplayName(fileType)}</h4>
                             <p className="text-xs text-gray-600 mt-1">
-                              Upload file PDF (maks. {fileType === 'skp_2_tahun_terakhir' ? '1.6MB' : '500KB'})
+                              Upload file PDF (maks. {fileType === 'skp_2_tahun_terakhir' ? '1.7MB' : '500KB'})
                             </p>
                           </div>
                           <Badge 
