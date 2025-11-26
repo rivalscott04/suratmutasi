@@ -112,6 +112,7 @@ const PengajuanIndex: React.FC = () => {
   const isReadOnlyUser = user?.role === 'user';
   const isBimas = user?.role === 'bimas';
   const isKanwil = user?.role === 'kanwil';
+  const isAdminWilayah = user?.role === 'admin_wilayah';
   const isReadOnlyRole = isReadOnlyUser || isBimas;
   const isGroupingRole = isAdmin || isReadOnlyUser || isBimas;
 
@@ -848,8 +849,8 @@ const PengajuanIndex: React.FC = () => {
                  </Select>
                </div>
                
-              {/* Filter Jenis Jabatan untuk admin & pengguna tracking */}
-               {(isReadOnlyUser || isAdmin) && (
+              {/* Filter Jenis Jabatan untuk admin, pengguna tracking, dan admin wilayah */}
+               {(isReadOnlyUser || isAdmin || isAdminWilayah) && (
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-400" />
                     <Select value={jenisJabatanFilter} onValueChange={handleJenisJabatanFilter}>
