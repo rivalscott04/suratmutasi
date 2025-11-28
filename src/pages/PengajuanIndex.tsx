@@ -433,6 +433,8 @@ const PengajuanIndex: React.FC = () => {
         if (response.success) {
           setFilterOptions(response.data);
           console.log('🔍 Filter options set:', response.data);
+          console.log('🔍 Kabupaten groups:', response.data?.kabupatenGroups);
+          console.log('🔍 Kabupaten groups length:', response.data?.kabupatenGroups?.length);
         } else {
           console.error('🔍 Filter options failed:', response.message);
         }
@@ -883,7 +885,7 @@ const PengajuanIndex: React.FC = () => {
                 )}
 
               {/* Filter Pulau/Wilayah untuk admin dan user */}
-              {(isAdmin || isReadOnlyUser) && filterOptions.kabupatenGroups && filterOptions.kabupatenGroups.length > 0 && (
+              {(isAdmin || isReadOnlyUser) && (
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-gray-400" />
                   <Select value={kabupatenGroupFilter} onValueChange={handleKabupatenGroupFilter}>
@@ -892,13 +894,17 @@ const PengajuanIndex: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Semua Pulau/Wilayah</SelectItem>
-                      {filterOptions.kabupatenGroups
-                        .filter(group => group.count > 0)
-                        .map((group) => (
-                          <SelectItem key={group.groupName} value={group.groupName}>
-                            {group.groupName} ({group.count})
-                          </SelectItem>
-                        ))}
+                      {filterOptions.kabupatenGroups && filterOptions.kabupatenGroups.length > 0 ? (
+                        filterOptions.kabupatenGroups
+                          .filter(group => group.count > 0 || group.groupName === 'Sumbawa')
+                          .map((group) => (
+                            <SelectItem key={group.groupName} value={group.groupName}>
+                              {group.groupName} ({group.count})
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="all" disabled>Memuat data...</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
