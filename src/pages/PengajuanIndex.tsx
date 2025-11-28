@@ -103,7 +103,10 @@ const PengajuanIndex: React.FC = () => {
     users: Array<{ id: string; email: string; full_name: string }>;
     statuses: Array<{ value: string; label: string; count: number }>;
     jenisJabatan: Array<{ value: string; label: string; count: number }>;
+    kabupatenGroups?: Array<{ groupName: string; kabupaten: string[]; count: number }>;
+    kabupaten?: Array<{ name: string; count: number }>;
   }>({ users: [], statuses: [], jenisJabatan: [] });
+  const [kabupatenGroupFilter, setKabupatenGroupFilter] = useState<string>(() => getInitialFilter('kabupaten_group', 'all'));
   const [groupedByKabkota, setGroupedByKabkota] = useState<Record<string, PengajuanData[]>>({});
   const pengajuanTourRef = useRef<Tour | null>(null);
 
@@ -338,6 +341,7 @@ const PengajuanIndex: React.FC = () => {
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (createdByFilter !== 'all') params.set('created_by', createdByFilter);
     if (jenisJabatanFilter !== 'all') params.set('jenis_jabatan', jenisJabatanFilter);
+    if (kabupatenGroupFilter !== 'all') params.set('kabupaten_group', kabupatenGroupFilter);
     if (currentPage > 1) params.set('page', currentPage.toString());
     
     // Update URL without triggering navigation
@@ -348,8 +352,9 @@ const PengajuanIndex: React.FC = () => {
     sessionStorage.setItem('pengajuan_filter_status', statusFilter);
     sessionStorage.setItem('pengajuan_filter_created_by', createdByFilter);
     sessionStorage.setItem('pengajuan_filter_jenis_jabatan', jenisJabatanFilter);
+    sessionStorage.setItem('pengajuan_filter_kabupaten_group', kabupatenGroupFilter);
     sessionStorage.setItem('pengajuan_filter_page', currentPage.toString());
-  }, [isAuthenticated, searchTerm, statusFilter, createdByFilter, jenisJabatanFilter, currentPage, setSearchParams]);
+  }, [isAuthenticated, searchTerm, statusFilter, createdByFilter, jenisJabatanFilter, kabupatenGroupFilter, currentPage, setSearchParams]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -361,7 +366,7 @@ const PengajuanIndex: React.FC = () => {
       setStatusFilter('final_approved');
     }
     fetchPengajuanData();
-  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter, jenisJabatanFilter, isReadOnlyUser, searchTerm]);
+  }, [isAuthenticated, navigate, currentPage, statusFilter, createdByFilter, jenisJabatanFilter, kabupatenGroupFilter, isReadOnlyUser, searchTerm]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -380,6 +385,7 @@ const PengajuanIndex: React.FC = () => {
         ...(jenisJabatanFilter !== 'all' && { jenis_jabatan: jenisJabatanFilter }),
         ...(searchTerm && { search: searchTerm }),
         ...(isAdmin && createdByFilter !== 'all' && { created_by: createdByFilter }),
+        ...((isAdmin || isReadOnlyUser) && kabupatenGroupFilter !== 'all' && { kabupaten_group: kabupatenGroupFilter }),
         // Kanwil hanya melihat pengajuan yang mereka buat
         ...(isKanwil && user?.id && { created_by: user.id })
       });
@@ -453,6 +459,11 @@ const PengajuanIndex: React.FC = () => {
 
   const handleJenisJabatanFilter = (value: string) => {
     setJenisJabatanFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleKabupatenGroupFilter = (value: string) => {
+    setKabupatenGroupFilter(value);
     setCurrentPage(1);
   };
 
@@ -870,6 +881,28 @@ const PengajuanIndex: React.FC = () => {
                     </Select>
                   </div>
                 )}
+
+              {/* Filter Pulau/Wilayah untuk admin dan user */}
+              {(isAdmin || isReadOnlyUser) && filterOptions.kabupatenGroups && filterOptions.kabupatenGroups.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-gray-400" />
+                  <Select value={kabupatenGroupFilter} onValueChange={handleKabupatenGroupFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filter Pulau/Wilayah" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Pulau/Wilayah</SelectItem>
+                      {filterOptions.kabupatenGroups
+                        .filter(group => group.count > 0)
+                        .map((group) => (
+                          <SelectItem key={group.groupName} value={group.groupName}>
+                            {group.groupName} ({group.count})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
                                {/* Admin Only Filters */}
                 {isAdmin && (
