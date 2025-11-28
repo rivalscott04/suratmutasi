@@ -372,7 +372,7 @@ const PengajuanIndex: React.FC = () => {
     if (isAuthenticated) {
       fetchFilterOptions();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, jenisJabatanFilter, statusFilter, createdByFilter, searchTerm]);
 
 
     const fetchPengajuanData = async () => {
@@ -428,7 +428,16 @@ const PengajuanIndex: React.FC = () => {
        const fetchFilterOptions = async () => {
       try {
         console.log('🔍 Fetching filter options...');
-        const response = await apiGet('/api/pengajuan/filter-options', token);
+        // Kirim filter aktif saat ini ke backend untuk menghitung count yang akurat
+        const params = new URLSearchParams();
+        if (jenisJabatanFilter !== 'all') params.set('jenis_jabatan', jenisJabatanFilter);
+        if (statusFilter !== 'all') params.set('status', statusFilter);
+        if (isAdmin && createdByFilter !== 'all') params.set('created_by', createdByFilter);
+        if (searchTerm) params.set('search', searchTerm);
+        
+        const queryString = params.toString();
+        const url = queryString ? `/api/pengajuan/filter-options?${queryString}` : '/api/pengajuan/filter-options';
+        const response = await apiGet(url, token);
         console.log('🔍 Filter options response:', response);
         if (response.success) {
           setFilterOptions(response.data);
