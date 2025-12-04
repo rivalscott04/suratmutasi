@@ -401,10 +401,10 @@ const PengajuanIndex: React.FC = () => {
   }, [isAuthenticated, token]);
 
   useEffect(() => {
-    if (showGenerateDownloadDialog && isAdmin) {
+    if (showGenerateDownloadDialog && (isAdmin || isReadOnlyUser)) {
       fetchGenerateFilterOptions();
     }
-  }, [showGenerateDownloadDialog, isAdmin, fetchGenerateFilterOptions]);
+  }, [showGenerateDownloadDialog, isAdmin, isReadOnlyUser, fetchGenerateFilterOptions]);
 
 
     const fetchPengajuanData = async () => {
@@ -933,7 +933,7 @@ const PengajuanIndex: React.FC = () => {
                   <Button onClick={exportPDF} className="bg-blue-600 hover:bg-blue-700 text-white">Export PDF</Button>
                 </>
               )}
-              {isAdmin && (
+              {(isAdmin || isReadOnlyUser) && (
                 <Button
                   onClick={() => setShowGenerateDownloadDialog(true)}
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -1731,8 +1731,19 @@ const PengajuanIndex: React.FC = () => {
             )}
             <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
               <p className="text-sm text-yellow-800">
-                <strong>Catatan:</strong> Proses generate download mungkin memakan waktu beberapa menit jika data banyak. 
-                File ZIP akan berisi semua berkas dari pengajuan dengan status <strong>final_approved</strong> sesuai filter yang dipilih.
+                <strong>Catatan:</strong>{' '}
+                {isReadOnlyUser ? (
+                  <>
+                    Proses generate download mungkin memakan waktu beberapa menit jika data banyak. File ZIP{' '}
+                    <strong>khusus berisi pengajuan dengan status final_approved</strong> sesuai filter yang dipilih untuk
+                    role user (read-only).
+                  </>
+                ) : (
+                  <>
+                    Proses generate download mungkin memakan waktu beberapa menit jika data banyak. File ZIP akan berisi
+                    semua berkas dari pengajuan dengan status <strong>final_approved</strong> sesuai filter yang dipilih.
+                  </>
+                )}
               </p>
             </div>
           </div>
