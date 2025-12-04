@@ -115,6 +115,11 @@ const PengajuanIndex: React.FC = () => {
   const [generateDownloadFilterValue, setGenerateDownloadFilterValue] = useState<string>('');
   const [generatingDownload, setGeneratingDownload] = useState(false);
   const [generateDownloadProgress, setGenerateDownloadProgress] = useState<string>('');
+  const [generateFilterOptions, setGenerateFilterOptions] = useState<{
+    jenisJabatan: Array<{ value: string; label: string; count: number }>;
+    kabupatenGroups?: Array<{ groupName: string; kabupaten: string[]; count: number }>;
+  }>({ jenisJabatan: [] });
+  const [generateOptionsLoading, setGenerateOptionsLoading] = useState(false);
 
   const itemsPerPage = 50;
   const isAdmin = user?.role === 'admin';
@@ -379,6 +384,27 @@ const PengajuanIndex: React.FC = () => {
       fetchFilterOptions();
     }
   }, [isAuthenticated, jenisJabatanFilter, statusFilter, createdByFilter, searchTerm]);
+
+  const fetchGenerateFilterOptions = useCallback(async () => {
+    if (!isAuthenticated || generateOptionsLoading) return;
+    try {
+      setGenerateOptionsLoading(true);
+      const response = await apiGet('/api/pengajuan/filter-options?status=final_approved', token);
+      if (response.success) {
+        setGenerateFilterOptions(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching generate filter options:', error);
+    } finally {
+      setGenerateOptionsLoading(false);
+    }
+  }, [generateOptionsLoading, isAuthenticated, token]);
+
+  useEffect(() => {
+    if (showGenerateDownloadDialog && isAdmin) {
+      fetchGenerateFilterOptions();
+    }
+  }, [showGenerateDownloadDialog, isAdmin, fetchGenerateFilterOptions]);
 
 
     const fetchPengajuanData = async () => {
@@ -1641,13 +1667,21 @@ const PengajuanIndex: React.FC = () => {
                     <SelectValue placeholder="Pilih jabatan" />
                   </SelectTrigger>
                   <SelectContent>
-                    {filterOptions.jenisJabatan
-                      .filter(jabatan => jabatan.count > 0)
-                      .map((jabatan) => (
-                        <SelectItem key={jabatan.value} value={jabatan.value}>
-                          {jabatan.label} ({jabatan.count})
-                        </SelectItem>
-                      ))}
+                    {generateOptionsLoading && (
+                      <SelectItem value="" disabled>Memuat data...</SelectItem>
+                    )}
+                    {!generateOptionsLoading && generateFilterOptions.jenisJabatan.length === 0 && (
+                      <SelectItem value="" disabled>Data tidak tersedia</SelectItem>
+                    )}
+                    {!generateOptionsLoading && generateFilterOptions.jenisJabatan.length > 0 && (
+                      generateFilterOptions.jenisJabatan
+                        .filter(jabatan => jabatan.count > 0)
+                        .map((jabatan) => (
+                          <SelectItem key={jabatan.value} value={jabatan.value}>
+                            {jabatan.label} ({jabatan.count})
+                          </SelectItem>
+                        ))
+                    )}
                   </SelectContent>
                 </Select>
               ) : (
@@ -1659,15 +1693,19 @@ const PengajuanIndex: React.FC = () => {
                     <SelectValue placeholder="Pilih kabupaten" />
                   </SelectTrigger>
                   <SelectContent>
-                    {filterOptions.kabupatenGroups && filterOptions.kabupatenGroups.length > 0 ? (
+                    {generateOptionsLoading && (
+                      <SelectItem value="" disabled>Memuat data...</SelectItem>
+                    )}
+                    {!generateOptionsLoading && (!generateFilterOptions.kabupatenGroups || generateFilterOptions.kabupatenGroups.length === 0) && (
+                      <SelectItem value="" disabled>Data tidak tersedia</SelectItem>
+                    )}
+                    {!generateOptionsLoading && generateFilterOptions.kabupatenGroups && generateFilterOptions.kabupatenGroups.length > 0 && (
                       (() => {
-                        // Flatten all kabupaten from all groups and get unique values
-                        const allKabupaten = filterOptions.kabupatenGroups
+                        const allKabupaten = generateFilterOptions.kabupatenGroups
                           .filter(group => group.count > 0 && group.kabupaten && group.kabupaten.length > 0)
                           .flatMap(group => group.kabupaten)
-                          .filter((kab, index, self) => self.indexOf(kab) === index) // Get unique
+                          .filter((kab, index, self) => self.indexOf(kab) === index)
                           .sort();
-                        
                         return allKabupaten.length > 0 ? (
                           allKabupaten.map((kab) => (
                             <SelectItem key={kab} value={kab}>
@@ -1678,8 +1716,6 @@ const PengajuanIndex: React.FC = () => {
                           <SelectItem value="" disabled>Tidak ada data kabupaten</SelectItem>
                         );
                       })()
-                    ) : (
-                      <SelectItem value="" disabled>Memuat data...</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
