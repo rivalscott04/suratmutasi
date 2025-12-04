@@ -28,10 +28,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Settings,
-  HelpCircle
+  HelpCircle,
+  Download
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiGet, apiDelete, apiPut } from '@/lib/api';
+import { apiGet, apiDelete, apiPut, apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import Shepherd, { type Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
@@ -109,6 +110,11 @@ const PengajuanIndex: React.FC = () => {
   const [kabupatenGroupFilter, setKabupatenGroupFilter] = useState<string>(() => getInitialFilter('kabupaten_group', 'all'));
   const [groupedByKabkota, setGroupedByKabkota] = useState<Record<string, PengajuanData[]>>({});
   const pengajuanTourRef = useRef<Tour | null>(null);
+  const [showGenerateDownloadDialog, setShowGenerateDownloadDialog] = useState(false);
+  const [generateDownloadFilterType, setGenerateDownloadFilterType] = useState<'jabatan' | 'kabupaten'>('jabatan');
+  const [generateDownloadFilterValue, setGenerateDownloadFilterValue] = useState<string>('');
+  const [generatingDownload, setGeneratingDownload] = useState(false);
+  const [generateDownloadProgress, setGenerateDownloadProgress] = useState<string>('');
 
   const itemsPerPage = 50;
   const isAdmin = user?.role === 'admin';
@@ -779,6 +785,90 @@ const PengajuanIndex: React.FC = () => {
     win.document.close();
   };
   
+  const handleGenerateDownload = async () => {
+    if (!generateDownloadFilterValue) {
+      toast({
+        title: 'Error',
+        description: 'Pilih filter terlebih dahulu',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setGeneratingDownload(true);
+      setGenerateDownloadProgress('Sedang memproses data pengajuan dan membuat file ZIP...');
+
+      // Generate file ZIP
+      const baseUrl = (import.meta as any).env?.VITE_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3000' : '');
+      const generateUrl = baseUrl ? `${baseUrl}/api/pengajuan/generate-download` : '/api/pengajuan/generate-download';
+      
+      const fetchResponse = await fetch(generateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          filter_type: generateDownloadFilterType,
+          filter_value: generateDownloadFilterValue
+        })
+      });
+
+      if (!fetchResponse.ok) {
+        const errorData = await fetchResponse.json().catch(() => ({ message: 'Gagal generate download' }));
+        throw new Error(errorData.message || 'Gagal generate download');
+      }
+
+      // Response should be JSON with file_id and download_url
+      const responseData = await fetchResponse.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Gagal generate download');
+      }
+
+      setGenerateDownloadProgress('File ZIP berhasil di-generate, sedang mengunduh...');
+
+      // Download file using the download_url
+      const fileDownloadUrl = baseUrl 
+        ? `${baseUrl}${responseData.data.download_url}` 
+        : responseData.data.download_url;
+      
+      const downloadResponse = await fetch(fileDownloadUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!downloadResponse.ok) {
+        const errorData = await downloadResponse.json().catch(() => ({ message: 'Gagal download file' }));
+        throw new Error(errorData.message || 'Gagal download file');
+      }
+
+      const blob = await downloadResponse.blob();
+      downloadBlob(blob, responseData.data.filename);
+
+      toast({
+        title: 'Berhasil',
+        description: 'File ZIP berhasil di-generate dan di-download',
+      });
+
+      setShowGenerateDownloadDialog(false);
+      setGenerateDownloadFilterValue('');
+      setGenerateDownloadProgress('');
+    } catch (error) {
+      console.error('Error generating download:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Gagal generate download',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingDownload(false);
+      setGenerateDownloadProgress('');
+    }
+  };
+
   // Debug info
   console.log('🔍 Debug PengajuanIndex:', {
     userRole: user?.role,
@@ -816,6 +906,15 @@ const PengajuanIndex: React.FC = () => {
                   <Button onClick={exportExcel} className="bg-green-600 hover:bg-green-700 text-white">Export Excel</Button>
                   <Button onClick={exportPDF} className="bg-blue-600 hover:bg-blue-700 text-white">Export PDF</Button>
                 </>
+              )}
+              {isAdmin && (
+                <Button
+                  onClick={() => setShowGenerateDownloadDialog(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate Download
+                </Button>
               )}
               {/* Only show Add button for admin and operator, not for user role */}
               {!isReadOnlyRole && (
@@ -1503,6 +1602,136 @@ const PengajuanIndex: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Generate Download Dialog */}
+      <Dialog open={showGenerateDownloadDialog} onOpenChange={setShowGenerateDownloadDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Generate Download ZIP</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="filterType">Filter By</Label>
+              <Select
+                value={generateDownloadFilterType}
+                onValueChange={(value: 'jabatan' | 'kabupaten') => {
+                  setGenerateDownloadFilterType(value);
+                  setGenerateDownloadFilterValue('');
+                }}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Pilih filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="jabatan">By Jabatan</SelectItem>
+                  <SelectItem value="kabupaten">By Kabupaten</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filterValue">
+                {generateDownloadFilterType === 'jabatan' ? 'Pilih Jabatan' : 'Pilih Kabupaten'}
+              </Label>
+              {generateDownloadFilterType === 'jabatan' ? (
+                <Select
+                  value={generateDownloadFilterValue}
+                  onValueChange={setGenerateDownloadFilterValue}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Pilih jabatan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filterOptions.jenisJabatan
+                      .filter(jabatan => jabatan.count > 0)
+                      .map((jabatan) => (
+                        <SelectItem key={jabatan.value} value={jabatan.value}>
+                          {jabatan.label} ({jabatan.count})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select
+                  value={generateDownloadFilterValue}
+                  onValueChange={setGenerateDownloadFilterValue}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Pilih kabupaten" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filterOptions.kabupatenGroups && filterOptions.kabupatenGroups.length > 0 ? (
+                      (() => {
+                        // Flatten all kabupaten from all groups and get unique values
+                        const allKabupaten = filterOptions.kabupatenGroups
+                          .filter(group => group.count > 0 && group.kabupaten && group.kabupaten.length > 0)
+                          .flatMap(group => group.kabupaten)
+                          .filter((kab, index, self) => self.indexOf(kab) === index) // Get unique
+                          .sort();
+                        
+                        return allKabupaten.length > 0 ? (
+                          allKabupaten.map((kab) => (
+                            <SelectItem key={kab} value={kab}>
+                              {kab}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>Tidak ada data kabupaten</SelectItem>
+                        );
+                      })()
+                    ) : (
+                      <SelectItem value="" disabled>Memuat data...</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            {generateDownloadProgress && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                  <p className="text-sm text-blue-800">{generateDownloadProgress}</p>
+                </div>
+              </div>
+            )}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+              <p className="text-sm text-yellow-800">
+                <strong>Catatan:</strong> Proses generate download mungkin memakan waktu beberapa menit jika data banyak. 
+                File ZIP akan berisi semua berkas dari pengajuan dengan status <strong>final_approved</strong> sesuai filter yang dipilih.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowGenerateDownloadDialog(false);
+                setGenerateDownloadFilterValue('');
+                setGenerateDownloadProgress('');
+              }}
+              disabled={generatingDownload}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleGenerateDownload}
+              disabled={generatingDownload || !generateDownloadFilterValue}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {generatingDownload ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate ZIP
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
