@@ -1668,10 +1668,10 @@ const PengajuanIndex: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {generateOptionsLoading && (
-                      <SelectItem value="" disabled>Memuat data...</SelectItem>
+                      <SelectItem value="__loading_jabatan" disabled>Memuat data...</SelectItem>
                     )}
                     {!generateOptionsLoading && generateFilterOptions.jenisJabatan.length === 0 && (
-                      <SelectItem value="" disabled>Data tidak tersedia</SelectItem>
+                      <SelectItem value="__empty_jabatan" disabled>Data tidak tersedia</SelectItem>
                     )}
                     {!generateOptionsLoading && generateFilterOptions.jenisJabatan.length > 0 && (
                       generateFilterOptions.jenisJabatan
@@ -1694,10 +1694,10 @@ const PengajuanIndex: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {generateOptionsLoading && (
-                      <SelectItem value="" disabled>Memuat data...</SelectItem>
+                      <SelectItem value="__loading_kabupaten" disabled>Memuat data...</SelectItem>
                     )}
                     {!generateOptionsLoading && (!generateFilterOptions.kabupatenGroups || generateFilterOptions.kabupatenGroups.length === 0) && (
-                      <SelectItem value="" disabled>Data tidak tersedia</SelectItem>
+                      <SelectItem value="__empty_kabupaten" disabled>Data tidak tersedia</SelectItem>
                     )}
                     {!generateOptionsLoading && generateFilterOptions.kabupatenGroups && generateFilterOptions.kabupatenGroups.length > 0 && (
                       (() => {
