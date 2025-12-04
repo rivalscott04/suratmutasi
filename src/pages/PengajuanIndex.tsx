@@ -386,7 +386,7 @@ const PengajuanIndex: React.FC = () => {
   }, [isAuthenticated, jenisJabatanFilter, statusFilter, createdByFilter, searchTerm]);
 
   const fetchGenerateFilterOptions = useCallback(async () => {
-    if (!isAuthenticated || generateOptionsLoading) return;
+    if (!isAuthenticated) return;
     try {
       setGenerateOptionsLoading(true);
       const response = await apiGet('/api/pengajuan/filter-options?status=final_approved', token);
@@ -398,7 +398,7 @@ const PengajuanIndex: React.FC = () => {
     } finally {
       setGenerateOptionsLoading(false);
     }
-  }, [generateOptionsLoading, isAuthenticated, token]);
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
     if (showGenerateDownloadDialog && isAdmin) {
