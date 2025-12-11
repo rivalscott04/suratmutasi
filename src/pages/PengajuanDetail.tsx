@@ -1997,7 +1997,7 @@ const PengajuanDetail: React.FC = () => {
 
                   {canEdit && pengajuan.status === 'draft' && (
                     <Button
-                      onClick={() => window.open(`http://localhost:8080/pengajuan/${pengajuan.id}/upload`, '_blank')}
+                      onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}
                       className="mt-4 bg-green-600 hover:bg-green-700 text-white"
                     >
                       <Edit className="h-4 w-4 mr-2" />
@@ -2633,7 +2633,7 @@ const PengajuanDetail: React.FC = () => {
                 {/* Tombol untuk status draft - tambahkan di bawah Ajukan Ulang */}
                 {pengajuan?.status === 'draft' && canEdit && (
                   <Button
-                    onClick={() => window.open(`http://localhost:8080/pengajuan/${pengajuan.id}/upload`, '_blank')}
+                    onClick={() => navigate(`/pengajuan/${pengajuan.id}/upload`)}
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                   >
                     <Edit className="h-4 w-4 mr-2" />
