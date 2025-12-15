@@ -7,7 +7,7 @@ const getBaseUrl = () => {
   const href = window.location.href;
   
   // Debug logging
-  console.log('🔍 API Base URL Detection:', {
+  console.log(' API Base URL Detection:', {
     envVar: import.meta.env.VITE_API_URL,
     hostname,
     protocol: window.location.protocol,
@@ -18,7 +18,7 @@ const getBaseUrl = () => {
   // PRIORITY 1: If frontend and backend are on the same server (path-based routing)
   // Use relative URL to avoid CORS issues completely
   if (hostname === '103.41.207.103' || hostname.includes('103.41.207.103')) {
-    console.log('✅ Frontend and backend on same server, using relative URL (no CORS needed)');
+    console.log(' Frontend and backend on same server, using relative URL (no CORS needed)');
     return ''; // Empty string = relative URL, will use /api/... directly
   }
   
@@ -31,21 +31,21 @@ const getBaseUrl = () => {
     // If protocols don't match and we're on HTTP, try to use HTTP version
     if (currentProtocol === 'http:' && apiProtocol === 'https:') {
       apiUrl = apiUrl.replace('https://', 'http://');
-      console.warn('⚠️ Protocol mismatch detected, using HTTP version:', apiUrl);
+      console.warn(' Protocol mismatch detected, using HTTP version:', apiUrl);
     } else {
-      console.log('✅ Using VITE_API_URL:', apiUrl);
+      console.log(' Using VITE_API_URL:', apiUrl);
     }
     return apiUrl;
   }
   
   // PRIORITY 3: Localhost fallback
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    console.log('✅ Using localhost fallback');
+    console.log(' Using localhost fallback');
     return 'http://localhost:3000';
   }
 
   // PRIORITY 4: Default fallback - use relative URL for same-origin
-  console.log('✅ Using relative URL (same-origin, no CORS)');
+  console.log(' Using relative URL (same-origin, no CORS)');
   return ''; // Empty string = relative URL
 };
 
@@ -69,7 +69,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
   const fullUrl = baseUrl + url;
   
   // Log the request for debugging
-  console.log('📤 API Request:', {
+  console.log(' API Request:', {
     method,
     url,
     fullUrl,
@@ -116,7 +116,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
     if (fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
       if (fullUrl.startsWith('http://')) {
         const httpsUrl = fullUrl.replace('http://', 'https://');
-        console.warn('⚠️ CORS error with HTTP, trying HTTPS:', httpsUrl);
+        console.warn(' CORS error with HTTP, trying HTTPS:', httpsUrl);
         try {
           res = await fetch(httpsUrl, fetchOptions);
         } catch (httpsError) {
@@ -181,7 +181,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
         }
       }
       // Jika refresh gagal, coba lagi sekali dengan delay
-      console.log('⚠️ Token refresh failed, retrying once...');
+      console.log(' Token refresh failed, retrying once...');
       try {
         await new Promise(resolve => setTimeout(resolve, 500));
         const retryRefreshRes = await fetch(getBaseUrl() + '/api/auth/refresh', {
@@ -214,7 +214,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
           }
         }
       } catch (retryError) {
-        console.log('❌ Retry refresh also failed:', retryError);
+        console.log(' Retry refresh also failed:', retryError);
       }
       
       // Jika refresh gagal, trigger modal sesi berakhir global
@@ -236,7 +236,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
     // Better error handling for 404
     if (res.status === 404) {
       const errorMsg = responseData?.message || 'Endpoint tidak ditemukan';
-      console.error('❌ 404 Not Found:', {
+      console.error(' 404 Not Found:', {
         url: fullUrl,
         method,
         status: res.status,
@@ -247,7 +247,7 @@ export async function apiFetch(method: string, url: string, options: { data?: an
     
     // For other errors, use the message from response or status text
     const errorMsg = responseData?.message || responseData || res.statusText || 'Terjadi kesalahan';
-    console.error('❌ API Error:', {
+    console.error(' API Error:', {
       url: fullUrl,
       method,
       status: res.status,
@@ -286,7 +286,7 @@ export const replaceFile = async (pengajuanId: string, fileId: string, file: Fil
   const url = `${baseUrl}/pengajuan/${pengajuanId}/files/${fileId}/replace`;
   const fullUrl = getBaseUrl() + url;
   
-  console.log('🔍 Debug API replace file:', {
+  console.log(' Debug API replace file:', {
     pengajuanId,
     fileId,
     fileName: file.name,
@@ -306,11 +306,11 @@ export const replaceFile = async (pengajuanId: string, fileId: string, file: Fil
     body: formData,
   });
   
-  console.log('🔍 Response status:', response.status);
-  console.log('🔍 Response ok:', response.ok);
+  console.log(' Response status:', response.status);
+  console.log(' Response ok:', response.ok);
   
   const result = await response.json();
-  console.log('🔍 Response data:', result);
+  console.log(' Response data:', result);
   
   if (!response.ok) {
     throw new Error(result.message || 'Gagal mengganti file');

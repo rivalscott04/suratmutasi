@@ -205,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isLoginPage = location.pathname === '/' || location.pathname === '/login';
     const isMaintenancePage = location.pathname === '/maintenance' || isMaintenanceMode;
     
-    console.log('🔍 useEffect triggered with conditions:', {
+    console.log(' useEffect triggered with conditions:', {
       hasUser: !!user,
       hasFullName: !!user?.full_name,
       showWelcomeIsland,
@@ -235,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     if (user && !showWelcomeIsland && !hasShownWelcome && !isHiding && !isLoginPage && !isMaintenancePage) {
-      console.log('✅ Conditions met! User data available, showing Dynamic Island:', {
+      console.log(' Conditions met! User data available, showing Dynamic Island:', {
         full_name: user.full_name,
         firstLetter: user.full_name?.charAt(0)?.toUpperCase(),
         hasUserData: !!user
@@ -256,7 +256,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Wait for hide animation to complete (600ms for smooth transition)
         const completeTimer = setTimeout(() => {
-          console.log('✅ Hide animation complete, removing Dynamic Island');
+          console.log(' Hide animation complete, removing Dynamic Island');
           setShowWelcomeIsland(false);
           setIsHiding(false);
           console.log('🎉 Dynamic Island fully removed!');

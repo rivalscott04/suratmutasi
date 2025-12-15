@@ -163,7 +163,7 @@ const PengajuanFileUpload: React.FC = () => {
     }
     
     const fetchConfig = async () => {
-      console.log('🔍 Checking for jabatan data:', { jabatanData: jabatanData?.id, pengajuanJabatanId: pengajuan?.jabatan_id });
+      console.log(' Checking for jabatan data:', { jabatanData: jabatanData?.id, pengajuanJabatanId: pengajuan?.jabatan_id });
       // Jika ada jabatanData dari state navigation (pengajuan baru)
       if (jabatanData?.id) {
         console.log('📋 Using jabatanData.id:', jabatanData.id);
@@ -174,7 +174,7 @@ const PengajuanFileUpload: React.FC = () => {
         console.log('📋 Using pengajuan.jabatan_id:', pengajuan.jabatan_id);
         await fetchAdminWilayahConfig(pengajuan.jabatan_id);
       } else {
-        console.log('⚠️ No jabatan_id found for admin wilayah config');
+        console.log(' No jabatan_id found for admin wilayah config');
       }
     };
     
@@ -257,18 +257,18 @@ const PengajuanFileUpload: React.FC = () => {
   // Fetch admin wilayah file configuration (hanya untuk role kanwil)
   const fetchAdminWilayahConfig = async (jabatanId: number) => {
     try {
-      console.log('🔍 Fetching admin wilayah config for jabatan_id:', jabatanId);
+      console.log(' Fetching admin wilayah config for jabatan_id:', jabatanId);
       const response = await apiGet(`/api/admin-wilayah-file-config/job-type/${jabatanId}`, token);
-      console.log('🔍 Admin wilayah config response:', response);
+      console.log(' Admin wilayah config response:', response);
       if (response.success && Array.isArray(response.data)) {
         console.log('✅ Setting admin wilayah required files:', response.data);
         setAdminWilayahRequiredFiles(response.data);
       } else {
-        console.log('⚠️ Admin wilayah config not found or empty for jabatan_id:', jabatanId);
+        console.log(' Admin wilayah config not found or empty for jabatan_id:', jabatanId);
         setAdminWilayahRequiredFiles([]);
       }
     } catch (error) {
-      console.error('❌ Error fetching admin wilayah config:', error);
+      console.error(' Error fetching admin wilayah config:', error);
       // Tidak set error karena ini opsional untuk kanwil
       setAdminWilayahRequiredFiles([]);
     }

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import ErrorModal from '@/components/ui/error-modal';
+import { formatError } from '@/utils/errorFormatter';
 
 interface PegawaiData {
   nip: string;
@@ -75,10 +76,11 @@ const PegawaiSelectionList: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating pengajuan:', error);
-      // Show error in modal instead of inline
-      setErrorMessage('Terjadi kesalahan saat membuat pengajuan');
+      // Format error message menjadi ramah pengguna
+      const errorMsg = formatError(error);
+      setErrorMessage(errorMsg);
       setShowErrorModal(true);
-      setError(null); // Clear inline error
+      setError(null);
     } finally {
       setProcessing(false);
     }

@@ -988,7 +988,7 @@ const Settings = () => {
       setConfigToDelete(null);
       fetchAdminWilayahConfigs(); // Refresh data from database
     } catch (error: any) {
-      console.error('❌ Error deleting admin wilayah config:', error);
+      console.error(' Error deleting admin wilayah config:', error);
       toast({
         title: "Error",
         description: "Gagal menghapus konfigurasi admin wilayah",
@@ -1188,11 +1188,11 @@ const Settings = () => {
         setAdminWilayahConfigs(groupedConfigs);
       } else {
         // If API fails, set empty array instead of crashing
-        console.warn('❌ Admin wilayah config API response invalid:', response);
+        console.warn(' Admin wilayah config API response invalid:', response);
         setAdminWilayahConfigs([]);
       }
           } catch (error: any) {
-        console.error('❌ Error fetching admin wilayah configs:', error);
+        console.error(' Error fetching admin wilayah configs:', error);
         // Don't show error toast, just set empty array to prevent crash
         setAdminWilayahConfigs([]);
       } finally {

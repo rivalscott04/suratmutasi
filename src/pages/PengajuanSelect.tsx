@@ -10,6 +10,7 @@ import { Search, Users, Send, Loader2, AlertCircle, ChevronLeft, ChevronRight, B
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 import ErrorModal from '@/components/ui/error-modal';
+import { formatError } from '@/utils/errorFormatter';
 
 
 interface PegawaiData {
@@ -146,10 +147,11 @@ const PengajuanSelect: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating pengajuan:', error);
-      // Show error in modal instead of inline
-      setErrorMessage('Terjadi kesalahan saat membuat pengajuan');
+      // Format error message menjadi ramah pengguna
+      const errorMsg = formatError(error);
+      setErrorMessage(errorMsg);
       setShowErrorModal(true);
-      setError(null); // Clear inline error
+      setError(null);
     } finally {
       setSubmitting(false);
     }

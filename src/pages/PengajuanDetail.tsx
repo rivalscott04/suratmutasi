@@ -43,6 +43,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ExpandableCards, { Card as SUExpandableCard } from '@/components/smoothui/ui/ExpandableCards';
 import { apiGet, apiPut, apiDelete, apiPost, replaceFile } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { formatError } from '@/utils/errorFormatter';
 import { EditJabatanDialog } from '@/components/EditJabatanDialog';
 import { AuditLogCard } from '@/components/AuditLogCard';
 import Shepherd, { type Tour } from 'shepherd.js';
@@ -296,8 +297,9 @@ const PengajuanDetail: React.FC = () => {
       }
     } catch (error) {
       console.error('Error approving pengajuan:', error);
-      setError('Terjadi kesalahan saat approve pengajuan');
-      toast({ title: 'Kesalahan', description: 'Terjadi kesalahan saat approve pengajuan', variant: 'destructive' });
+      const errorMsg = formatError(error);
+      setError(errorMsg);
+      toast({ title: 'Kesalahan', description: errorMsg, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -342,8 +344,9 @@ const PengajuanDetail: React.FC = () => {
       }
     } catch (error) {
       console.error('Error rejecting pengajuan:', error);
-      setError('Terjadi kesalahan saat reject pengajuan');
-      toast({ title: 'Kesalahan', description: 'Terjadi kesalahan saat reject pengajuan', variant: 'destructive' });
+      const errorMsg = formatError(error);
+      setError(errorMsg);
+      toast({ title: 'Kesalahan', description: errorMsg, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -565,17 +568,17 @@ const PengajuanDetail: React.FC = () => {
   // Fungsi untuk verifikasi file
   const handleVerifyFile = async (fileId: string, verificationStatus: 'approved' | 'rejected', notes?: string) => {
     try {
-      console.log('🔍 Debug handleVerifyFile:', { fileId, verificationStatus, notes, token });
+      console.log(' Debug handleVerifyFile:', { fileId, verificationStatus, notes, token });
       setVerifyingFile(fileId);
       
       const requestData = {
         verification_status: verificationStatus,
         verification_notes: notes
       };
-      console.log('📤 Request data:', requestData);
+      console.log(' Request data:', requestData);
       
       const response = await apiPut(`/api/pengajuan/files/${fileId}/verify`, requestData, token);
-      console.log('📥 Response:', response);
+      console.log(' Response:', response);
       
       if (response.success) {
         // Update local state immediately for smooth UX
@@ -601,7 +604,7 @@ const PengajuanDetail: React.FC = () => {
         toast({ title: 'Gagal', description: response.message || 'Gagal verifikasi file', variant: 'destructive' });
       }
     } catch (error) {
-      console.error('❌ Error verifying file:', error);
+      console.error(' Error verifying file:', error);
       setError('Terjadi kesalahan saat verifikasi file');
       toast({ title: 'Kesalahan', description: 'Terjadi kesalahan saat verifikasi file', variant: 'destructive' });
     } finally {
@@ -978,9 +981,9 @@ const PengajuanDetail: React.FC = () => {
   };
 
   const handlePreviewFile = async (file: PengajuanFile) => {
-    console.log('🔍 Preview file:', file);
-    console.log('🔍 File name:', file.file_name);
-    console.log('🔍 File type:', file.file_type);
+    console.log(' Preview file:', file);
+    console.log(' File name:', file.file_name);
+    console.log(' File type:', file.file_type);
     const baseUrl = (import.meta as any).env?.VITE_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3000' : '');
 
     const fetchWithToken = async (jwt?: string) => {
@@ -1022,8 +1025,8 @@ const PengajuanDetail: React.FC = () => {
       if (!res.ok) {
         // Tampilkan state error yang ramah di modal
         const msg = res.status === 404 ? 'File tidak ditemukan di server.' : `Gagal memuat pratinjau (kode ${res.status}).`;
-        console.log('🔍 Setting preview file (error):', file);
-        console.log('🔍 Error file name:', file.file_name);
+        console.log(' Setting preview file (error):', file);
+        console.log(' Error file name:', file.file_name);
         setPreviewFile(file);
         setPreviewError(msg);
         setShowPreview(true);
@@ -1040,7 +1043,7 @@ const PengajuanDetail: React.FC = () => {
 
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
-      console.log('🔍 Setting preview file (success):', { ...file, blobUrl });
+      console.log(' Setting preview file (success):', { ...file, blobUrl });
       setPreviewFile({ ...file, blobUrl });
       setShowPreview(true);
     } catch (e) {
@@ -1055,7 +1058,7 @@ const PengajuanDetail: React.FC = () => {
   };
 
   const handleGantiFile = (file: PengajuanFile) => {
-    console.log('🔍 handleGantiFile called with file:', {
+    console.log(' handleGantiFile called with file:', {
       fileId: file.id,
       fileIdLength: file.id.length,
       fileIdType: typeof file.id,
@@ -1074,7 +1077,7 @@ const PengajuanDetail: React.FC = () => {
     input.onchange = (e) => {
       const newFile = (e.target as HTMLInputElement).files?.[0];
       if (newFile) {
-        console.log('🔍 About to replace file:', {
+        console.log(' About to replace file:', {
           fileId: file.id,
           newFileName: newFile.name,
           newFileSize: newFile.size
@@ -1087,7 +1090,7 @@ const PengajuanDetail: React.FC = () => {
 
   const uploadFilePengganti = async (fileId: string, newFile: File, fileCategory?: string) => {
     try {
-      console.log('🔍 Debug replace file:', {
+      console.log(' Debug replace file:', {
         pengajuanId,
         fileId,
         fileIdLength: fileId.length,

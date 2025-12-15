@@ -21,7 +21,7 @@ export const usePegawaiSearch = () => {
       apiGet(`/api/employees/search?q=${encodeURIComponent(searchTerm)}`, token)
         .then(data => {
           const results = data.pegawai || data.employees || [];
-          console.log(`🔍 Frontend search "${searchTerm}": received ${results.length} results`);
+          console.log(` Frontend search "${searchTerm}": received ${results.length} results`);
           console.log(`📋 First 5 results:`, results.slice(0, 5).map((p: any) => ({ nip: p.nip, nama: p.nama })));
           setResults(results);
         })

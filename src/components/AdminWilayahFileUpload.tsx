@@ -121,12 +121,12 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
       
       const response = await apiGet(`/api/admin-wilayah-file-config/job-type/${jobTypeId}`, token);
       
-      console.log('🔍 API Response:', response);
-      console.log('🔍 Job Type ID:', jobTypeId);
-      console.log('🔍 Jenis Jabatan ID:', jenisJabatanId);
+      console.log(' API Response:', response);
+      console.log(' Job Type ID:', jobTypeId);
+      console.log(' Jenis Jabatan ID:', jenisJabatanId);
       
       if (response.success) {
-        console.log('✅ Setting required files:', response.data);
+        console.log(' Setting required files:', response.data);
         setRequiredFiles(response.data);
         // Notify parent about total required files (uploaded may be known later)
         if (onProgressChange) {
@@ -218,7 +218,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
         return;
       }
       // Debug logging
-      console.log('🔍 Uploading file:', {
+      console.log(' Uploading file:', {
         fileType,
         fileName: file.name,
         pengajuanId,
@@ -873,7 +873,7 @@ const AdminWilayahFileUpload: React.FC<AdminWilayahFileUploadProps> = ({
                                 handleFileUpload(fileConfig.file_type, file);
                                 e.target.value = '';
                               } else {
-                                console.log('❌ No file selected');
+                                console.log(' No file selected');
                               }
                             }}
                             className="hidden"

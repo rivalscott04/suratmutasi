@@ -105,10 +105,10 @@ const NavigationBar = () => {
       const filteredUsers = response.users.filter((u: User) => 
         u.id !== originalUser?.id && u.role !== 'admin'
       );
-      console.log('✅ Filtered users:', filteredUsers);
+      console.log(' Filtered users:', filteredUsers);
       setAvailableUsers(filteredUsers);
     } catch (error) {
-      console.error('❌ Failed to fetch users:', error);
+      console.error(' Failed to fetch users:', error);
       setAvailableUsers([]);
     } finally {
       setLoadingUsers(false);
@@ -192,23 +192,25 @@ const NavigationBar = () => {
       <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo and Brand */}
-            <div className="flex items-center">
-              <Link to="/dashboard" className="flex items-center space-x-3">
-                <img 
-                  src="/FE/logo-kemenag.png"
-                  alt="Kementerian Agama" 
-                  className="h-8 w-8"
-                  onError={(e) => {
-                    console.error('Logo Kemenag not found');
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <div className="hidden sm:block">
-                  <h1 className="text-lg font-semibold text-green-700">
+            {/* Logo and Brand - Fixed in container on left */}
+            <div className="flex items-center h-full min-w-0 flex-shrink-0">
+              <Link to="/dashboard" className="flex items-center space-x-2 h-full px-2 hover:bg-gray-50 rounded transition-colors">
+                <div className="flex items-center justify-center h-10 w-10 flex-shrink-0">
+                  <img 
+                    src="/FE/logo-kemenag.png"
+                    alt="Kementerian Agama" 
+                    className="h-full w-full object-contain"
+                    onError={(e) => {
+                      console.error('Logo Kemenag not found');
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+                <div className="hidden sm:block min-w-0">
+                  <h1 className="text-sm font-semibold text-green-700 leading-tight truncate">
                     Si Imut
                   </h1>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 leading-tight truncate">
                     Sistem Informasi Mutasi
                   </p>
                 </div>
@@ -234,7 +236,7 @@ const NavigationBar = () => {
             )}
 
             {/* Desktop Navigation - Compact untuk bimas */}
-            <div className={`hidden md:flex items-center ${user?.role === 'bimas' ? 'space-x-3' : 'space-x-8'}`}>
+            <div className={`hidden md:flex items-center flex-1 justify-center ${user?.role === 'bimas' ? 'space-x-3' : 'space-x-6'}`}>
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 

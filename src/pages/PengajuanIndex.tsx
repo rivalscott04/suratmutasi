@@ -34,6 +34,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiDelete, apiPut, apiPost } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { formatError } from '@/utils/errorFormatter';
 import Shepherd, { type Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 
@@ -136,14 +137,14 @@ const PengajuanIndex: React.FC = () => {
     
     // Always use server grouping if available
     if (Object.keys(groupedByKabkota).length > 0) {
-      console.log('🔍 Using server grouping:', groupedByKabkota);
+      console.log(' Using server grouping:', groupedByKabkota);
       return groupedByKabkota;
     }
     
     // Fallback to client grouping
     if (!pengajuanList || pengajuanList.length === 0) return {};
     
-    console.log('🔍 Using client grouping, pengajuanList length:', pengajuanList.length);
+    console.log(' Using client grouping, pengajuanList length:', pengajuanList.length);
     const clientGrouped = pengajuanList.reduce((acc: Record<string, PengajuanData[]>, item: any) => {
       const kab = (item.office && (item.office.kabkota || item.office.name)) || (item.pegawai && (item.pegawai as any).induk_unit) || (item.pegawai as any)?.unit_kerja || 'Lainnya';
       if (!acc[kab]) acc[kab] = [];
@@ -151,7 +152,7 @@ const PengajuanIndex: React.FC = () => {
       return acc;
     }, {});
     
-    console.log('🔍 Client grouped result:', clientGrouped);
+    console.log(' Client grouped result:', clientGrouped);
     return clientGrouped;
   }, [isGroupingRole, groupedByKabkota, pengajuanList]);
 
@@ -430,8 +431,8 @@ const PengajuanIndex: React.FC = () => {
         setPengajuanList(response.data);
         if (isAdmin) {
           const grouped = response.grouped_by_kabkota;
-          console.log('🔍 Frontend received grouped data:', grouped);
-          console.log('🔍 Frontend received data length:', response.data?.length);
+          console.log(' Frontend received grouped data:', grouped);
+          console.log(' Frontend received data length:', response.data?.length);
           if (grouped) {
             setGroupedByKabkota(grouped as Record<string, PengajuanData[]>);
           } else {
@@ -451,7 +452,8 @@ const PengajuanIndex: React.FC = () => {
       }
      } catch (error) {
        console.error('Error fetching pengajuan data:', error);
-       setError('Terjadi kesalahan saat mengambil data pengajuan');
+       const errorMsg = formatError(error);
+       setError(errorMsg);
      } finally {
        setLoading(false);
      }
@@ -459,7 +461,7 @@ const PengajuanIndex: React.FC = () => {
 
        const fetchFilterOptions = async () => {
       try {
-        console.log('🔍 Fetching filter options...');
+        console.log(' Fetching filter options...');
         // Kirim filter aktif saat ini ke backend untuk menghitung count yang akurat
         const params = new URLSearchParams();
         if (jenisJabatanFilter !== 'all') params.set('jenis_jabatan', jenisJabatanFilter);
@@ -470,14 +472,14 @@ const PengajuanIndex: React.FC = () => {
         const queryString = params.toString();
         const url = queryString ? `/api/pengajuan/filter-options?${queryString}` : '/api/pengajuan/filter-options';
         const response = await apiGet(url, token);
-        console.log('🔍 Filter options response:', response);
+        console.log(' Filter options response:', response);
         if (response.success) {
           setFilterOptions(response.data);
-          console.log('🔍 Filter options set:', response.data);
-          console.log('🔍 Kabupaten groups:', response.data?.kabupatenGroups);
-          console.log('🔍 Kabupaten groups length:', response.data?.kabupatenGroups?.length);
+          console.log(' Filter options set:', response.data);
+          console.log(' Kabupaten groups:', response.data?.kabupatenGroups);
+          console.log(' Kabupaten groups length:', response.data?.kabupatenGroups?.length);
         } else {
-          console.error('🔍 Filter options failed:', response.message);
+          console.error(' Filter options failed:', response.message);
         }
       } catch (error) {
         console.error('Error fetching filter options:', error);
@@ -884,9 +886,10 @@ const PengajuanIndex: React.FC = () => {
       setGenerateDownloadProgress('');
     } catch (error) {
       console.error('Error generating download:', error);
+      const errorMsg = formatError(error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Gagal generate download',
+        description: errorMsg,
         variant: 'destructive',
       });
     } finally {
@@ -896,7 +899,7 @@ const PengajuanIndex: React.FC = () => {
   };
 
   // Debug info
-  console.log('🔍 Debug PengajuanIndex:', {
+  console.log(' Debug PengajuanIndex:', {
     userRole: user?.role,
     isAdmin,
     userEmail: user?.email
@@ -1446,7 +1449,7 @@ const PengajuanIndex: React.FC = () => {
                               {(isAdmin || (pengajuan.status === 'draft' && user?.role !== 'user')) && (
                                 <DropdownMenuItem 
                                   onClick={() => {
-                                    console.log('🔍 Debug: Klik hapus untuk pengajuan:', {
+                                    console.log(' Debug: Klik hapus untuk pengajuan:', {
                                       id: pengajuan.id,
                                       status: pengajuan.status,
                                       isAdmin,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
+import { formatError } from '@/utils/errorFormatter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -330,7 +331,8 @@ const Users = () => {
       });
     } catch (error: any) {
       setAddUserSuccess(false);
-      setAddUserMessage(error?.message || 'Gagal menyimpan user.');
+      const errorMsg = formatError(error);
+      setAddUserMessage(errorMsg);
     } finally {
       setIsSubmitting(false);
       // Close form modal first, then show result modal
