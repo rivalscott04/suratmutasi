@@ -112,14 +112,15 @@ const PengajuanIndex: React.FC = () => {
   const [groupedByKabkota, setGroupedByKabkota] = useState<Record<string, PengajuanData[]>>({});
   const pengajuanTourRef = useRef<Tour | null>(null);
   const [showGenerateDownloadDialog, setShowGenerateDownloadDialog] = useState(false);
-  const [generateDownloadFilterType, setGenerateDownloadFilterType] = useState<'jabatan' | 'kabupaten'>('jabatan');
+  const [generateDownloadFilterType, setGenerateDownloadFilterType] = useState<'jabatan' | 'kabupaten' | 'pegawai'>('jabatan');
   const [generateDownloadFilterValue, setGenerateDownloadFilterValue] = useState<string>('');
   const [generatingDownload, setGeneratingDownload] = useState(false);
   const [generateDownloadProgress, setGenerateDownloadProgress] = useState<string>('');
   const [generateFilterOptions, setGenerateFilterOptions] = useState<{
     jenisJabatan: Array<{ value: string; label: string; count: number }>;
     kabupatenGroups?: Array<{ groupName: string; kabupaten: string[]; count: number }>;
-  }>({ jenisJabatan: [] });
+    pegawai?: Array<{ id: string; nama: string; nip?: string; count?: number }>;
+  }>({ jenisJabatan: [], pegawai: [] });
   const [generateOptionsLoading, setGenerateOptionsLoading] = useState(false);
 
   const itemsPerPage = 50;
@@ -392,7 +393,12 @@ const PengajuanIndex: React.FC = () => {
       setGenerateOptionsLoading(true);
       const response = await apiGet('/api/pengajuan/filter-options?status=final_approved', token);
       if (response.success) {
-        setGenerateFilterOptions(response.data);
+        const { jenisJabatan = [], kabupatenGroups = [], pegawai = [] } = response.data || {};
+        setGenerateFilterOptions({
+          jenisJabatan,
+          kabupatenGroups,
+          pegawai
+        });
       }
     } catch (error) {
       console.error('Error fetching generate filter options:', error);
@@ -1643,7 +1649,7 @@ const PengajuanIndex: React.FC = () => {
               <Label htmlFor="filterType">Filter By</Label>
               <Select
                 value={generateDownloadFilterType}
-                onValueChange={(value: 'jabatan' | 'kabupaten') => {
+                onValueChange={(value: 'jabatan' | 'kabupaten' | 'pegawai') => {
                   setGenerateDownloadFilterType(value);
                   setGenerateDownloadFilterValue('');
                 }}
@@ -1654,12 +1660,17 @@ const PengajuanIndex: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="jabatan">By Jabatan</SelectItem>
                   <SelectItem value="kabupaten">By Kabupaten</SelectItem>
+                  <SelectItem value="pegawai">By Pegawai</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="filterValue">
-                {generateDownloadFilterType === 'jabatan' ? 'Pilih Jabatan' : 'Pilih Kabupaten'}
+                {generateDownloadFilterType === 'jabatan'
+                  ? 'Pilih Jabatan'
+                  : generateDownloadFilterType === 'kabupaten'
+                    ? 'Pilih Kabupaten'
+                    : 'Pilih Pegawai'}
               </Label>
               {generateDownloadFilterType === 'jabatan' ? (
                 <Select
@@ -1687,7 +1698,7 @@ const PengajuanIndex: React.FC = () => {
                     )}
                   </SelectContent>
                 </Select>
-              ) : (
+              ) : generateDownloadFilterType === 'kabupaten' ? (
                 <Select
                   value={generateDownloadFilterValue}
                   onValueChange={setGenerateDownloadFilterValue}
@@ -1719,6 +1730,30 @@ const PengajuanIndex: React.FC = () => {
                           <SelectItem value="" disabled>Tidak ada data kabupaten</SelectItem>
                         );
                       })()
+                    )}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select
+                  value={generateDownloadFilterValue}
+                  onValueChange={setGenerateDownloadFilterValue}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Pilih pegawai" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {generateOptionsLoading && (
+                      <SelectItem value="__loading_pegawai" disabled>Memuat data...</SelectItem>
+                    )}
+                    {!generateOptionsLoading && (!generateFilterOptions.pegawai || generateFilterOptions.pegawai.length === 0) && (
+                      <SelectItem value="__empty_pegawai" disabled>Data tidak tersedia</SelectItem>
+                    )}
+                    {!generateOptionsLoading && generateFilterOptions.pegawai && generateFilterOptions.pegawai.length > 0 && (
+                      generateFilterOptions.pegawai.map((pegawai) => (
+                        <SelectItem key={pegawai.id} value={pegawai.id}>
+                          {pegawai.nama}{pegawai.nip ? ` • ${pegawai.nip}` : ''}
+                        </SelectItem>
+                      ))
                     )}
                   </SelectContent>
                 </Select>
