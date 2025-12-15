@@ -1791,6 +1791,10 @@ const PengajuanIndex: React.FC = () => {
                     onChange={(e) => setGeneratePegawaiSearch(e.target.value)}
                     onFocus={() => setShowPegawaiSuggestions(true)}
                   />
+                  <div className="text-xs text-gray-500 flex items-center justify-between">
+                    <span>Ketik untuk tambah pegawai lain (maks 20).</span>
+                    <span>{selectedGeneratePegawai.length}/20</span>
+                  </div>
                   {selectedGeneratePegawai.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {selectedGeneratePegawai.map((p) => (
