@@ -113,7 +113,7 @@ const PengajuanIndex: React.FC = () => {
   const pengajuanTourRef = useRef<Tour | null>(null);
   const [showGenerateDownloadDialog, setShowGenerateDownloadDialog] = useState(false);
   const [generateDownloadFilterType, setGenerateDownloadFilterType] = useState<'jabatan' | 'kabupaten' | 'pegawai'>('jabatan');
-  const [generateDownloadFilterValue, setGenerateDownloadFilterValue] = useState<string>('');
+  const [generateDownloadFilterValue, setGenerateDownloadFilterValue] = useState<string | string[]>('');
   const [generatingDownload, setGeneratingDownload] = useState(false);
   const [generateDownloadProgress, setGenerateDownloadProgress] = useState<string>('');
   const [generateFilterOptions, setGenerateFilterOptions] = useState<{
@@ -123,6 +123,8 @@ const PengajuanIndex: React.FC = () => {
   }>({ jenisJabatan: [], pegawai: [] });
   const [generateOptionsLoading, setGenerateOptionsLoading] = useState(false);
   const [generatePegawaiSearch, setGeneratePegawaiSearch] = useState('');
+  const [showPegawaiSuggestions, setShowPegawaiSuggestions] = useState(false);
+  const [selectedGeneratePegawai, setSelectedGeneratePegawai] = useState<Array<{ id: string; label: string }>>([]);
 
   const itemsPerPage = 50;
   const isAdmin = user?.role === 'admin';
@@ -529,6 +531,35 @@ const PengajuanIndex: React.FC = () => {
     );
   }, [generateFilterOptions.pegawai, generatePegawaiSearch]);
 
+  const handleSelectGeneratePegawai = (pegawaiId: string, label: string) => {
+    // avoid duplicate
+    if (selectedGeneratePegawai.find((p) => p.id === pegawaiId)) {
+      setGeneratePegawaiSearch('');
+      setShowPegawaiSuggestions(false);
+      return;
+    }
+    // limit 20
+    if (selectedGeneratePegawai.length >= 20) {
+      toast({
+        title: 'Batas tercapai',
+        description: 'Maksimal 20 pegawai per generate.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    const next = [...selectedGeneratePegawai, { id: pegawaiId, label }];
+    setSelectedGeneratePegawai(next);
+    setGenerateDownloadFilterValue(next.map((p) => p.id));
+    setGeneratePegawaiSearch('');
+    setShowPegawaiSuggestions(false);
+  };
+
+  const handleRemoveGeneratePegawai = (pegawaiId: string) => {
+    const next = selectedGeneratePegawai.filter((item) => item.id !== pegawaiId);
+    setSelectedGeneratePegawai(next);
+    setGenerateDownloadFilterValue(next.map((item) => item.id));
+  };
+
   // Helper function to navigate to detail while preserving filter state
   const navigateToDetail = (pengajuanId: string) => {
     // Filter state is already saved in sessionStorage by the useEffect above
@@ -831,7 +862,11 @@ const PengajuanIndex: React.FC = () => {
   };
   
   const handleGenerateDownload = async () => {
-    if (!generateDownloadFilterValue) {
+    const hasPegawaiSelection = generateDownloadFilterType === 'pegawai'
+      ? selectedGeneratePegawai.length > 0
+      : !!generateDownloadFilterValue;
+
+    if (!hasPegawaiSelection) {
       toast({
         title: 'Error',
         description: 'Pilih filter terlebih dahulu',
@@ -856,7 +891,9 @@ const PengajuanIndex: React.FC = () => {
         },
         body: JSON.stringify({
           filter_type: generateDownloadFilterType,
-          filter_value: generateDownloadFilterValue
+          filter_value: generateDownloadFilterType === 'pegawai'
+            ? selectedGeneratePegawai.map((p) => p.id)
+            : generateDownloadFilterValue
         })
       });
 
@@ -1662,7 +1699,9 @@ const PengajuanIndex: React.FC = () => {
                 value={generateDownloadFilterType}
                 onValueChange={(value: 'jabatan' | 'kabupaten' | 'pegawai') => {
                   setGenerateDownloadFilterType(value);
-                  setGenerateDownloadFilterValue('');
+                  setGenerateDownloadFilterValue(value === 'pegawai' ? [] : '');
+                  setSelectedGeneratePegawai([]);
+                  setGeneratePegawaiSearch('');
                 }}
               >
                 <SelectTrigger className="mt-1">
@@ -1685,7 +1724,7 @@ const PengajuanIndex: React.FC = () => {
               </Label>
               {generateDownloadFilterType === 'jabatan' ? (
                 <Select
-                  value={generateDownloadFilterValue}
+                  value={typeof generateDownloadFilterValue === 'string' ? generateDownloadFilterValue : ''}
                   onValueChange={setGenerateDownloadFilterValue}
                 >
                   <SelectTrigger className="mt-1">
@@ -1711,7 +1750,7 @@ const PengajuanIndex: React.FC = () => {
                 </Select>
               ) : generateDownloadFilterType === 'kabupaten' ? (
                 <Select
-                  value={generateDownloadFilterValue}
+                  value={typeof generateDownloadFilterValue === 'string' ? generateDownloadFilterValue : ''}
                   onValueChange={setGenerateDownloadFilterValue}
                 >
                   <SelectTrigger className="mt-1">
@@ -1745,35 +1784,58 @@ const PengajuanIndex: React.FC = () => {
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <Input
                     placeholder="Cari pegawai (nama/NIP)..."
                     value={generatePegawaiSearch}
                     onChange={(e) => setGeneratePegawaiSearch(e.target.value)}
+                    onFocus={() => setShowPegawaiSuggestions(true)}
                   />
-                  <Select
-                    value={generateDownloadFilterValue}
-                    onValueChange={setGenerateDownloadFilterValue}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih pegawai" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {generateOptionsLoading && (
-                        <SelectItem value="__loading_pegawai" disabled>Memuat data...</SelectItem>
+                  {selectedGeneratePegawai.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedGeneratePegawai.map((p) => (
+                        <Badge
+                          key={p.id}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {p.label}
+                          <button
+                            type="button"
+                            className="text-gray-600 hover:text-red-600"
+                            onClick={() => handleRemoveGeneratePegawai(p.id)}
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  {generateOptionsLoading && (
+                    <div className="text-sm text-gray-500">Memuat data...</div>
+                  )}
+                  {!generateOptionsLoading && showPegawaiSuggestions && (
+                    <div className="absolute z-20 mt-1 w-full max-h-56 overflow-auto rounded-md border bg-white shadow">
+                      {filteredGeneratePegawaiOptions.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-500">Tidak ada hasil</div>
+                      ) : (
+                        filteredGeneratePegawaiOptions.slice(0, 20).map((pegawai) => {
+                          const label = `${pegawai.nama}${pegawai.nip ? ` • ${pegawai.nip}` : ''}`;
+                          return (
+                            <button
+                              type="button"
+                              key={pegawai.id || pegawai.nip}
+                              className="w-full px-3 py-2 text-left hover:bg-green-50 text-sm"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => handleSelectGeneratePegawai(pegawai.id || pegawai.nip || '', label)}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })
                       )}
-                      {!generateOptionsLoading && filteredGeneratePegawaiOptions.length === 0 && (
-                        <SelectItem value="__empty_pegawai" disabled>Data tidak tersedia</SelectItem>
-                      )}
-                      {!generateOptionsLoading && filteredGeneratePegawaiOptions.length > 0 && (
-                        filteredGeneratePegawaiOptions.map((pegawai) => (
-                          <SelectItem key={pegawai.id} value={pegawai.id || pegawai.nip || ''}>
-                            {pegawai.nama}{pegawai.nip ? ` • ${pegawai.nip}` : ''}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1810,6 +1872,9 @@ const PengajuanIndex: React.FC = () => {
                 setShowGenerateDownloadDialog(false);
                 setGenerateDownloadFilterValue('');
                 setGenerateDownloadProgress('');
+                setGeneratePegawaiSearch('');
+                setShowPegawaiSuggestions(false);
+                setSelectedGeneratePegawai([]);
               }}
               disabled={generatingDownload}
             >
@@ -1817,8 +1882,14 @@ const PengajuanIndex: React.FC = () => {
             </Button>
             <Button
               onClick={handleGenerateDownload}
-              disabled={generatingDownload || !generateDownloadFilterValue}
+              disabled={
+                generatingDownload || 
+                (generateDownloadFilterType === 'pegawai'
+                  ? selectedGeneratePegawai.length === 0
+                  : !generateDownloadFilterValue)
+              }
               className="bg-green-600 hover:bg-green-700 text-white"
+              onMouseEnter={() => setShowPegawaiSuggestions(false)}
             >
               {generatingDownload ? (
                 <>
