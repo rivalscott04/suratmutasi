@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -122,6 +122,7 @@ const PengajuanIndex: React.FC = () => {
     pegawai?: Array<{ id: string; nama: string; nip?: string; count?: number }>;
   }>({ jenisJabatan: [], pegawai: [] });
   const [generateOptionsLoading, setGenerateOptionsLoading] = useState(false);
+  const [generatePegawaiSearch, setGeneratePegawaiSearch] = useState('');
 
   const itemsPerPage = 50;
   const isAdmin = user?.role === 'admin';
@@ -517,6 +518,16 @@ const PengajuanIndex: React.FC = () => {
     setKabupatenGroupFilter(value);
     setCurrentPage(1);
   };
+
+  const filteredGeneratePegawaiOptions = useMemo(() => {
+    const list = generateFilterOptions.pegawai || [];
+    const q = generatePegawaiSearch.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((p) => 
+      (p.nama && p.nama.toLowerCase().includes(q)) ||
+      (p.nip && p.nip.toLowerCase().includes(q))
+    );
+  }, [generateFilterOptions.pegawai, generatePegawaiSearch]);
 
   // Helper function to navigate to detail while preserving filter state
   const navigateToDetail = (pengajuanId: string) => {
@@ -1734,29 +1745,36 @@ const PengajuanIndex: React.FC = () => {
                   </SelectContent>
                 </Select>
               ) : (
-                <Select
-                  value={generateDownloadFilterValue}
-                  onValueChange={setGenerateDownloadFilterValue}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Pilih pegawai" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {generateOptionsLoading && (
-                      <SelectItem value="__loading_pegawai" disabled>Memuat data...</SelectItem>
-                    )}
-                    {!generateOptionsLoading && (!generateFilterOptions.pegawai || generateFilterOptions.pegawai.length === 0) && (
-                      <SelectItem value="__empty_pegawai" disabled>Data tidak tersedia</SelectItem>
-                    )}
-                    {!generateOptionsLoading && generateFilterOptions.pegawai && generateFilterOptions.pegawai.length > 0 && (
-                      generateFilterOptions.pegawai.map((pegawai) => (
-                        <SelectItem key={pegawai.id} value={pegawai.id}>
-                          {pegawai.nama}{pegawai.nip ? ` • ${pegawai.nip}` : ''}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Cari pegawai (nama/NIP)..."
+                    value={generatePegawaiSearch}
+                    onChange={(e) => setGeneratePegawaiSearch(e.target.value)}
+                  />
+                  <Select
+                    value={generateDownloadFilterValue}
+                    onValueChange={setGenerateDownloadFilterValue}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih pegawai" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generateOptionsLoading && (
+                        <SelectItem value="__loading_pegawai" disabled>Memuat data...</SelectItem>
+                      )}
+                      {!generateOptionsLoading && filteredGeneratePegawaiOptions.length === 0 && (
+                        <SelectItem value="__empty_pegawai" disabled>Data tidak tersedia</SelectItem>
+                      )}
+                      {!generateOptionsLoading && filteredGeneratePegawaiOptions.length > 0 && (
+                        filteredGeneratePegawaiOptions.map((pegawai) => (
+                          <SelectItem key={pegawai.id} value={pegawai.id || pegawai.nip || ''}>
+                            {pegawai.nama}{pegawai.nip ? ` • ${pegawai.nip}` : ''}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </div>
             {generateDownloadProgress && (
