@@ -963,7 +963,7 @@ const PengajuanIndex: React.FC = () => {
     <div className="container mx-auto p-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle data-tour-id="pengajuan-header" className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
@@ -973,12 +973,12 @@ const PengajuanIndex: React.FC = () => {
                 {isAdmin ? 'Semua pengajuan mutasi PNS' : (isReadOnlyUser ? 'Semua pengajuan berstatus final_approved (read-only)' : (isKanwil ? 'Pengajuan mutasi PNS Anda (Kanwil)' : 'Pengajuan mutasi PNS Anda'))}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
               {isReadOnlyUser && (
                 <Button
                   variant="outline"
                   onClick={startPengajuanTour}
-                  className="border-green-200 text-green-700"
+                  className="w-full sm:w-auto justify-center border-green-200 text-green-700"
                 >
                   <HelpCircle className="h-4 w-4 mr-2" />
                   Mulai Tutorial
@@ -986,14 +986,14 @@ const PengajuanIndex: React.FC = () => {
               )}
               {isReadOnlyUser && (
                 <>
-                  <Button onClick={exportExcel} className="bg-green-600 hover:bg-green-700 text-white">Export Excel</Button>
-                  <Button onClick={exportPDF} className="bg-blue-600 hover:bg-blue-700 text-white">Export PDF</Button>
+                  <Button onClick={exportExcel} className="w-full sm:w-auto justify-center bg-green-600 hover:bg-green-700 text-white">Export Excel</Button>
+                  <Button onClick={exportPDF} className="w-full sm:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white">Export PDF</Button>
                 </>
               )}
               {(isAdmin || isReadOnlyUser) && (
                 <Button
                   onClick={() => setShowGenerateDownloadDialog(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full sm:w-auto justify-center bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Generate Download
@@ -1003,7 +1003,7 @@ const PengajuanIndex: React.FC = () => {
               {!isReadOnlyRole && (
                 <Button
                   onClick={() => navigate('/pengajuan/select')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full sm:w-auto justify-center bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Tambah Pengajuan
