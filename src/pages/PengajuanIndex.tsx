@@ -1788,7 +1788,10 @@ const PengajuanIndex: React.FC = () => {
                   <Input
                     placeholder="Cari pegawai (nama/NIP)..."
                     value={generatePegawaiSearch}
-                    onChange={(e) => setGeneratePegawaiSearch(e.target.value)}
+                    onChange={(e) => {
+                      setGeneratePegawaiSearch(e.target.value);
+                      setShowPegawaiSuggestions(true);
+                    }}
                     onFocus={() => setShowPegawaiSuggestions(true)}
                   />
                   <div className="text-xs text-gray-500 flex items-center justify-between">
