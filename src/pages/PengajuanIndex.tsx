@@ -875,6 +875,10 @@ const PengajuanIndex: React.FC = () => {
       return;
     }
 
+    // Create AbortController for timeout (5 minutes for ZIP generation)
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 5 * 60 * 1000); // 5 minutes timeout
+
     try {
       setGeneratingDownload(true);
       setGenerateDownloadProgress('Sedang memproses data pengajuan dan membuat file ZIP...');
@@ -894,10 +898,18 @@ const PengajuanIndex: React.FC = () => {
           filter_value: generateDownloadFilterType === 'pegawai'
             ? selectedGeneratePegawai.map((p) => p.id)
             : generateDownloadFilterValue
-        })
+        }),
+        signal: abortController.signal
       });
 
+      clearTimeout(timeoutId);
+
       if (!fetchResponse.ok) {
+        // Handle 502 Bad Gateway specifically
+        if (fetchResponse.status === 502) {
+          throw new Error('Server sedang sibuk atau timeout. Proses generate ZIP memakan waktu terlalu lama. Silakan coba lagi dengan filter yang lebih spesifik atau hubungi administrator.');
+        }
+        
         const errorData = await fetchResponse.json().catch(() => ({ message: 'Gagal generate download' }));
         throw new Error(errorData.message || 'Gagal generate download');
       }
@@ -938,9 +950,22 @@ const PengajuanIndex: React.FC = () => {
       setShowGenerateDownloadDialog(false);
       setGenerateDownloadFilterValue('');
       setGenerateDownloadProgress('');
-    } catch (error) {
+    } catch (error: any) {
+      clearTimeout(timeoutId);
       console.error('Error generating download:', error);
-      const errorMsg = formatError(error);
+      
+      let errorMsg = formatError(error);
+      
+      // Handle timeout/abort errors
+      if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+        errorMsg = 'Request timeout. Proses generate ZIP memakan waktu terlalu lama. Silakan coba lagi dengan filter yang lebih spesifik atau hubungi administrator.';
+      }
+      
+      // Handle network errors that might indicate server issues
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+        errorMsg = 'Tidak dapat terhubung ke server. Pastikan koneksi internet stabil atau server sedang dalam maintenance.';
+      }
+      
       toast({
         title: 'Error',
         description: errorMsg,
