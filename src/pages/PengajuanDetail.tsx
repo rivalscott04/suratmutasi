@@ -222,6 +222,10 @@ const PengajuanDetail: React.FC = () => {
         if (pengajuanData?.status === 'admin_wilayah_rejected') {
           setActiveTab('admin_wilayah');
         }
+        // Admin wilayah + final_approved: buka tab Admin Wilayah agar bisa ganti file (overwrite) berkas admin wilayah
+        else if (user?.role === 'admin_wilayah' && pengajuanData?.status && String(pengajuanData.status).toLowerCase() === 'final_approved') {
+          setActiveTab('admin_wilayah');
+        }
         // Jika ditolak admin wilayah (rejected), default tab ke Kabupaten/Kota
         else if (pengajuanData?.status === 'rejected') {
           setActiveTab('KabupatenKota');
@@ -1840,11 +1844,12 @@ const PengajuanDetail: React.FC = () => {
             {user?.role === 'admin_wilayah' && (
               <>
                 <TabsTrigger value="KabupatenKota" data-tour-id="pengajuan-tab-kabupaten">Kabupaten/Kota</TabsTrigger>
-                {/* Tampilkan tab Admin Wilayah jika status memerlukan upload/perbaikan atau final_approved (ganti file berkas admin wilayah) */}
-                {(pengajuan?.status === 'admin_wilayah_rejected' || 
-                  pengajuan?.status === 'admin_wilayah_approved' || 
-                  pengajuan?.status === 'admin_wilayah_submitted' ||
-                  pengajuan?.status === 'final_approved') && (
+                {/* Tampilkan tab Admin Wilayah jika ada berkas admin wilayah: upload/perbaikan atau final_approved (ganti file / overwrite) */}
+                {(hasAdminWilayahFiles &&
+                  (pengajuan?.status === 'admin_wilayah_rejected' || 
+                   pengajuan?.status === 'admin_wilayah_approved' || 
+                   pengajuan?.status === 'admin_wilayah_submitted' ||
+                   (pengajuan?.status && String(pengajuan.status).toLowerCase() === 'final_approved'))) && (
                   <TabsTrigger value="admin_wilayah" data-tour-id="pengajuan-tab-admin">Admin Wilayah</TabsTrigger>
                 )}
                 <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
@@ -2328,13 +2333,14 @@ const PengajuanDetail: React.FC = () => {
                             Download
                           </Button>
                           )}
-                          {/* Button Ganti File - hanya untuk admin dan admin_wilayah */}
+                          {/* Button Ganti File (overwrite) - admin & admin_wilayah; untuk final_approved admin wilayah bisa overwrite berkas admin wilayah */}
                           {(user?.role === 'admin' || user?.role === 'admin_wilayah') && (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handleGantiFile(file)}
                             className="px-3 py-2"
+                            title="Overwrite file dengan berkas baru"
                           >
                             <Upload className="h-4 w-4 mr-2" />
                             Ganti File
