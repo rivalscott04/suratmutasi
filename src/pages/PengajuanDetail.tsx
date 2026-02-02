@@ -1840,10 +1840,11 @@ const PengajuanDetail: React.FC = () => {
             {user?.role === 'admin_wilayah' && (
               <>
                 <TabsTrigger value="KabupatenKota" data-tour-id="pengajuan-tab-kabupaten">Kabupaten/Kota</TabsTrigger>
-                {/* Tampilkan tab Admin Wilayah jika status memerlukan upload/perbaikan */}
+                {/* Tampilkan tab Admin Wilayah jika status memerlukan upload/perbaikan atau final_approved (ganti file berkas admin wilayah) */}
                 {(pengajuan?.status === 'admin_wilayah_rejected' || 
                   pengajuan?.status === 'admin_wilayah_approved' || 
-                  pengajuan?.status === 'admin_wilayah_submitted') && (
+                  pengajuan?.status === 'admin_wilayah_submitted' ||
+                  pengajuan?.status === 'final_approved') && (
                   <TabsTrigger value="admin_wilayah" data-tour-id="pengajuan-tab-admin">Admin Wilayah</TabsTrigger>
                 )}
                 <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
