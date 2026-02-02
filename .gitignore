@@ -18,7 +18,6 @@ backend/error.log
 backend/access.log
 backend/combined.log
 
-backend
 node_modules
 *.local
 logs

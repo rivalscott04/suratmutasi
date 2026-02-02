@@ -263,58 +263,67 @@ export const apiPost = (url: string, data?: any, token?: string, headers?: any) 
 export const apiPut = (url: string, data?: any, token?: string, headers?: any) => apiFetch('PUT', url, { data, token, headers });
 export const apiDelete = (url: string, token?: string, headers?: any) => apiFetch('DELETE', url, { token, headers });
 
-// API function untuk replace file
+// API function untuk replace file (mendukung refresh token pada 401/403 agar tidak langsung popup sesi berakhir)
 export const replaceFile = async (pengajuanId: string, fileId: string, file: File, token: string, userRole: string, fileCategory?: string) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  // Logic untuk menentukan endpoint berdasarkan user role dan file category
-  let baseUrl = '/api';
-  
-  if (userRole === 'admin_wilayah') {
-    // Admin wilayah selalu menggunakan endpoint admin-wilayah
-    baseUrl = '/api/admin-wilayah';
-  } else if (userRole === 'admin') {
-    // Super admin: gunakan endpoint admin-wilayah untuk file admin_wilayah, endpoint biasa untuk file kabupaten
-    if (fileCategory === 'admin_wilayah') {
+  const doPut = async (jwt: string): Promise<Response> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    let baseUrl = '/api';
+    if (userRole === 'admin_wilayah') {
       baseUrl = '/api/admin-wilayah';
-    } else {
-      baseUrl = '/api';
+    } else if (userRole === 'admin') {
+      baseUrl = fileCategory === 'admin_wilayah' ? '/api/admin-wilayah' : '/api';
+    }
+    const url = `${baseUrl}/pengajuan/${pengajuanId}/files/${fileId}/replace`;
+    const fullUrl = getBaseUrl() + url;
+    return fetch(fullUrl, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${jwt}` },
+      body: formData,
+      credentials: 'include',
+    });
+  };
+
+  let response = await doPut(token);
+  console.log(' Replace file response status:', response.status);
+
+  // 401/403: coba refresh token lalu retry sekali dengan FormData baru
+  if ((response.status === 401 || response.status === 403) && token) {
+    try {
+      await new Promise(r => setTimeout(r, 100));
+      const refreshRes = await fetch(getBaseUrl() + '/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        if (refreshData.token) {
+          localStorage.setItem('token', refreshData.token);
+          if (typeof window !== 'undefined' && (window as any).dispatchTokenUpdate) {
+            (window as any).dispatchTokenUpdate(refreshData.token);
+          }
+          response = await doPut(refreshData.token);
+          console.log(' Replace file retry response status:', response.status);
+        }
+      }
+    } catch (refreshErr) {
+      console.log(' Replace file refresh failed:', refreshErr);
     }
   }
-  
-  const url = `${baseUrl}/pengajuan/${pengajuanId}/files/${fileId}/replace`;
-  const fullUrl = getBaseUrl() + url;
-  
-  console.log(' Debug API replace file:', {
-    pengajuanId,
-    fileId,
-    fileName: file.name,
-    userRole,
-    fileCategory,
-    baseUrl,
-    url,
-    fullUrl,
-    token: token ? 'exists' : 'missing'
-  });
-  
-  const response = await fetch(fullUrl, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-    body: formData,
-  });
-  
-  console.log(' Response status:', response.status);
-  console.log(' Response ok:', response.ok);
-  
-  const result = await response.json();
-  console.log(' Response data:', result);
-  
+
+  const contentType = response.headers.get('content-type');
+  const result = contentType?.includes('application/json')
+    ? await response.json()
+    : await response.text();
+
   if (!response.ok) {
-    throw new Error(result.message || 'Gagal mengganti file');
+    if ((response.status === 401 || response.status === 403) && typeof window !== 'undefined' && (window as any).showSessionExpiredModal) {
+      (window as any).showSessionExpiredModal();
+    }
+    const msg = typeof result === 'object' && result?.message ? result.message : 'Gagal mengganti file';
+    throw new Error(msg);
   }
-  
-  return result;
+
+  return typeof result === 'object' ? result : { success: true };
 }; 
