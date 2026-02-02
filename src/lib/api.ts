@@ -287,8 +287,8 @@ export const replaceFile = async (pengajuanId: string, fileId: string, file: Fil
   let response = await doPut(token);
   console.log(' Replace file response status:', response.status);
 
-  // 401/403: coba refresh token lalu retry sekali dengan FormData baru
-  if ((response.status === 401 || response.status === 403) && token) {
+  // Hanya 401 (token invalid/expired): coba refresh lalu retry. 403 = forbidden (permission), jangan anggap sesi berakhir.
+  if (response.status === 401 && token) {
     try {
       await new Promise(r => setTimeout(r, 100));
       const refreshRes = await fetch(getBaseUrl() + '/api/auth/refresh', {
@@ -318,7 +318,8 @@ export const replaceFile = async (pengajuanId: string, fileId: string, file: Fil
     : await response.text();
 
   if (!response.ok) {
-    if ((response.status === 401 || response.status === 403) && typeof window !== 'undefined' && (window as any).showSessionExpiredModal) {
+    // Modal "Sesi Berakhir" hanya untuk 401 (token habis). 403 = akses ditolak, tampilkan pesan backend saja.
+    if (response.status === 401 && typeof window !== 'undefined' && (window as any).showSessionExpiredModal) {
       (window as any).showSessionExpiredModal();
     }
     const msg = typeof result === 'object' && result?.message ? result.message : 'Gagal mengganti file';
