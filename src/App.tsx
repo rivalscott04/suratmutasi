@@ -389,13 +389,14 @@ const AppInner = () => {
       localStorage.setItem('token', token);
     };
 
-    // Handle global errors
+    // Handle global errors - HANYA untuk 401 (token expired), BUKAN 403 (forbidden/permission)
+    // 403 = akses ditolak (misal role tidak punya izin), bukan sesi berakhir
     const handleGlobalError = (event: ErrorEvent) => {
       if (event.error && typeof event.error === 'object') {
         const error = event.error as any;
-        if (error.status === 403 || error.message?.includes('403') || error.message?.includes('Forbidden')) {
+        // Hanya 401 yang dianggap sesi berakhir
+        if (error.status === 401 || error.message?.includes('401') || error.message?.includes('Unauthorized')) {
           event.preventDefault();
-          // Check if user is on login page
           const currentPath = window.location.pathname;
           const isOnLoginPage = currentPath === '/' || currentPath === '/login';
           
@@ -406,13 +407,13 @@ const AppInner = () => {
       }
     };
 
-    // Handle unhandled promise rejections (fetch errors)
+    // Handle unhandled promise rejections (fetch errors) - HANYA 401
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       if (event.reason && typeof event.reason === 'object') {
         const error = event.reason as any;
-        if (error.status === 403 || error.message?.includes('403') || error.message?.includes('Forbidden')) {
+        // Hanya 401 yang dianggap sesi berakhir
+        if (error.status === 401 || error.message?.includes('401') || error.message?.includes('Unauthorized')) {
           event.preventDefault();
-          // Check if user is on login page
           const currentPath = window.location.pathname;
           const isOnLoginPage = currentPath === '/' || currentPath === '/login';
           
@@ -423,38 +424,30 @@ const AppInner = () => {
       }
     };
 
-    // Intercept fetch requests to catch 403 errors
+    // Intercept fetch requests - HANYA untuk 401 (sesi berakhir), JANGAN intercept 403 (forbidden/permission)
+    // 403 harus dibiarkan lewat agar pesan error dari backend bisa ditampilkan ke user
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
       try {
         const response = await originalFetch(...args);
         
-        // If we get a 403 response, show session expired modal
-        if (response.status === 403) {
+        // Hanya 401 yang trigger session expired modal, 403 dibiarkan (permission error, bukan session)
+        if (response.status === 401) {
           const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
-          // Don't intercept auth-related requests
+          // Don't intercept auth-related requests (refresh, login, etc.)
           if (!url.includes('/api/auth/')) {
-            // Check if user is on login page
             const currentPath = window.location.pathname;
             const isOnLoginPage = currentPath === '/' || currentPath === '/login';
             
             if (!isOnLoginPage && window.showSessionExpiredModal) {
               window.showSessionExpiredModal();
             }
-            // Return a custom response to prevent the default 403 page
-            return new Response(JSON.stringify({ 
-              success: false, 
-              message: 'Sesi berakhir, silakan login kembali' 
-            }), {
-              status: 403,
-              headers: { 'Content-Type': 'application/json' }
-            });
           }
         }
         
+        // Selalu return response asli (tidak replace body) agar error message dari backend bisa dibaca
         return response;
       } catch (error) {
-        // Re-throw the error if it's not a 403
         throw error;
       }
     };

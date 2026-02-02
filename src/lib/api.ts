@@ -139,9 +139,10 @@ export async function apiFetch(method: string, url: string, options: { data?: an
     responseData = await res.text();
   }
   
-  // Handle authentication errors (401) and authorization errors (403) that might indicate session expiry
+  // Handle authentication errors (401 ONLY) - token expired/invalid
+  // 403 = Forbidden (permission denied), bukan sesi berakhir - jangan trigger refresh untuk 403
   // Hanya handle jika bukan endpoint auth dan bukan request yang sudah di-retry
-  if ((res.status === 401 || res.status === 403) && 
+  if (res.status === 401 && 
       url !== '/api/auth/refresh' && 
       url !== '/api/auth/me' && // Jangan retry /api/auth/me untuk mencegah infinite loop
       !url.includes('/api/auth/')) {
