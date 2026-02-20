@@ -16,8 +16,12 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
   ],
+  // Esbuild: drop console.log dan debugger di production agar console bersih
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
   build: {
-    sourcemap: true,
+    sourcemap: mode !== 'production', // sourcemap hanya untuk development
     chunkSizeWarningLimit: 1000, // Increase warning limit to 1MB
     rollupOptions: {
       output: {
@@ -40,12 +44,6 @@ export default defineConfig(({ mode }) => ({
             'lucide-react',
           ],
         },
-      },
-    },
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
       },
     },
   },

@@ -78,11 +78,11 @@ export function getKanwilSettings() {
 
 // Role-based permission utilities
 export const canCreate = (userRole: string): boolean => {
-  return ['admin', 'operator'].includes(userRole);
+  return ['admin', 'operator', 'admin_wilayah'].includes(userRole);
 };
 
 export const canEdit = (userRole: string): boolean => {
-  return ['admin', 'operator'].includes(userRole);
+  return ['admin', 'operator', 'admin_wilayah'].includes(userRole);
 };
 
 export const canDelete = (userRole: string): boolean => {

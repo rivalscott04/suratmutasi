@@ -1844,12 +1844,13 @@ const PengajuanDetail: React.FC = () => {
             {user?.role === 'admin_wilayah' && (
               <>
                 <TabsTrigger value="KabupatenKota" data-tour-id="pengajuan-tab-kabupaten">Kabupaten/Kota</TabsTrigger>
-                {/* Tampilkan tab Admin Wilayah jika ada berkas admin wilayah: upload/perbaikan atau final_approved (ganti file / overwrite) */}
-                {(hasAdminWilayahFiles &&
-                  (pengajuan?.status === 'admin_wilayah_rejected' || 
-                   pengajuan?.status === 'admin_wilayah_approved' || 
+                {/* Tab Admin Wilayah: draft buatan sendiri (lengkapi & ajukan), atau ada berkas admin wilayah untuk status lain */}
+                {((hasAdminWilayahFiles &&
+                  (pengajuan?.status === 'admin_wilayah_rejected' ||
+                   pengajuan?.status === 'admin_wilayah_approved' ||
                    pengajuan?.status === 'admin_wilayah_submitted' ||
-                   (pengajuan?.status && String(pengajuan.status).toLowerCase() === 'final_approved'))) && (
+                   (pengajuan?.status && String(pengajuan.status).toLowerCase() === 'final_approved'))) ||
+                  (pengajuan?.status === 'draft' && pengajuan?.created_by === user?.id)) && (
                   <TabsTrigger value="admin_wilayah" data-tour-id="pengajuan-tab-admin">Admin Wilayah</TabsTrigger>
                 )}
                 <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
@@ -2150,7 +2151,9 @@ const PengajuanDetail: React.FC = () => {
                   onClick={() => navigate(`/admin-wilayah/upload/${pengajuan.id}`)}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Perbaiki Dokumen Kanwil
+                  {pengajuan.status === 'draft' && pengajuan.created_by === user?.id
+                    ? 'Lengkapi berkas & Ajukan ke Superadmin'
+                    : 'Perbaiki Dokumen Kanwil'}
                 </Button>
               )}
             </CardHeader>

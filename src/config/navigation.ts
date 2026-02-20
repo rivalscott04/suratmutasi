@@ -223,7 +223,7 @@ export const routeConfig: Record<string, {
       { name: 'Data Pengajuan', href: '/pengajuan' },
       { name: 'Pilih Pegawai', current: true }
     ],
-    roles: ['admin', 'operator', 'kanwil'],
+    roles: ['admin', 'operator', 'admin_wilayah', 'kanwil'],
     parent: '/pengajuan'
   },
   '/pengajuan/:pengajuanId': {
@@ -242,7 +242,7 @@ export const routeConfig: Record<string, {
       { name: 'Detail Pengajuan', href: '/pengajuan/:pengajuanId' },
       { name: 'Upload File', current: true }
     ],
-    roles: ['admin', 'operator', 'kanwil'],
+    roles: ['admin', 'operator', 'admin_wilayah', 'kanwil'],
     parent: '/pengajuan'
   },
   '/pengajuan/:pengajuanId/edit': {
@@ -252,7 +252,7 @@ export const routeConfig: Record<string, {
       { name: 'Detail Pengajuan', href: '/pengajuan/:pengajuanId' },
       { name: 'Edit', current: true }
     ],
-    roles: ['admin', 'operator', 'kanwil'],
+    roles: ['admin', 'operator', 'admin_wilayah', 'kanwil'],
     parent: '/pengajuan'
   },
   '/admin-wilayah/upload/:pengajuanId': {
