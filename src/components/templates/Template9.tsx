@@ -94,8 +94,8 @@ export const Template9: React.FC<Template9Props> = ({ data }) => {
           </p>
         </div>
 
-        {/* Signature */}
-        <div className="mt-8 ml-auto w-48 text-left">
+        {/* Signature - digeser ke kiri (mr-10) dan diperlebar (w-64) agar nama + gelar tidak pindah baris */}
+        <div className="mt-8 ml-auto mr-10 w-64 text-left">
           <div className="mb-1">
             {data.ibukota}, {formatTanggalIndonesia(data.tanggal)}
           </div>

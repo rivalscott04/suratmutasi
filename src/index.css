@@ -260,10 +260,13 @@ input, button, form {
   width: 21%;
 }
 
+/* Blok TTD digeser ke kiri (margin-right) dan lebar cukup agar nama + gelar tidak pindah baris */
 .signature-section {
   margin-top: 30px;
   margin-left: auto;
+  margin-right: 2.5rem;
   width: 300px;
+  min-width: 260px;
   text-align: left;
 }
 
